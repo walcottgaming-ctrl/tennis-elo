@@ -53,7 +53,7 @@ export default function Home() {
           <div className="mb-3 text-5xl">🎾</div>
 
           <h1 className="text-3xl font-black text-gray-900">
-            Tennis & Padel
+            SmashBreakPoint
           </h1>
 
           <p className="mt-2 text-gray-500">

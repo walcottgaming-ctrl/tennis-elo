@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/src/supabase/client";
 
@@ -32,23 +33,45 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white px-6">
-      <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-black">
-          Se connecter
-        </h1>
+    <main className="min-h-screen bg-[#121212] px-5 py-8 text-white">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col justify-center">
+        {/* LOGO */}
+        <div className="text-center">
+          <div className="mx-auto h-28 w-28 overflow-hidden rounded-[28px] bg-white shadow-lg">
+            <img
+              src="/icons/icon-192.png?v=2"
+              alt="SmashBreakPoint"
+              className="h-full w-full object-cover"
+            />
+          </div>
 
-        <p className="mt-2 text-gray-600">
-          Bienvenue sur Tennis & Padel 🎾
-        </p>
+          <p className="mt-6 text-base font-medium text-gray-400">
+            Trace tes matchs. Challenge tes amis.
+          </p>
+        </div>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-4">
+        {/* TOGGLE */}
+        <div className="mt-8 flex rounded-2xl bg-[#242424] p-1">
+          <div className="flex flex-1 items-center justify-center rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-black">
+            Connexion
+          </div>
+
+          <Link
+            href="/signup"
+            className="flex flex-1 items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-gray-400 transition hover:bg-[#303030] hover:text-white"
+          >
+            Inscription
+          </Link>
+        </div>
+
+        {/* FORMULAIRE */}
+        <form onSubmit={handleLogin} className="mt-8 space-y-5">
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-black"
+              className="block text-sm font-semibold text-gray-300"
             >
-              Adresse e-mail
+              Email
             </label>
 
             <input
@@ -57,15 +80,16 @@ export default function LoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-black"
-              placeholder="ton@email.com"
+              autoComplete="email"
+              placeholder="toi@example.com"
+              className="mt-2 min-h-14 w-full rounded-2xl border border-[#383838] bg-[#202020] px-4 text-base text-white outline-none placeholder:text-gray-600 transition focus:border-gray-500 focus:bg-[#242424]"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-black"
+              className="block text-sm font-semibold text-gray-300"
             >
               Mot de passe
             </label>
@@ -76,24 +100,39 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-black"
+              autoComplete="current-password"
               placeholder="Ton mot de passe"
+              className="mt-2 min-h-14 w-full rounded-2xl border border-[#383838] bg-[#202020] px-4 text-base text-white outline-none placeholder:text-gray-600 transition focus:border-gray-500 focus:bg-[#242424]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-black px-4 py-3 font-medium text-white disabled:opacity-50"
+            className="min-h-14 w-full rounded-2xl bg-white px-5 py-4 text-base font-bold text-black transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Connexion..." : "Se connecter"}
           </button>
         </form>
 
+        {/* MOT DE PASSE OUBLIÉ */}
+        <button
+          type="button"
+          onClick={() =>
+            setMessage(
+              "La récupération du mot de passe sera disponible prochainement."
+            )
+          }
+          className="mt-5 w-full text-center text-sm font-medium text-gray-400 transition hover:text-white"
+        >
+          Mot de passe oublié ?
+        </button>
+
+        {/* MESSAGE */}
         {message && (
-          <p className="mt-6 rounded-lg bg-gray-100 p-4 text-sm text-gray-700">
+          <div className="mt-6 rounded-2xl border border-[#333333] bg-[#1d1d1d] p-4 text-center text-sm text-gray-300">
             {message}
-          </p>
+          </div>
         )}
       </div>
     </main>

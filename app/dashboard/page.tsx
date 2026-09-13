@@ -20,7 +20,7 @@ export default async function DashboardPage() {
       <main className="min-h-screen bg-gray-50 px-5 py-8">
         <div className="mx-auto max-w-lg">
           <h1 className="text-3xl font-bold text-black">
-            Tennis & Padel
+            SmashBreakPoint
           </h1>
 
           <p className="mt-3 text-gray-600">

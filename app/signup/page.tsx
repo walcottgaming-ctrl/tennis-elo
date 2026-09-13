@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/src/supabase/client";
 
 export default function SignupPage() {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -20,6 +22,11 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          username,
+        },
+      },
     });
 
     if (error) {
@@ -34,23 +41,65 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-white px-6">
-      <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-black">
-          Créer un compte
-        </h1>
+    <main className="min-h-screen bg-[#121212] px-5 py-8 text-white">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col justify-center">
+        {/* LOGO */}
+        <div className="text-center">
+          <div className="mx-auto h-28 w-28 overflow-hidden rounded-[28px] bg-white shadow-lg">
+            <img
+              src="/icons/icon-192.png?v=2"
+              alt="SmashBreakPoint"
+              className="h-full w-full object-cover"
+            />
+          </div>
 
-        <p className="mt-2 text-gray-600">
-          Rejoins ton application Tennis & Padel 🎾
-        </p>
+          <p className="mt-6 text-base font-medium text-gray-400">
+            Trace tes matchs. Challenge tes amis.
+          </p>
+        </div>
 
-        <form onSubmit={handleSignup} className="mt-8 space-y-4">
+        {/* TOGGLE */}
+        <div className="mt-8 flex rounded-2xl bg-[#242424] p-1">
+          <Link
+            href="/login"
+            className="flex flex-1 items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-gray-400 transition hover:bg-[#303030] hover:text-white"
+          >
+            Connexion
+          </Link>
+
+          <div className="flex flex-1 items-center justify-center rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-black">
+            Inscription
+          </div>
+        </div>
+
+        {/* FORMULAIRE */}
+        <form onSubmit={handleSignup} className="mt-8 space-y-5">
+          <div>
+            <label
+              htmlFor="username"
+              className="block text-sm font-semibold text-gray-300"
+            >
+              Pseudo
+            </label>
+
+            <input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              required
+              autoComplete="username"
+              placeholder="TonPseudo"
+              className="mt-2 min-h-14 w-full rounded-2xl border border-[#383838] bg-[#202020] px-4 text-base text-white outline-none placeholder:text-gray-600 transition focus:border-gray-500 focus:bg-[#242424]"
+            />
+          </div>
+
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-black"
+              className="block text-sm font-semibold text-gray-300"
             >
-              Adresse e-mail
+              Email
             </label>
 
             <input
@@ -59,15 +108,16 @@ export default function SignupPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-black"
-              placeholder="ton@email.com"
+              autoComplete="email"
+              placeholder="toi@example.com"
+              className="mt-2 min-h-14 w-full rounded-2xl border border-[#383838] bg-[#202020] px-4 text-base text-white outline-none placeholder:text-gray-600 transition focus:border-gray-500 focus:bg-[#242424]"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-black"
+              className="block text-sm font-semibold text-gray-300"
             >
               Mot de passe
             </label>
@@ -79,24 +129,26 @@ export default function SignupPage() {
               onChange={(event) => setPassword(event.target.value)}
               required
               minLength={6}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-3 text-black"
+              autoComplete="new-password"
               placeholder="Au moins 6 caractères"
+              className="mt-2 min-h-14 w-full rounded-2xl border border-[#383838] bg-[#202020] px-4 text-base text-white outline-none placeholder:text-gray-600 transition focus:border-gray-500 focus:bg-[#242424]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-black px-4 py-3 font-medium text-white disabled:opacity-50"
+            className="min-h-14 w-full rounded-2xl bg-white px-5 py-4 text-base font-bold text-black transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Création..." : "Créer mon compte"}
+            {loading ? "Création..." : "S'inscrire"}
           </button>
         </form>
 
+        {/* MESSAGE */}
         {message && (
-          <p className="mt-6 rounded-lg bg-gray-100 p-4 text-sm text-gray-700">
+          <div className="mt-6 rounded-2xl border border-[#333333] bg-[#1d1d1d] p-4 text-center text-sm text-gray-300">
             {message}
-          </p>
+          </div>
         )}
       </div>
     </main>
