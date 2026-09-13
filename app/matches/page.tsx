@@ -41,9 +41,7 @@ type SetRow = {
   is_match_tiebreak: boolean;
 };
 
-function getProfile(
-  profiles: MatchPlayer["profiles"]
-) {
+function getProfile(profiles: MatchPlayer["profiles"]) {
   if (!profiles) return null;
 
   return Array.isArray(profiles)
@@ -99,6 +97,14 @@ function formatScore(sets: SetRow[]) {
     .join("  ");
 }
 
+function getMatchDate(date: string) {
+  return new Date(date).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export default async function MatchesPage() {
   const supabase = await createClient();
 
@@ -106,17 +112,28 @@ export default async function MatchesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-   if (!user) {
+  if (!user) {
     return (
-      <main className="min-h-screen bg-gray-50 px-6 py-12 pb-28">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <div className="mx-auto max-w-lg">
-          <h1 className="text-3xl font-bold text-black">
-            Mes matchs
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+            SmashBreakPoint
+          </p>
+
+          <h1 className="mt-3 text-3xl font-bold tracking-tight">
+            Connexion requise
           </h1>
 
-          <p className="mt-4 text-gray-600">
-            Tu dois être connecté pour voir tes matchs.
+          <p className="mt-3 leading-6 text-muted">
+            Connecte-toi pour retrouver tes matchs et ton historique.
           </p>
+
+          <Link
+            href="/login"
+            className="mt-7 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98]"
+          >
+            Se connecter
+          </Link>
         </div>
       </main>
     );
@@ -209,62 +226,128 @@ export default async function MatchesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8 pb-28">
-      <div className="mx-auto max-w-lg">
-        <div className="flex items-center justify-between">
+    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+      <div className="mx-auto max-w-lg pb-8">
+
+        {/* HEADER */}
+        <header className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-black text-black">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+              Activité
+            </p>
+
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">
               Mes matchs
             </h1>
 
-            <p className="mt-2 text-gray-500">
-              Tous tes matchs enregistrés
+            <p className="mt-2 text-sm leading-5 text-muted">
+              Ton historique de rencontres
             </p>
           </div>
 
           <Link
             href="/matches/new"
-            className="rounded-xl bg-black px-4 py-3 text-sm font-bold text-white"
+            aria-label="Nouveau match"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-2xl font-light text-background transition-all duration-200 hover:brightness-95 active:scale-95"
           >
-            + Match
+            +
           </Link>
-        </div>
+        </header>
 
-        {error && (
-          <div className="mt-6 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-            Erreur : {error.message}
+        {/* STATS RAPIDES */}
+        {typedMatches.length > 0 && (
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Matchs
+              </p>
+
+              <p className="mt-2 text-2xl font-bold">
+                {typedMatches.length}
+              </p>
+
+              <p className="mt-1 text-xs text-muted-2">
+                enregistrés
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-surface p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Compétitifs
+              </p>
+
+              <p className="mt-2 text-2xl font-bold">
+                {
+                  typedMatches.filter(
+                    (match) =>
+                      match.result_type === "competitive"
+                  ).length
+                }
+              </p>
+
+              <p className="mt-1 text-xs text-muted-2">
+                matchs classés
+              </p>
+            </div>
           </div>
         )}
 
-        {!error && typedMatches.length === 0 && (
-          <div className="mt-8 rounded-2xl bg-white p-6 text-center shadow-sm">
-            <div className="text-4xl">🎾</div>
+        {/* ERREUR */}
+        {error && (
+          <div className="mt-6 rounded-2xl border border-danger/20 bg-danger/5 p-4">
+            <p className="text-sm font-semibold text-danger">
+              Impossible de charger tes matchs
+            </p>
 
-            <p className="mt-3 font-semibold text-black">
+            <p className="mt-1 text-xs text-muted">
+              {error.message}
+            </p>
+          </div>
+        )}
+
+        {/* EMPTY STATE */}
+        {!error && typedMatches.length === 0 && (
+          <div className="mt-8 rounded-3xl border border-border bg-surface p-7">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                className="h-6 w-6"
+              >
+                <circle cx="12" cy="12" r="8.5" />
+                <path
+                  strokeLinecap="round"
+                  d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c-2.5 1.5-3.5 4-3.5 5.5s1 4 3.5 5.5"
+                />
+              </svg>
+            </div>
+
+            <p className="mt-5 text-lg font-bold">
               Aucun match pour le moment
             </p>
 
-            <p className="mt-1 text-sm text-gray-500">
-              Enregistre ton premier match pour
-              commencer ton classement.
+            <p className="mt-2 max-w-sm text-sm leading-5 text-muted">
+              Enregistre ton premier résultat pour commencer
+              à suivre ton classement.
             </p>
 
             <Link
               href="/matches/new"
-              className="mt-5 inline-block rounded-xl bg-black px-5 py-3 font-semibold text-white"
+              className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98]"
             >
               Créer un match
             </Link>
           </div>
         )}
 
-        <div className="mt-8 space-y-4">
+        {/* MATCHS */}
+        <div className="mt-8 space-y-3">
           {typedMatches.map((match) => {
             const matchSets = getMatchSets(match.id);
-            const winnerTeam =
-              getWinnerTeam(matchSets);
-            const pointsChange =
-              getPointsChange(match.id);
+            const winnerTeam = getWinnerTeam(matchSets);
+            const pointsChange = getPointsChange(match.id);
 
             const team1 = match.match_players.filter(
               (player) => player.team === 1
@@ -275,8 +358,8 @@ export default async function MatchesPage() {
             );
 
             const userTeam = match.match_players.find(
-  (player) => player.player_id === currentUserId
-)?.team;
+              (player) => player.player_id === currentUserId
+            )?.team;
 
             const userWon =
               winnerTeam !== null &&
@@ -290,61 +373,99 @@ export default async function MatchesPage() {
               <Link
                 key={match.id}
                 href={`/matches/${match.id}`}
-                className="block overflow-hidden rounded-2xl bg-white shadow-sm transition hover:shadow-md active:scale-[0.99]"
+                className="group block overflow-hidden rounded-3xl border border-border bg-surface transition-all duration-200 hover:border-white/10 hover:bg-surface-2 active:scale-[0.99]"
               >
-                <div className="p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">
-                          {match.sport === "tennis"
-                            ? "🎾"
-                            : "🟢"}
+                {/* TOP */}
+                <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                        match.sport === "tennis"
+                          ? "bg-accent/10 text-accent"
+                          : "bg-white/5 text-white"
+                      }`}
+                    >
+                      {match.sport === "tennis" ? (
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.7"
+                          className="h-5 w-5"
+                        >
+                          <circle cx="12" cy="12" r="8.5" />
+                          <path
+                            strokeLinecap="round"
+                            d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c2.5 1.5 3.5 4 3.5 5.5s1 4 3.5 5.5"
+                          />
+                        </svg>
+                      ) : (
+                        <span className="text-sm font-black">
+                          P
                         </span>
+                      )}
+                    </div>
 
-                        <h2 className="font-bold text-black">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold">
                           {match.sport === "tennis"
                             ? "Tennis"
                             : "Padel"}
-                        </h2>
+                        </p>
+
+                        <span className="text-muted-2">
+                          ·
+                        </span>
+
+                        <p className="text-sm text-muted">
+                          {match.format === "singles"
+                            ? "Simple"
+                            : "Double"}
+                        </p>
                       </div>
 
-                      <p className="mt-1 text-sm text-gray-500">
-                        {match.format === "singles"
-                          ? "Simple"
-                          : "Double"}
+                      <p className="mt-0.5 text-xs text-muted-2">
+                        {getMatchDate(match.created_at)}
                       </p>
                     </div>
-
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-bold ${
-                        match.result_type ===
-                        "competitive"
-                          ? "bg-black text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {match.result_type ===
-                      "competitive"
-                        ? "🏆 Compétitif"
-                        : "🤝 Amical"}
-                    </span>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                      match.result_type === "competitive"
+                        ? "bg-accent/10 text-accent"
+                        : "bg-white/5 text-muted"
+                    }`}
+                  >
+                    {match.result_type === "competitive"
+                      ? "Compétitif"
+                      : "Amical"}
+                  </span>
+                </div>
+
+                {/* SCORE */}
+                <div className="px-5 py-5">
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+
+                    {/* TEAM 1 */}
+                    <div className="min-w-0">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-2">
                         Équipe 1
                       </p>
 
-                      <div className="mt-2 space-y-1">
+                      <div className="space-y-1.5">
                         {team1.map((player) => (
                           <p
                             key={
                               player.player_id ??
                               player.guest_name
                             }
-                            className="font-semibold text-black"
+                            className={`truncate text-sm font-semibold ${
+                              userTeam === 1
+                                ? "text-foreground"
+                                : "text-muted"
+                            }`}
                           >
                             {getPlayerName(player)}
                           </p>
@@ -352,31 +473,51 @@ export default async function MatchesPage() {
                       </div>
                     </div>
 
-                    <div className="text-center">
+                    {/* SCORE */}
+                    <div className="min-w-22.5 text-center">
                       {matchSets.length > 0 ? (
-                        <p className="text-lg font-black text-black">
-                          {formatScore(matchSets)}
-                        </p>
+                        <>
+                          <p className="whitespace-nowrap text-lg font-black tracking-tight">
+                            {formatScore(matchSets)}
+                          </p>
+
+                          {winnerTeam !== null && (
+                            <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-muted-2">
+                              Équipe {winnerTeam}
+                            </p>
+                          )}
+                        </>
                       ) : (
-                        <p className="text-xs font-medium text-gray-400">
-                          VS
-                        </p>
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs font-bold uppercase tracking-wide text-muted-2">
+                            VS
+                          </span>
+
+                          <span className="mt-1 text-[10px] text-muted-2">
+                            à jouer
+                          </span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="text-right">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    {/* TEAM 2 */}
+                    <div className="min-w-0 text-right">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-2">
                         Équipe 2
                       </p>
 
-                      <div className="mt-2 space-y-1">
+                      <div className="space-y-1.5">
                         {team2.map((player) => (
                           <p
                             key={
                               player.player_id ??
                               player.guest_name
                             }
-                            className="font-semibold text-black"
+                            className={`truncate text-sm font-semibold ${
+                              userTeam === 2
+                                ? "text-foreground"
+                                : "text-muted"
+                            }`}
                           >
                             {getPlayerName(player)}
                           </p>
@@ -385,26 +526,27 @@ export default async function MatchesPage() {
                     </div>
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between border-t border-gray-100 pt-4">
-                    <div>
+                  {/* RESULT */}
+                  <div className="mt-5 flex items-end justify-between border-t border-border pt-4">
+                    <div className="min-w-0">
                       {winnerTeam !== null ? (
                         <p
                           className={`text-sm font-bold ${
                             userWon
-                              ? "text-green-600"
+                              ? "text-success"
                               : userLost
-                              ? "text-red-600"
-                              : "text-gray-600"
+                              ? "text-danger"
+                              : "text-muted"
                           }`}
                         >
                           {userWon
-                            ? "🏆 Victoire"
+                            ? "Victoire"
                             : userLost
                             ? "Défaite"
                             : `Équipe ${winnerTeam} gagnante`}
                         </p>
                       ) : (
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm font-medium text-muted">
                           Aucun résultat enregistré
                         </p>
                       )}
@@ -413,20 +555,18 @@ export default async function MatchesPage() {
                         <p
                           className={`mt-1 text-xs font-semibold ${
                             pointsChange >= 0
-                              ? "text-green-600"
-                              : "text-red-600"
+                              ? "text-success"
+                              : "text-danger"
                           }`}
                         >
-                          {pointsChange >= 0
-                            ? "+"
-                            : ""}
+                          {pointsChange >= 0 ? "+" : ""}
                           {pointsChange} points
                         </p>
                       )}
                     </div>
 
-                    <span className="text-sm font-bold text-gray-400">
-                      Voir le match →
+                    <span className="ml-4 shrink-0 text-sm font-semibold text-muted-2 transition-transform duration-200 group-hover:translate-x-1">
+                      →
                     </span>
                   </div>
                 </div>

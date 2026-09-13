@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/src/supabase/client";
 
 type Player = {
@@ -58,6 +59,133 @@ type Division = {
   description: string;
 };
 
+function TrophyIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-5 w-5"
+      stroke="currentColor"
+      strokeWidth="1.7"
+    >
+      <path d="M8 4h8v4a4 4 0 0 1-8 0V4Z" />
+      <path d="M8 6H5a3 3 0 0 0 3 3" />
+      <path d="M16 6h3a3 3 0 0 1-3 3" />
+      <path d="M12 12v4" />
+      <path d="M8 20h8" />
+      <path d="M9 16h6" />
+    </svg>
+  );
+}
+
+function TennisIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-5 w-5"
+      stroke="currentColor"
+      strokeWidth="1.7"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.5 5.5c3.2 2 5 4.8 5 8.2s-1.8 6.2-5 8.2" />
+      <path d="M18.5 5.5c-3.2 2-5 4.8-5 8.2s1.8 6.2 5 8.2" />
+    </svg>
+  );
+}
+
+function PadelIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-5 w-5"
+      stroke="currentColor"
+      strokeWidth="1.7"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 4.5c1.5 2 1.7 4.1.7 6.1-1 2-2.8 3.4-5.2 4" />
+      <path d="M16 19.5c-1.5-2-1.7-4.1-.7-6.1 1-2 2.8-3.4 5.2-4" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={`h-5 w-5 transition-transform ${
+        open ? "rotate-180" : ""
+      }`}
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-5 w-5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function CrownIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m4 7 4 4 4-6 4 6 4-4-2 11H6L4 7Z" />
+      <path d="M6 21h12" />
+    </svg>
+  );
+}
+
+function FlameIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-5 w-5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M12 21a7 7 0 0 0 7-7c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-3 2-4 5-4 8a6 6 0 0 0 6 7Z" />
+    </svg>
+  );
+}
+
+function ArrowUpIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-4 w-4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M12 19V5" />
+      <path d="m6 11 6-6 6 6" />
+    </svg>
+  );
+}
+
+
+
 export default function RankingPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -69,9 +197,7 @@ export default function RankingPage() {
 
   const [sport, setSport] = useState<Sport>("tennis");
 
-  const [openPlayer, setOpenPlayer] = useState<string | null>(
-    null
-  );
+  const [openPlayer, setOpenPlayer] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
@@ -110,9 +236,7 @@ export default function RankingPage() {
         error: matchesError,
       } = await supabase
         .from("matches")
-        .select(
-          "id, sport, format, created_at"
-        )
+        .select("id, sport, format, created_at")
         .order("created_at", {
           ascending: false,
         });
@@ -128,9 +252,7 @@ export default function RankingPage() {
         error: matchPlayersError,
       } = await supabase
         .from("match_players")
-        .select(
-          "match_id, player_id, team"
-        );
+        .select("match_id, player_id, team");
 
       if (matchPlayersError) {
         setMessage(matchPlayersError.message);
@@ -416,10 +538,16 @@ export default function RankingPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gray-50 px-5">
-        <p className="text-gray-600">
-          Chargement du classement...
-        </p>
+      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+        <div className="mx-auto flex min-h-[70vh] max-w-lg items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-accent/20" />
+
+            <p className="mt-4 text-sm font-medium text-muted">
+              Chargement du classement...
+            </p>
+          </div>
+        </div>
       </main>
     );
   }
@@ -434,62 +562,75 @@ export default function RankingPage() {
 
   const topPlayer = rankedPlayers[0] ?? null;
 
-const currentChampion = getChampion(sport);
+  const currentChampion = getChampion(sport);
 
-const currentChampionPlayer = currentChampion
-  ? players.find(
-      (player) => player.id === currentChampion.player_id
-    ) ?? null
-  : null;
+  const currentChampionPlayer = currentChampion
+    ? players.find(
+        (player) =>
+          player.id === currentChampion.player_id
+      ) ?? null
+    : null;
 
-const topDivision = topPlayer
-  ? getDivision(getPlayerPoints(topPlayer))
-  : null;
+  const topDivision = topPlayer
+    ? getDivision(getPlayerPoints(topPlayer))
+    : null;
 
   return (
-    <main className="min-h-screen bg-gray-50 px-5 py-8">
+    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
       <div className="mx-auto max-w-lg pb-8">
-
         {/* HEADER */}
 
-        <div>
-          <p className="text-sm font-medium text-gray-500">
-            🏆 Classement
-          </p>
+        <header>
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <TrophyIcon />
+            </div>
 
-          <h1 className="mt-1 text-3xl font-bold text-black">
-            Classement
-          </h1>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                Classement
+              </p>
 
-          <p className="mt-2 text-gray-600">
-            Gagne des points à chaque match et
-            grimpe dans le classement.
+              <h1 className="mt-1 text-3xl font-bold tracking-tight">
+                Qui domine ?
+              </h1>
+            </div>
+          </div>
+
+          <p className="mt-4 text-sm leading-6 text-muted">
+            Gagne des points à chaque match et grimpe
+            progressivement dans le classement.
           </p>
-        </div>
+        </header>
+
+        {/* ERROR */}
 
         {message && (
-          <div className="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">
-            {message}
+          <div className="mt-6 rounded-2xl border border-danger/20 bg-danger/5 p-4">
+            <p className="text-sm font-medium text-danger">
+              {message}
+            </p>
           </div>
         )}
 
         {/* SPORT SELECTOR */}
 
-        <section className="mt-6 rounded-2xl bg-white p-2 shadow-sm">
-          <div className="grid grid-cols-2 gap-2">
+        <section className="mt-7">
+          <div className="grid grid-cols-2 gap-2 rounded-3xl border border-border bg-surface p-2">
             <button
               type="button"
               onClick={() => {
                 setSport("tennis");
                 setOpenPlayer(null);
               }}
-              className={`min-h-12 rounded-xl px-4 py-3 text-sm font-bold transition ${
+              className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition ${
                 sport === "tennis"
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-600"
+                  ? "bg-accent text-background"
+                  : "bg-surface-2 text-muted hover:text-foreground"
               }`}
             >
-              🎾 Tennis
+              <TennisIcon />
+              Tennis
             </button>
 
             <button
@@ -498,80 +639,97 @@ const topDivision = topPlayer
                 setSport("padel");
                 setOpenPlayer(null);
               }}
-              className={`min-h-12 rounded-xl px-4 py-3 text-sm font-bold transition ${
+              className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition ${
                 sport === "padel"
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-600"
+                  ? "bg-accent text-background"
+                  : "bg-surface-2 text-muted hover:text-foreground"
               }`}
             >
-              🟢 Padel
+              <PadelIcon />
+              Padel
             </button>
           </div>
         </section>
 
-        {/* CHAMPION CARD */}
+        {/* CHAMPION */}
 
-        {currentChampionPlayer && topDivision && (
-  <section className="mt-6 overflow-hidden rounded-3xl bg-black text-white shadow-lg">
-            <div className="p-6">
-
+        {currentChampionPlayer && (
+          <section className="mt-5 overflow-hidden rounded-3xl border border-accent/20 bg-surface">
+            <div className="p-5">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                    Champion actuel
-                  </p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                      <CrownIcon />
+                    </div>
 
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-3xl">
-                      👑
-                    </span>
-
-                    <h2 className="text-2xl font-black">
-                    {getPlayerName(currentChampionPlayer)}  
-                    </h2>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">
+                      Champion actuel
+                    </p>
                   </div>
 
-                  <p className="mt-2 text-sm text-gray-400">
-                    N°1 {sport === "tennis" ? "Tennis" : "Padel"}
+                  <h2 className="mt-4 truncate text-2xl font-bold tracking-tight">
+                    {getPlayerName(currentChampionPlayer)}
+                  </h2>
+
+                  <p className="mt-1 text-sm text-muted">
+                    N°1{" "}
+                    {sport === "tennis"
+                      ? "Tennis"
+                      : "Padel"}
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-white/10 px-4 py-3 text-center">
-                  <p className="text-2xl font-black">
-                    {getPlayerPoints(currentChampionPlayer)}
+                <div className="shrink-0 rounded-2xl bg-accent/10 px-4 py-3 text-right">
+                  <p className="text-2xl font-bold text-accent">
+                    {getPlayerPoints(
+                      currentChampionPlayer
+                    )}
                   </p>
 
-                  <p className="text-xs text-gray-400">
-                    POINTS
+                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+                    Points
                   </p>
                 </div>
               </div>
 
-              
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-white/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-surface-2 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
                     Division
                   </p>
 
-                  <p className="mt-2 text-xl font-black">
-                    {getDivision(
-                      getPlayerPoints(currentChampionPlayer)
-                    ).icon}{" "}
-                    {getDivision(
-                      getPlayerPoints(currentChampionPlayer)
-                    ).name}
+                  <p className="mt-2 text-lg font-bold">
+                    {
+                      getDivision(
+                        getPlayerPoints(
+                          currentChampionPlayer
+                        )
+                      ).icon
+                    }{" "}
+                    {
+                      getDivision(
+                        getPlayerPoints(
+                          currentChampionPlayer
+                        )
+                      ).name
+                    }
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-white/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
-                    Streak Champion
-                  </p>
+                <div className="rounded-2xl bg-surface-2 p-4">
+                  <div className="flex items-center gap-2 text-muted">
+                    <FlameIcon />
 
-                  <p className="mt-2 text-xl font-black">
-                    🔥{" "}
-                    {getChampionStreak(currentChampionPlayer.id)}{" "}
+                    <p className="text-xs font-bold uppercase tracking-[0.14em]">
+                      Streak
+                    </p>
+                  </div>
+
+                  <p className="mt-2 text-lg font-bold">
+                    {getChampionStreak(
+                      currentChampionPlayer.id
+                    )}{" "}
                     match
                     {getChampionStreak(
                       currentChampionPlayer.id
@@ -585,110 +743,105 @@ const topDivision = topPlayer
               {getChampionStartedAt(
                 currentChampionPlayer.id
               ) && (
-                <p className="mt-5 text-xs text-gray-400">
+                <p className="mt-4 text-xs text-muted">
                   Champion depuis le{" "}
                   {new Date(
                     getChampionStartedAt(
                       currentChampionPlayer.id
                     )!
-                  ).toLocaleDateString(
-                    "fr-FR"
-                  )}
+                  ).toLocaleDateString("fr-FR")}
                 </p>
               )}
             </div>
           </section>
         )}
-```
 
-```
+        {/* DIVISION */}
 
-
-        {/* DIVISION CARD */}
-
-        {topPlayer && (
-          <section className="mt-5 rounded-3xl bg-white p-5 shadow-sm">
-
-            <div className="flex items-center justify-between">
+        {topPlayer && topDivision && (
+          <section className="mt-5 rounded-3xl border border-border bg-surface p-5">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                  Division actuelle
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                  Division du leader
                 </p>
 
-                <h2 className="mt-1 text-xl font-black text-black">
-                  {getDivision(
-                    getPlayerPoints(topPlayer)
-                  ).icon}{" "}
-                  {getDivision(
-                    getPlayerPoints(topPlayer)
-                  ).name}
+                <h2 className="mt-2 text-2xl font-bold tracking-tight">
+                  {topDivision.icon}{" "}
+                  {topDivision.name}
                 </h2>
               </div>
 
               <div className="text-right">
-                <p className="text-2xl font-black text-black">
+                <p className="text-2xl font-bold">
                   {getPlayerPoints(topPlayer)}
                 </p>
 
-                <p className="text-xs text-gray-400">
-                  points du leader
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+                  Points
                 </p>
               </div>
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-gray-500">
-              {getDivision(
-                getPlayerPoints(topPlayer)
-              ).description}
+            <p className="mt-3 text-sm leading-6 text-muted">
+              {topDivision.description}
             </p>
 
-            <div className="mt-5 space-y-2">
+            <div className="mt-5 grid grid-cols-5 gap-1.5">
+              {[
+                {
+                  name: "Bronze",
+                  icon: "🥉",
+                  range: "< 1000",
+                },
+                {
+                  name: "Argent",
+                  icon: "🥈",
+                  range: "1000",
+                },
+                {
+                  name: "Or",
+                  icon: "🥇",
+                  range: "1100",
+                },
+                {
+                  name: "Platine",
+                  icon: "💠",
+                  range: "1200",
+                },
+                {
+                  name: "Diamant",
+                  icon: "💎",
+                  range: "1300+",
+                },
+              ].map((division) => (
+                <div
+                  key={division.name}
+                  className={`rounded-xl p-2 text-center ${
+                    division.name === topDivision.name
+                      ? "border border-accent/20 bg-accent/10"
+                      : "bg-surface-2"
+                  }`}
+                >
+                  <p className="text-base">
+                    {division.icon}
+                  </p>
 
-              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-                <span className="text-sm font-semibold text-gray-700">
-                  🥉 Bronze
-                </span>
-                <span className="text-xs text-gray-400">
-                  &lt; 1000
-                </span>
-              </div>
+                  <p
+                    className={`mt-1 text-[9px] font-bold uppercase tracking-wide ${
+                      division.name === topDivision.name
+                        ? "text-accent"
+                        : "text-muted"
+                    }`}
+                  >
+                    {division.name}
+                  </p>
 
-              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-                <span className="text-sm font-semibold text-gray-700">
-                  🥈 Argent
-                </span>
-                <span className="text-xs text-gray-400">
-                  1000–1099
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-                <span className="text-sm font-semibold text-gray-700">
-                  🥇 Or
-                </span>
-                <span className="text-xs text-gray-400">
-                  1100–1199
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-                <span className="text-sm font-semibold text-gray-700">
-                  💠 Platine
-                </span>
-                <span className="text-xs text-gray-400">
-                  1200–1299
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-                <span className="text-sm font-semibold text-gray-700">
-                  💎 Diamant
-                </span>
-                <span className="text-xs text-gray-400">
-                  1300+
-                </span>
-              </div>
-
+                  <p className="mt-0.5 text-[8px] text-muted">
+                    {division.range}
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -698,21 +851,17 @@ const topDivision = topPlayer
         {podium.length > 0 && (
           <section className="mt-8">
             <div>
-              <h2 className="text-xl font-bold text-black">
-                🏆 Podium
-              </h2>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Top 3{" "}
-                {sport === "tennis"
-                  ? "Tennis"
-                  : "Padel"}
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                Classement
               </p>
+
+              <h2 className="mt-1 text-xl font-bold tracking-tight">
+                Le podium
+              </h2>
             </div>
 
             <div className="mt-5 grid grid-cols-3 items-end gap-2">
-
-              {/* 2e */}
+              {/* 2ND */}
 
               {podium[1] && (
                 <button
@@ -724,32 +873,36 @@ const topDivision = topPlayer
                         : podium[1].id
                     )
                   }
-                  className="rounded-2xl bg-white p-3 text-center shadow-sm"
+                  className="rounded-3xl border border-border bg-surface p-3 text-center transition hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
                 >
-                  <div className="text-3xl">
-                    🥈
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-xl">
+                    2
                   </div>
 
-                  <p className="mt-2 truncate text-sm font-bold text-black">
+                  <p className="mt-3 truncate text-sm font-bold">
                     {getPlayerName(podium[1])}
                   </p>
 
-                  <p className="mt-1 text-2xl font-bold text-black">
+                  <p className="mt-1 text-2xl font-bold">
                     {getPlayerPoints(podium[1])}
                   </p>
 
-                  <p className="text-xs text-gray-500">
-                    {getDivision(
-                      getPlayerPoints(podium[1])
-                    ).icon}{" "}
-                    {getDivision(
-                      getPlayerPoints(podium[1])
-                    ).name}
+                  <p className="mt-1 text-[10px] font-semibold text-muted">
+                    {
+                      getDivision(
+                        getPlayerPoints(podium[1])
+                      ).icon
+                    }{" "}
+                    {
+                      getDivision(
+                        getPlayerPoints(podium[1])
+                      ).name
+                    }
                   </p>
                 </button>
               )}
 
-              {/* 1er */}
+              {/* 1ST */}
 
               {podium[0] && (
                 <button
@@ -761,38 +914,43 @@ const topDivision = topPlayer
                         : podium[0].id
                     )
                   }
-                  className="relative rounded-2xl border-2 border-yellow-300 bg-white p-4 text-center shadow-sm"
+                  className="relative rounded-3xl border border-accent/30 bg-surface p-4 text-center shadow-2xl transition hover:bg-surface-2 active:scale-[0.98]"
                 >
                   {isChampion(podium[0].id) && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-black px-3 py-1 text-[10px] font-black text-white">
-                      👑 CHAMPION
+                    <span className="absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-accent px-3 py-1 text-[9px] font-bold text-background">
+                      <CrownIcon />
+                      CHAMPION
                     </span>
                   )}
 
-                  <div className="text-4xl">
-                    🥇
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+                    <TrophyIcon />
                   </div>
 
-                  <p className="mt-2 truncate text-sm font-bold text-black">
+                  <p className="mt-3 truncate text-sm font-bold">
                     {getPlayerName(podium[0])}
                   </p>
 
-                  <p className="mt-1 text-3xl font-bold text-black">
+                  <p className="mt-1 text-3xl font-bold tracking-tight">
                     {getPlayerPoints(podium[0])}
                   </p>
 
-                  <p className="text-xs text-gray-500">
-                    {getDivision(
-                      getPlayerPoints(podium[0])
-                    ).icon}{" "}
-                    {getDivision(
-                      getPlayerPoints(podium[0])
-                    ).name}
+                  <p className="mt-1 text-[10px] font-semibold text-muted">
+                    {
+                      getDivision(
+                        getPlayerPoints(podium[0])
+                      ).icon
+                    }{" "}
+                    {
+                      getDivision(
+                        getPlayerPoints(podium[0])
+                      ).name
+                    }
                   </p>
                 </button>
               )}
 
-              {/* 3e */}
+              {/* 3RD */}
 
               {podium[2] && (
                 <button
@@ -804,27 +962,31 @@ const topDivision = topPlayer
                         : podium[2].id
                     )
                   }
-                  className="rounded-2xl bg-white p-3 text-center shadow-sm"
+                  className="rounded-3xl border border-border bg-surface p-3 text-center transition hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
                 >
-                  <div className="text-3xl">
-                    🥉
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-xl">
+                    3
                   </div>
 
-                  <p className="mt-2 truncate text-sm font-bold text-black">
+                  <p className="mt-3 truncate text-sm font-bold">
                     {getPlayerName(podium[2])}
                   </p>
 
-                  <p className="mt-1 text-2xl font-bold text-black">
+                  <p className="mt-1 text-2xl font-bold">
                     {getPlayerPoints(podium[2])}
                   </p>
 
-                  <p className="text-xs text-gray-500">
-                    {getDivision(
-                      getPlayerPoints(podium[2])
-                    ).icon}{" "}
-                    {getDivision(
-                      getPlayerPoints(podium[2])
-                    ).name}
+                  <p className="mt-1 text-[10px] font-semibold text-muted">
+                    {
+                      getDivision(
+                        getPlayerPoints(podium[2])
+                      ).icon
+                    }{" "}
+                    {
+                      getDivision(
+                        getPlayerPoints(podium[2])
+                      ).name
+                    }
                   </p>
                 </button>
               )}
@@ -835,164 +997,172 @@ const topDivision = topPlayer
         {/* FULL RANKING */}
 
         <section className="mt-8">
-          <h2 className="text-xl font-bold text-black">
-            📊 Classement complet
-          </h2>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                Classement
+              </p>
 
-          <div className="mt-4 overflow-hidden rounded-2xl bg-white shadow-sm">
+              <h2 className="mt-1 text-xl font-bold tracking-tight">
+                Tous les joueurs
+              </h2>
+            </div>
+
+            <span className="text-xs font-medium text-muted">
+              {rankedPlayers.length} joueur
+              {rankedPlayers.length > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-surface">
             {rankedPlayers.length === 0 ? (
               <div className="p-6 text-center">
-                <p className="text-gray-500">
+                <p className="text-sm text-muted">
                   Aucun joueur disponible.
                 </p>
               </div>
             ) : (
-              rankedPlayers.map(
-                (player, index) => {
-                  const isOpen =
-                    openPlayer === player.id;
+              rankedPlayers.map((player, index) => {
+                const isOpen =
+                  openPlayer === player.id;
 
-                  const playerHistory =
-                    getPlayerHistory(player.id);
+                const playerHistory =
+                  getPlayerHistory(player.id);
 
-                  const playerPoints =
-                    getPlayerPoints(player);
+                const playerPoints =
+                  getPlayerPoints(player);
 
-                  const division =
-                    getDivision(playerPoints);
+                const division =
+                  getDivision(playerPoints);
 
-                  const playerIsChampion =
-                    isChampion(player.id);
+                const playerIsChampion =
+                  isChampion(player.id);
 
-                  return (
-                    <div
-                      key={player.id}
-                      className="border-b border-gray-100 last:border-b-0"
+                return (
+                  <div
+                    key={player.id}
+                    className="border-b border-border last:border-b-0"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setOpenPlayer(
+                          isOpen
+                            ? null
+                            : player.id
+                        )
+                      }
+                      className="w-full px-4 py-4 text-left transition hover:bg-surface-2"
                     >
-                      {/* PLAYER ROW */}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                            index === 0
+                              ? "bg-accent/10 text-accent"
+                              : "bg-surface-2 text-muted"
+                          }`}
+                        >
+                          {index + 1}
+                        </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setOpenPlayer(
-                            isOpen
-                              ? null
-                              : player.id
-                          )
-                        }
-                        className="w-full px-5 py-5 text-left"
-                      >
-                        <div className="flex items-center gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-bold">
+                              {getPlayerName(player)}
+                            </p>
 
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 font-bold text-black">
-                            {index === 0
-                              ? "🥇"
-                              : index === 1
-                                ? "🥈"
-                                : index === 2
-                                  ? "🥉"
-                                  : index + 1}
+                            {playerIsChampion && (
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                                <CrownIcon />
+                              </span>
+                            )}
                           </div>
 
-                          <div className="min-w-0 flex-1">
+                          <p className="mt-1 truncate text-xs text-muted">
+                            {division.icon}{" "}
+                            {division.name}
+                          </p>
+                        </div>
 
-                            <div className="flex items-center gap-2">
-                              <p className="truncate font-bold text-black">
+                        <div className="text-right">
+                          <p className="text-xl font-bold">
+                            {playerPoints}
+                          </p>
+
+                          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
+                            points
+                          </p>
+                        </div>
+
+                        <div className="text-muted">
+                          <ChevronDownIcon
+                            open={isOpen}
+                          />
+                        </div>
+                      </div>
+                    </button>
+
+                    {isOpen && (
+                      <div className="border-t border-border bg-surface-2/60 px-4 py-5">
+                        {/* PLAYER SUMMARY */}
+
+                        <div className="rounded-2xl border border-border bg-surface p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-base font-bold">
                                 {getPlayerName(player)}
                               </p>
 
-                              {playerIsChampion && (
-                                <span className="shrink-0 rounded-full bg-black px-2 py-1 text-[9px] font-black text-white">
-                                  👑
-                                </span>
-                              )}
-                            </div>
-
-                            <p className="mt-1 text-xs text-gray-500">
-                              {division.icon}{" "}
-                              {division.name}
-                              {" · "}
-                              {sport === "tennis"
-                                ? "🎾 Tennis"
-                                : "🟢 Padel"}
-                            </p>
-                          </div>
-
-                          <div className="text-right">
-                            <p className="text-2xl font-bold text-black">
-                              {playerPoints}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                              POINTS
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* PLAYER DETAILS */}
-
-                      {isOpen && (
-                        <div className="border-t border-gray-100 bg-gray-50 px-5 py-5">
-
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="font-bold text-black">
-                                {getPlayerName(player)}
-                              </h3>
-
-                              <p className="mt-1 text-sm text-gray-500">
-                                Points{" "}
+                              <p className="mt-1 text-xs text-muted">
                                 {sport === "tennis"
                                   ? "Tennis"
                                   : "Padel"}{" "}
-                                :{" "}
-                                {playerPoints}
-                              </p>
-
-                              <p className="mt-1 text-sm font-semibold text-gray-600">
-                                {division.icon}{" "}
-                                Division{" "}
+                                · Division{" "}
                                 {division.name}
                               </p>
                             </div>
 
                             <div className="text-right">
-                              <span className="rounded-full bg-white px-3 py-2 text-xs font-bold text-gray-600">
-                                #{index + 1}
-                              </span>
+                              <p className="text-2xl font-bold text-accent">
+                                {playerPoints}
+                              </p>
 
-                              {playerIsChampion && (
-                                <p className="mt-2 text-xs font-black text-black">
-                                  👑 CHAMPION
-                                </p>
-                              )}
+                              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
+                                points
+                              </p>
                             </div>
                           </div>
 
                           {playerIsChampion && (
-                            <div className="mt-4 rounded-2xl bg-black p-4 text-white">
-                              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                                Streak Champion
-                              </p>
+                            <div className="mt-4 rounded-2xl border border-accent/20 bg-accent/10 p-4">
+                              <div className="flex items-center gap-2 text-accent">
+                                <CrownIcon />
 
-                              <p className="mt-1 text-2xl font-black">
-                                🔥{" "}
-                                {getChampionStreak(
-                                  player.id
-                                )}{" "}
-                                match
-                                {getChampionStreak(
-                                  player.id
-                                ) > 1
-                                  ? "s"
-                                  : ""}
-                              </p>
+                                <p className="text-xs font-bold uppercase tracking-[0.14em]">
+                                  Champion actuel
+                                </p>
+                              </div>
+
+                              <div className="mt-3 flex items-center gap-2">
+                                <FlameIcon />
+
+                                <p className="text-lg font-bold">
+                                  {getChampionStreak(
+                                    player.id
+                                  )}{" "}
+                                  match
+                                  {getChampionStreak(
+                                    player.id
+                                  ) > 1
+                                    ? "s"
+                                    : ""}
+                                </p>
+                              </div>
 
                               {getChampionStartedAt(
                                 player.id
                               ) && (
-                                <p className="mt-1 text-xs text-gray-400">
+                                <p className="mt-1 text-xs text-muted">
                                   Depuis le{" "}
                                   {new Date(
                                     getChampionStartedAt(
@@ -1005,123 +1175,170 @@ const topDivision = topPlayer
                               )}
                             </div>
                           )}
+                        </div>
 
-                          <div className="mt-5">
-                            <h4 className="font-bold text-black">
-                              10 dernières confrontations
-                            </h4>
+                        {/* MATCH HISTORY */}
 
-                            {playerHistory.length === 0 ? (
-                              <p className="mt-4 text-sm text-gray-500">
-                                Aucune confrontation enregistrée.
+                        <div className="mt-6">
+                          <div className="flex items-end justify-between gap-4">
+                            <div>
+                              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                                Historique
                               </p>
-                            ) : (
-                              <div className="mt-4 space-y-3">
-                                {playerHistory.map(
-                                  (item) => (
-                                    <div
-                                      key={item.match.id}
-                                      className="rounded-xl bg-white p-4"
-                                    >
-                                      <div className="flex items-start justify-between gap-3">
 
-                                        <div className="min-w-0">
-                                          <div className="flex flex-wrap items-center gap-2">
-                                            <span className="text-sm font-bold text-black">
-                                              {item.match.sport ===
-                                              "tennis"
-                                                ? "🎾 Tennis"
-                                                : "🟢 Padel"}
-                                            </span>
+                              <h3 className="mt-1 text-base font-bold">
+                                10 dernières confrontations
+                              </h3>
+                            </div>
+                          </div>
 
-                                            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">
+                          {playerHistory.length === 0 ? (
+                            <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
+                              <p className="text-sm text-muted">
+                                Aucune confrontation
+                                enregistrée.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="mt-3 space-y-2">
+                              {playerHistory.map(
+                                (item) => (
+                                  <Link
+                                    key={item.match.id}
+                                    href={`/matches/${item.match.id}`}
+                                    className="block rounded-2xl border border-border bg-surface p-4 transition hover:border-white/10 hover:bg-surface-2"
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-muted">
+                                        {item.match.sport ===
+                                        "tennis" ? (
+                                          <TennisIcon />
+                                        ) : (
+                                          <PadelIcon />
+                                        )}
+                                      </div>
+
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="min-w-0">
+                                            <p className="truncate text-sm font-bold">
+                                              vs{" "}
+                                              {
+                                                item.opponentName
+                                              }
+                                            </p>
+
+                                            <p className="mt-1 text-xs text-muted">
                                               {item.match.format ===
                                               "singles"
                                                 ? "Simple"
-                                                : "Double"}
-                                            </span>
+                                                : "Double"}{" "}
+                                              ·{" "}
+                                              {new Date(
+                                                item.match.created_at
+                                              ).toLocaleDateString(
+                                                "fr-FR"
+                                              )}
+                                            </p>
                                           </div>
 
-                                          <p className="mt-2 text-sm text-gray-600">
-                                            vs{" "}
-                                            {item.opponentName}
-                                          </p>
+                                          <span
+                                            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                                              item.result ===
+                                              "Victoire"
+                                                ? "bg-accent/10 text-accent"
+                                                : "bg-danger/10 text-danger"
+                                            }`}
+                                          >
+                                            {item.result}
+                                          </span>
                                         </div>
 
-                                        <span
-                                          className={`shrink-0 text-sm font-bold ${
-                                            item.result ===
-                                            "Victoire"
-                                              ? "text-green-600"
-                                              : "text-red-600"
-                                          }`}
-                                        >
-                                          {item.result}
-                                        </span>
+                                        <div className="mt-3 flex flex-wrap gap-1.5">
+                                          {item.scores.map(
+                                            (
+                                              score,
+                                              scoreIndex
+                                            ) => (
+                                              <span
+                                                key={`${item.match.id}-${scoreIndex}`}
+                                                className="rounded-lg bg-surface-2 px-2.5 py-1.5 text-[10px] font-semibold text-muted"
+                                              >
+                                                S
+                                                {scoreIndex +
+                                                  1}{" "}
+                                                {score}
+                                              </span>
+                                            )
+                                          )}
+                                        </div>
                                       </div>
 
-                                      <div className="mt-3 flex flex-wrap gap-2">
-                                        {item.scores.map(
-                                          (
-                                            score,
-                                            scoreIndex
-                                          ) => (
-                                            <span
-                                              key={`${item.match.id}-${scoreIndex}`}
-                                              className="rounded-lg bg-gray-100 px-3 py-2 text-xs font-semibold text-gray-700"
-                                            >
-                                              Set{" "}
-                                              {scoreIndex + 1} :{" "}
-                                              {score}
-                                            </span>
-                                          )
-                                        )}
+                                      <div className="shrink-0 pt-1 text-muted">
+                                        <ChevronRightIcon />
                                       </div>
-
-                                      <p className="mt-3 text-xs text-gray-400">
-                                        {new Date(
-                                          item.match.created_at
-                                        ).toLocaleDateString(
-                                          "fr-FR"
-                                        )}
-                                      </p>
                                     </div>
-                                  )
-                                )}
-                              </div>
-                            )}
-                          </div>
+                                  </Link>
+                                )
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                }
-              )
+                      </div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </section>
 
+<Link
+  href="/ranking/history"
+  className="mt-4 flex min-h-14 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
+>
+  <div>
+    <p className="text-sm font-bold text-foreground">
+      Historique des points
+    </p>
+    <p className="mt-0.5 text-xs text-muted">
+      Voir l&apos;évolution de vos points
+    </p>
+  </div>
+
+  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+    →
+  </div>
+</Link>
+
+
+
         {/* POINTS EXPLANATION */}
 
-        <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">
-              💡
+        <section className="mt-6 rounded-3xl border border-border bg-surface p-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <ArrowUpIcon />
             </div>
 
             <div>
-              <p className="font-bold text-black">
+              <p className="font-bold">
                 Comment fonctionnent les points ?
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-gray-500">
+              <p className="mt-2 text-sm leading-6 text-muted">
                 Une victoire rapporte{" "}
-                <strong>+25 points</strong> et une
-                défaite fait perdre{" "}
-                <strong>20 points</strong>.
+                <span className="font-semibold text-foreground">
+                  +25 points
+                </span>{" "}
+                et une défaite fait perdre{" "}
+                <span className="font-semibold text-foreground">
+                  20 points
+                </span>
+                .
               </p>
 
-              <p className="mt-3 text-sm leading-6 text-gray-500">
+              <p className="mt-3 text-sm leading-6 text-muted">
                 Des bonus récompensent les grosses
                 performances : bulle, double bulle,
                 victoire propre, série de victoires
@@ -1129,28 +1346,33 @@ const topDivision = topPlayer
                 classé.
               </p>
 
-              <p className="mt-3 text-sm leading-6 text-gray-500">
-                Les défaites peuvent également
-entraîner des malus selon le score
-et le niveau de l&apos;adversaire.
+              <p className="mt-3 text-sm leading-6 text-muted">
+                Les défaites peuvent également entraîner
+                des malus selon le score et le niveau
+                de l&apos;adversaire.
               </p>
 
-              <p className="mt-3 text-sm leading-6 text-gray-500">
+              <p className="mt-3 text-sm leading-6 text-muted">
                 Plus tes points augmentent, plus tu
                 montes dans les divisions : Bronze,
                 Argent, Or, Platine puis Diamant.
               </p>
 
-              <p className="mt-3 text-sm font-semibold leading-6 text-gray-700">
-                👑 Le joueur actuellement premier est
-                le Champion. Son compteur indique
-                combien de matchs il a conservé la
-                première place.
-              </p>
+              <div className="mt-4 flex items-start gap-2 rounded-2xl bg-accent/5 p-3">
+                <div className="mt-0.5 shrink-0 text-accent">
+                  <CrownIcon />
+                </div>
+
+                <p className="text-xs font-medium leading-5 text-muted">
+                  Le joueur actuellement premier est le
+                  Champion. Son compteur indique combien
+                  de matchs il a conservé la première
+                  place.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-
+        </section>
       </div>
     </main>
   );

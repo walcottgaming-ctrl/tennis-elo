@@ -419,91 +419,170 @@ if (
     );
   }
 
-  if (loading) {
+    if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 px-5 py-8">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <div className="mx-auto max-w-lg">
-          <p className="text-gray-600">
-            Chargement...
-          </p>
+          <div className="h-3 w-24 animate-pulse rounded-full bg-surface-2" />
+          <div className="mt-4 h-9 w-56 animate-pulse rounded-xl bg-surface-2" />
+          <div className="mt-3 h-4 w-72 animate-pulse rounded-full bg-surface-2" />
+
+          <div className="mt-8 space-y-4">
+            <div className="h-36 animate-pulse rounded-3xl bg-surface" />
+            <div className="h-36 animate-pulse rounded-3xl bg-surface" />
+            <div className="h-36 animate-pulse rounded-3xl bg-surface" />
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-5 py-8 pb-28">
-      <div className="mx-auto max-w-lg">
-        <Link
-          href="/dashboard"
-          className="text-sm font-medium text-gray-500"
-        >
-          ← Retour
-        </Link>
+    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+      <div className="mx-auto max-w-lg pb-8">
 
-        <h1 className="mt-3 text-3xl font-bold text-black">
-          Nouveau match
-        </h1>
+        {/* HEADER */}
+        <header>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center text-sm font-semibold text-muted transition-colors hover:text-white"
+          >
+            <span className="mr-2 text-base">←</span>
+            Retour
+          </Link>
 
-        <p className="mt-2 text-gray-600">
-          Configure ta partie avant de saisir le résultat.
-        </p>
+          <div className="mt-6">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+              Match
+            </p>
+
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">
+              Nouveau match
+            </h1>
+
+            <p className="mt-2 max-w-sm text-sm leading-5 text-muted">
+              Configure ta rencontre avant de passer à la saisie du score.
+            </p>
+          </div>
+        </header>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-6 space-y-5"
+          className="mt-8 space-y-4"
         >
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-black">
-              Sport
-            </h2>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+          {/* SPORT */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                  01
+                </p>
+
+                <h2 className="mt-1 text-lg font-bold">
+                  Sport
+                </h2>
+              </div>
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.7"
+                  className="h-5 w-5"
+                >
+                  <circle cx="12" cy="12" r="8.5" />
+                  <path
+                    strokeLinecap="round"
+                    d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c2.5 1.5 3.5 4 3.5 5.5s-1 4-3.5 5.5"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setSport("tennis")}
-                className={`min-h-14 rounded-xl border-2 px-4 font-bold ${
+                className={`min-h-14 rounded-2xl border px-4 text-sm font-bold transition-all duration-200 ${
                   sport === "tennis"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent text-background shadow-lg shadow-accent/10"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                🎾 Tennis
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    className="h-5 w-5"
+                  >
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path
+                      strokeLinecap="round"
+                      d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c2.5 1.5 3.5 4 3.5 5.5s-1 4-3.5 5.5"
+                    />
+                  </svg>
+                  Tennis
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setSport("padel")}
-                className={`min-h-14 rounded-xl border-2 px-4 font-bold ${
+                className={`min-h-14 rounded-2xl border px-4 text-sm font-bold transition-all duration-200 ${
                   sport === "padel"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent text-background shadow-lg shadow-accent/10"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                🟢 Padel
+                <span className="flex items-center justify-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-md border-2 border-current text-[9px] font-black">
+                    P
+                  </span>
+                  Padel
+                </span>
               </button>
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-black">
-              Format
-            </h2>
+          {/* FORMAT */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                02
+              </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+              <h2 className="mt-1 text-lg font-bold">
+                Format
+              </h2>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setFormat("singles");
                   clearGuest();
                 }}
-                className={`min-h-14 rounded-xl border-2 px-4 font-bold ${
+                className={`min-h-14 rounded-2xl border px-4 text-sm font-bold transition-all duration-200 ${
                   format === "singles"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent text-background"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                1 contre 1
+                <span className="block">Simple</span>
+                <span
+                  className={`mt-0.5 block text-xs ${
+                    format === "singles"
+                      ? "text-background/60"
+                      : "text-muted-2"
+                  }`}
+                >
+                  1 contre 1
+                </span>
               </button>
 
               <button
@@ -512,142 +591,209 @@ if (
                   setFormat("doubles");
                   clearGuest();
                 }}
-                className={`min-h-14 rounded-xl border-2 px-4 font-bold ${
+                className={`min-h-14 rounded-2xl border px-4 text-sm font-bold transition-all duration-200 ${
                   format === "doubles"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent text-background"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                Doubles
+                <span className="block">Double</span>
+                <span
+                  className={`mt-0.5 block text-xs ${
+                    format === "doubles"
+                      ? "text-background/60"
+                      : "text-muted-2"
+                  }`}
+                >
+                  2 contre 2
+                </span>
               </button>
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-black">
-              Type de match
-            </h2>
+          {/* TYPE DE MATCH */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                03
+              </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+              <h2 className="mt-1 text-lg font-bold">
+                Type de match
+              </h2>
+
+              <p className="mt-1 text-sm text-muted">
+                Comment cette rencontre doit-elle être comptabilisée ?
+              </p>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={hasGuest()}
-                onClick={() =>
-                  setMatchType("quick_1v1")
-                }
-                className={`min-h-14 rounded-xl border-2 px-4 text-sm font-bold disabled:opacity-40 ${
+                onClick={() => setMatchType("quick_1v1")}
+                className={`min-h-16 rounded-2xl border px-4 text-left transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                   matchType === "quick_1v1"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                ⚡ Match rapide
+                <span className="block text-sm font-bold">
+                  Match rapide
+                </span>
+
+                <span className="mt-1 block text-xs text-muted-2">
+                  Partie classique
+                </span>
               </button>
 
               <button
                 type="button"
                 disabled={hasGuest()}
-                onClick={() =>
-                  setMatchType("group_match")
-                }
-                className={`min-h-14 rounded-xl border-2 px-4 text-sm font-bold disabled:opacity-40 ${
+                onClick={() => setMatchType("group_match")}
+                className={`min-h-16 rounded-2xl border px-4 text-left transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                   matchType === "group_match"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                👥 Groupe / ligue
+                <span className="block text-sm font-bold">
+                  Groupe / ligue
+                </span>
+
+                <span className="mt-1 block text-xs text-muted-2">
+                  Match organisé
+                </span>
               </button>
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-black">
-              Enjeu
-            </h2>
+          {/* ENJEU */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                04
+              </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+              <h2 className="mt-1 text-lg font-bold">
+                Enjeu
+              </h2>
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={hasGuest()}
-                onClick={() =>
-                  setResultType("competitive")
-                }
-                className={`min-h-14 rounded-xl border-2 px-4 text-sm font-bold disabled:opacity-40 ${
+                onClick={() => setResultType("competitive")}
+                className={`min-h-14 rounded-2xl border px-4 text-sm font-bold transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${
                   resultType === "competitive"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent text-background"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                🏆 Compétitif
+                Compétitif
               </button>
 
               <button
                 type="button"
-                onClick={() =>
-                  setResultType("friendly")
-                }
-                className={`min-h-14 rounded-xl border-2 px-4 text-sm font-bold ${
+                onClick={() => setResultType("friendly")}
+                className={`min-h-14 rounded-2xl border px-4 text-sm font-bold transition-all duration-200 ${
                   resultType === "friendly"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-200 bg-white text-black"
+                    ? "border-accent bg-accent text-background"
+                    : "border-border bg-surface-2 text-muted hover:border-white/10 hover:text-white"
                 }`}
               >
-                🤝 Amical
+                Amical
               </button>
             </div>
 
             {hasGuest() && (
-              <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-medium text-amber-800">
-                Un invité participe au match :
-                le résultat sera automatiquement
-                enregistré comme amical, sans impact ELO.
-              </p>
+              <div className="mt-4 rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                <div className="flex gap-3">
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
+                    !
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold text-warning">
+                      Match amical
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-muted">
+                      <p>
+  La présence d&apos;un invité désactive automatiquement
+  l&apos;impact ELO.
+</p>
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </section>
 
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-black">
-              Joueurs
-            </h2>
+          {/* JOUEURS */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                05
+              </p>
+
+              <h2 className="mt-1 text-lg font-bold">
+                Joueurs
+              </h2>
+
+              <p className="mt-1 text-sm text-muted">
+                Compose les deux équipes.
+              </p>
+            </div>
 
             {format === "singles" ? (
-              <div className="mt-4">
-                <label
-                  htmlFor="opponent"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Adversaire
-                </label>
+              <div className="mt-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <label
+                    htmlFor="opponent"
+                    className="text-sm font-bold"
+                  >
+                    Adversaire
+                  </label>
 
-                {guestPosition ===
-                "opponent" ? (
-                  <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <p className="text-sm font-medium text-amber-800">
-                      👤 Invité
-                    </p>
+                  <span className="text-xs font-medium text-muted-2">
+                    Équipe 2
+                  </span>
+                </div>
 
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
-                        value={guestName}
-                        onChange={(event) =>
-                          setGuestName(
-                            event.target.value
-                          )
-                        }
-                        placeholder="Nom de l'invité"
-                        className="min-h-12 flex-1 rounded-xl border border-gray-300 bg-white px-4 text-black"
-                      />
+                {guestPosition === "opponent" ? (
+                  <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-warning">
+                          Invité
+                        </p>
+
+                        <p className="mt-1 font-bold">
+                          Joueur externe
+                        </p>
+                      </div>
 
                       <button
                         type="button"
                         onClick={removeGuest}
-                        className="rounded-xl border border-gray-300 px-4 font-bold text-black"
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-muted transition hover:bg-white/10 hover:text-white"
+                        aria-label="Supprimer l'invité"
                       >
                         ×
                       </button>
                     </div>
+
+                    <input
+                      type="text"
+                      value={guestName}
+                      onChange={(event) =>
+                        setGuestName(event.target.value)
+                      }
+                      placeholder="Nom de l'invité"
+                      className="mt-4 min-h-12 w-full rounded-xl border border-border bg-surface-2 px-4 text-sm text-foreground outline-none transition placeholder:text-muted-2 focus:border-accent"
+                    />
                   </div>
                 ) : (
                   <>
@@ -655,91 +801,99 @@ if (
                       id="opponent"
                       value={opponentId}
                       onChange={(event) =>
-                        setOpponentId(
-                          event.target.value
-                        )
+                        setOpponentId(event.target.value)
                       }
-                      className="mt-2 min-h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-black"
+                      className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition focus:border-accent"
                     >
                       <option value="">
                         Sélectionner un adversaire
                       </option>
 
                       {[
-  ...friends,
-  ...players.filter(
-    (player) =>
-      !friends.some(
-        (friend) => friend.id === player.id
-      )
-  ),
-].map((player) => {
-  const isFriend = friends.some(
-    (friend) => friend.id === player.id
-  );
+                        ...friends,
+                        ...players.filter(
+                          (player) =>
+                            !friends.some(
+                              (friend) => friend.id === player.id
+                            )
+                        ),
+                      ].map((player) => {
+                        const isFriend = friends.some(
+                          (friend) => friend.id === player.id
+                        );
 
-  return (
-    <option
-      key={player.id}
-      value={player.id}
-    >
-      {isFriend ? "⭐ " : ""}
-      {playerName(player)}
-    </option>
-  );
-})}
+                        return (
+                          <option
+                            key={player.id}
+                            value={player.id}
+                          >
+                            {isFriend ? "★ " : ""}
+                            {playerName(player)}
+                          </option>
+                        );
+                      })}
                     </select>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        addGuest("opponent")
-                      }
-                      className="mt-3 min-h-12 w-full rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 font-bold text-black"
+                      onClick={() => addGuest("opponent")}
+                      className="mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-dashed border-border bg-transparent px-4 text-sm font-bold text-muted transition-all hover:border-white/15 hover:bg-white/2 hover:text-white"
                     >
-                      ＋ Ajouter un invité
+                      + Ajouter un invité
                     </button>
                   </>
                 )}
               </div>
             ) : (
-              <div className="mt-4 space-y-4">
+              <div className="mt-5 space-y-6">
+
+                {/* PARTENAIRE */}
                 <div>
-                  <label
-                    htmlFor="teammate"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Ton partenaire
-                  </label>
+                  <div className="mb-3 flex items-center justify-between">
+                    <label
+                      htmlFor="teammate"
+                      className="text-sm font-bold"
+                    >
+                      Ton partenaire
+                    </label>
 
-                  {guestPosition ===
-                  "teammate" ? (
-                    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-sm font-medium text-amber-800">
-                        👤 Invité
-                      </p>
+                    <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
+                      Équipe 1
+                    </span>
+                  </div>
 
-                      <div className="mt-3 flex gap-2">
-                        <input
-                          type="text"
-                          value={guestName}
-                          onChange={(event) =>
-                            setGuestName(
-                              event.target.value
-                            )
-                          }
-                          placeholder="Nom du partenaire"
-                          className="min-h-12 flex-1 rounded-xl border border-gray-300 bg-white px-4 text-black"
-                        />
+                  {guestPosition === "teammate" ? (
+                    <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wide text-warning">
+                            Invité
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            Partenaire externe
+                          </p>
+                        </div>
 
                         <button
                           type="button"
                           onClick={removeGuest}
-                          className="rounded-xl border border-gray-300 px-4 font-bold text-black"
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-muted hover:text-white"
+                          aria-label="Supprimer l'invité"
                         >
                           ×
                         </button>
                       </div>
+
+                      <input
+                        type="text"
+                        value={guestName}
+                        onChange={(event) =>
+                          setGuestName(event.target.value)
+                        }
+                        placeholder="Nom du partenaire"
+                        className="mt-4 min-h-12 w-full rounded-xl border border-border bg-surface-2 px-4 text-sm text-foreground outline-none placeholder:text-muted-2 focus:border-accent"
+                      />
                     </div>
                   ) : (
                     <>
@@ -747,73 +901,81 @@ if (
                         id="teammate"
                         value={teammateId}
                         onChange={(event) =>
-                          setTeammateId(
-                            event.target.value
-                          )
+                          setTeammateId(event.target.value)
                         }
-                        className="mt-2 min-h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-black"
+                        className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none focus:border-accent"
                       >
                         <option value="">
                           Sélectionner ton partenaire
                         </option>
 
                         {[
-  ...friends,
-  ...players.filter(
-    (player) =>
-      !friends.some(
-        (friend) => friend.id === player.id
-      )
-  ),
-]
-  .filter(
-    (player) =>
-      player.id !== opponentId &&
-      player.id !== opponent2Id
-  )
-  .map((player) => {
-    const isFriend = friends.some(
-      (friend) => friend.id === player.id
-    );
+                          ...friends,
+                          ...players.filter(
+                            (player) =>
+                              !friends.some(
+                                (friend) =>
+                                  friend.id === player.id
+                              )
+                          ),
+                        ]
+                          .filter(
+                            (player) =>
+                              player.id !== opponentId &&
+                              player.id !== opponent2Id
+                          )
+                          .map((player) => {
+                            const isFriend = friends.some(
+                              (friend) =>
+                                friend.id === player.id
+                            );
 
-    return (
-      <option
-        key={player.id}
-        value={player.id}
-      >
-        {isFriend ? "⭐ " : ""}
-        {playerName(player)}
-      </option>
-    );
-  })}
+                            return (
+                              <option
+                                key={player.id}
+                                value={player.id}
+                              >
+                                {isFriend ? "★ " : ""}
+                                {playerName(player)}
+                              </option>
+                            );
+                          })}
                       </select>
 
                       <button
                         type="button"
-                        onClick={() =>
-                          addGuest("teammate")
-                        }
-                        className="mt-3 min-h-12 w-full rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 font-bold text-black"
+                        onClick={() => addGuest("teammate")}
+                        className="mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-dashed border-border text-sm font-bold text-muted transition hover:border-white/15 hover:text-white"
                       >
-                        ＋ Partenaire invité
+                        + Partenaire invité
                       </button>
                     </>
                   )}
                 </div>
 
+                {/* ADVERSAIRE 1 */}
                 <div>
-                  <label
-                    htmlFor="opponent1"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Adversaire 1
-                  </label>
+                  <div className="mb-3 flex items-center justify-between">
+                    <label
+                      htmlFor="opponent1"
+                      className="text-sm font-bold"
+                    >
+                      Adversaire 1
+                    </label>
 
-                  {guestPosition ===
-                  "opponent" ? (
-                    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="font-bold text-black">
-                        👤 {guestName || "Invité"}
+                    <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted">
+                      Équipe 2
+                    </span>
+                  </div>
+
+                  {guestPosition === "opponent" ? (
+                    <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-warning">
+                        Invité
+                      </p>
+
+                      <p className="mt-1 font-bold">
+                        {guestName || "Invité"}
                       </p>
                     </div>
                   ) : (
@@ -822,73 +984,81 @@ if (
                         id="opponent1"
                         value={opponentId}
                         onChange={(event) =>
-                          setOpponentId(
-                            event.target.value
-                          )
+                          setOpponentId(event.target.value)
                         }
-                        className="mt-2 min-h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-black"
+                        className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none focus:border-accent"
                       >
                         <option value="">
                           Sélectionner un adversaire
                         </option>
 
                         {[
-  ...friends,
-  ...players.filter(
-    (player) =>
-      !friends.some(
-        (friend) => friend.id === player.id
-      )
-  ),
-]
-  .filter(
-    (player) =>
-      player.id !== teammateId &&
-      player.id !== opponent2Id
-  )
-  .map((player) => {
-    const isFriend = friends.some(
-      (friend) => friend.id === player.id
-    );
+                          ...friends,
+                          ...players.filter(
+                            (player) =>
+                              !friends.some(
+                                (friend) =>
+                                  friend.id === player.id
+                              )
+                          ),
+                        ]
+                          .filter(
+                            (player) =>
+                              player.id !== teammateId &&
+                              player.id !== opponent2Id
+                          )
+                          .map((player) => {
+                            const isFriend = friends.some(
+                              (friend) =>
+                                friend.id === player.id
+                            );
 
-    return (
-      <option
-        key={player.id}
-        value={player.id}
-      >
-        {isFriend ? "⭐ " : ""}
-        {playerName(player)}
-      </option>
-    );
-  })}
+                            return (
+                              <option
+                                key={player.id}
+                                value={player.id}
+                              >
+                                {isFriend ? "★ " : ""}
+                                {playerName(player)}
+                              </option>
+                            );
+                          })}
                       </select>
 
                       <button
                         type="button"
-                        onClick={() =>
-                          addGuest("opponent")
-                        }
-                        className="mt-3 min-h-12 w-full rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 font-bold text-black"
+                        onClick={() => addGuest("opponent")}
+                        className="mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-dashed border-border text-sm font-bold text-muted transition hover:border-white/15 hover:text-white"
                       >
-                        ＋ Inviter un adversaire
+                        + Inviter un adversaire
                       </button>
                     </>
                   )}
                 </div>
 
+                {/* ADVERSAIRE 2 */}
                 <div>
-                  <label
-                    htmlFor="opponent2"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Adversaire 2
-                  </label>
+                  <div className="mb-3 flex items-center justify-between">
+                    <label
+                      htmlFor="opponent2"
+                      className="text-sm font-bold"
+                    >
+                      Adversaire 2
+                    </label>
 
-                  {guestPosition ===
-                  "opponent2" ? (
-                    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="font-bold text-black">
-                        👤 {guestName || "Invité"}
+                    <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted">
+                      Équipe 2
+                    </span>
+                  </div>
+
+                  {guestPosition === "opponent2" ? (
+                    <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-warning">
+                        Invité
+                      </p>
+
+                      <p className="mt-1 font-bold">
+                        {guestName || "Invité"}
                       </p>
                     </div>
                   ) : (
@@ -897,55 +1067,53 @@ if (
                         id="opponent2"
                         value={opponent2Id}
                         onChange={(event) =>
-                          setOpponent2Id(
-                            event.target.value
-                          )
+                          setOpponent2Id(event.target.value)
                         }
-                        className="mt-2 min-h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-black"
+                        className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none focus:border-accent"
                       >
                         <option value="">
                           Sélectionner un adversaire
                         </option>
 
                         {[
-  ...friends,
-  ...players.filter(
-    (player) =>
-      !friends.some(
-        (friend) => friend.id === player.id
-      )
-  ),
-]
-  .filter(
-    (player) =>
-      player.id !== teammateId &&
-      player.id !== opponentId
-  )
-  .map((player) => {
-    const isFriend = friends.some(
-      (friend) => friend.id === player.id
-    );
+                          ...friends,
+                          ...players.filter(
+                            (player) =>
+                              !friends.some(
+                                (friend) =>
+                                  friend.id === player.id
+                              )
+                          ),
+                        ]
+                          .filter(
+                            (player) =>
+                              player.id !== teammateId &&
+                              player.id !== opponentId
+                          )
+                          .map((player) => {
+                            const isFriend = friends.some(
+                              (friend) =>
+                                friend.id === player.id
+                            );
 
-    return (
-      <option
-        key={player.id}
-        value={player.id}
-      >
-        {isFriend ? "⭐ " : ""}
-        {playerName(player)}
-      </option>
-    );
-  })}
+                            return (
+                              <option
+                                key={player.id}
+                                value={player.id}
+                              >
+                                {isFriend ? "★ " : ""}
+                                {playerName(player)}
+                              </option>
+                            );
+                          })}
                       </select>
 
                       <button
                         type="button"
-                        onClick={() =>
-                          addGuest("opponent2")
-                        }
-                        className="mt-3 min-h-12 w-full rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 font-bold text-black"
+                        onClick={() => addGuest("opponent2")}
+                        className="mt-3 flex min-h-12 w-full items-center justify-center rounded-2xl border border-dashed border-border text-sm font-bold text-muted transition hover:border-white/15 hover:text-white"
                       >
-                        ＋ Inviter un adversaire
+                        + Inviter un adversaire
                       </button>
                     </>
                   )}
@@ -954,16 +1122,27 @@ if (
             )}
           </section>
 
-          <section className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-bold text-black">
-              Informations complémentaires
-            </h2>
+          {/* INFORMATIONS */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                06
+              </p>
 
-            <div className="mt-4 space-y-4">
+              <h2 className="mt-1 text-lg font-bold">
+                Détails
+              </h2>
+
+              <p className="mt-1 text-sm text-muted">
+                Quelques informations sur la rencontre.
+              </p>
+            </div>
+
+            <div className="mt-5 space-y-5">
               <div>
                 <label
                   htmlFor="surface"
-                  className="block text-sm font-medium text-gray-700"
+                  className="mb-3 block text-sm font-bold"
                 >
                   Surface
                 </label>
@@ -972,24 +1151,26 @@ if (
                   id="surface"
                   value={surface}
                   onChange={(event) =>
-                    setSurface(
-                      event.target.value as Surface
-                    )
+                    setSurface(event.target.value as Surface)
                   }
-                  className="mt-2 min-h-14 w-full rounded-xl border border-gray-300 bg-white px-4 text-black"
+                  className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none focus:border-accent"
                 >
                   <option value="">
                     Non précisée
                   </option>
+
                   <option value="hard">
                     Dur
                   </option>
+
                   <option value="clay">
                     Terre battue
                   </option>
+
                   <option value="grass">
                     Gazon
                   </option>
+
                   <option value="indoor">
                     En salle
                   </option>
@@ -999,49 +1180,73 @@ if (
               <div>
                 <label
                   htmlFor="duration"
-                  className="block text-sm font-medium text-gray-700"
+                  className="mb-3 block text-sm font-bold"
                 >
                   Durée
                 </label>
 
-                <div className="mt-2 flex items-center gap-3">
+                <div className="flex items-center gap-3">
                   <input
                     id="duration"
                     type="number"
                     min="1"
                     value={duration}
                     onChange={(event) =>
-                      setDuration(
-                        event.target.value
-                      )
+                      setDuration(event.target.value)
                     }
-                    placeholder="Ex. 75"
-                    className="min-h-14 w-full rounded-xl border border-gray-300 px-4 text-black"
+                    placeholder="75"
+                    className="min-h-14 flex-1 rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none placeholder:text-muted-2 focus:border-accent"
                   />
 
-                  <span className="text-sm text-gray-500">
-                    minutes
+                  <span className="text-sm font-medium text-muted">
+                    min
                   </span>
                 </div>
               </div>
             </div>
           </section>
 
+          {/* MESSAGE */}
           {message && (
-            <div className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-700">
-              {message}
+            <div className="rounded-2xl border border-danger/20 bg-danger/5 p-4">
+              <div className="flex gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-sm font-bold text-danger">
+                  !
+                </div>
+
+                <p className="text-sm font-medium leading-5 text-danger">
+                  {message}
+                </p>
+              </div>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="min-h-16 w-full rounded-2xl bg-black px-5 py-4 text-lg font-bold text-white disabled:opacity-50"
-          >
-            {saving
-              ? "Création du match..."
-              : "Continuer vers le score →"}
-          </button>
+          {/* SUBMIT */}
+                    <div className="pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="group flex min-h-16 w-full items-center justify-between rounded-2xl bg-accent px-5 text-left text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <div>
+                <p className="font-bold">
+                  {saving
+                    ? "Création du match..."
+                    : "Continuer vers le score"}
+                </p>
+
+                {!saving && (
+                  <p className="mt-0.5 text-sm font-medium text-background/60">
+                    La saisie du résultat arrive ensuite
+                  </p>
+                )}
+              </div>
+
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-xl transition-transform duration-200 group-hover:translate-x-0.5">
+                →
+              </span>
+            </button>
+          </div>
         </form>
       </div>
     </main>

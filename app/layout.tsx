@@ -14,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className="min-h-screen bg-gray-50 pb-24">
+      <body className="min-h-screen bg-[#0E0F11] pb-28 text-[#F5F5F5] antialiased">
         {children}
         <BottomNav />
       </body>
