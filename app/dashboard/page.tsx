@@ -17,19 +17,23 @@ export default async function DashboardPage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-gray-50 px-5 py-8">
+      <main className="min-h-screen bg-[#121212] px-5 py-8 text-white">
         <div className="mx-auto max-w-lg">
-          <h1 className="text-3xl font-bold text-black">
+          <p className="text-sm font-medium text-gray-500">
             SmashBreakPoint
+          </p>
+
+          <h1 className="mt-3 text-3xl font-bold">
+            Connexion requise
           </h1>
 
-          <p className="mt-3 text-gray-600">
+          <p className="mt-3 text-gray-400">
             Tu dois être connecté pour accéder à ton espace.
           </p>
 
           <Link
             href="/login"
-            className="mt-6 block rounded-xl bg-black px-5 py-4 text-center font-semibold text-white"
+            className="mt-6 block rounded-2xl bg-white px-5 py-4 text-center font-bold text-black transition active:scale-[0.98]"
           >
             Se connecter
           </Link>
@@ -41,7 +45,7 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "first_name, last_name, username, elo_tennis, elo_padel"
+      "first_name, last_name, username, points_tennis, points_padel"
     )
     .eq("id", user.id)
     .single();
@@ -58,64 +62,118 @@ export default async function DashboardPage() {
     profile?.username ||
     "Joueur";
 
-  return (
-    <main className="min-h-screen bg-gray-50 px-5 py-8">
-      <div className="mx-auto max-w-lg pb-6">
-        <div>
-          <p className="text-sm font-medium text-gray-500">
-            Bienvenue
-          </p>
+  const tennisPoints = profile?.points_tennis ?? 0;
+  const padelPoints = profile?.points_padel ?? 0;
 
-          <h1 className="mt-1 text-3xl font-bold text-black">
-            {displayName} 👋
-          </h1>
+  return (
+    <main className="min-h-screen bg-[#121212] px-5 py-7 text-white">
+      <div className="mx-auto max-w-lg pb-8">
+
+        {/* HEADER */}
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-500">
+              Bienvenue
+            </p>
+
+            <h1 className="mt-1 text-3xl font-bold tracking-tight">
+              {displayName} 👋
+            </h1>
+          </div>
+
+          <Link
+            href="/players"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#242424] text-lg transition active:scale-95"
+            aria-label="Mon profil"
+          >
+            👤
+          </Link>
         </div>
 
+        {/* POINTS PRINCIPAUX */}
+        <div className="mt-7 rounded-[28px] bg-[#1d1d1d] p-6 shadow-xl">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.15em] text-gray-500">
+                Tes points
+              </p>
+
+              <p className="mt-3 text-5xl font-bold tracking-tight">
+                {Math.max(tennisPoints, padelPoints).toLocaleString("fr-FR")}
+              </p>
+
+              <p className="mt-1 text-sm text-gray-500">
+                meilleur total
+              </p>
+            </div>
+
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#292929] text-xl">
+              🎾
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-[#262626] p-4">
+              <p className="text-sm text-gray-500">
+                Tennis
+              </p>
+
+              <p className="mt-2 text-2xl font-bold">
+                {tennisPoints.toLocaleString("fr-FR")}
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                points
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-[#262626] p-4">
+              <p className="text-sm text-gray-500">
+                Padel
+              </p>
+
+              <p className="mt-2 text-2xl font-bold">
+                {padelPoints.toLocaleString("fr-FR")}
+              </p>
+
+              <p className="mt-1 text-xs text-gray-500">
+                points
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* NOUVEAU MATCH */}
         <Link
           href="/matches/new"
-          className="mt-7 flex min-h-16 items-center justify-center rounded-2xl bg-black px-5 text-lg font-bold text-white shadow-sm"
+          className="mt-4 flex min-h-16 items-center justify-between rounded-2xl bg-white px-5 text-black transition active:scale-[0.98]"
         >
-          + Nouveau match
+          <div>
+            <p className="text-base font-bold">
+              Nouveau match
+            </p>
+
+            <p className="mt-0.5 text-sm text-gray-500">
+              Enregistre ton résultat
+            </p>
+          </div>
+
+          <span className="text-2xl font-light">
+            +
+          </span>
         </Link>
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">
-              🎾 Tennis
-            </p>
-
-            <p className="mt-2 text-4xl font-bold text-black">
-              {profile?.elo_tennis ?? 1000}
-            </p>
-
-            <p className="mt-1 text-sm text-gray-500">
-              ELO
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-gray-500">
-              🟢 Padel
-            </p>
-
-            <p className="mt-2 text-4xl font-bold text-black">
-              {profile?.elo_padel ?? 1000}
-            </p>
-
-            <p className="mt-1 text-sm text-gray-500">
-              ELO
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-4">
+        {/* RACCOURCIS */}
+        <div className="mt-8 grid grid-cols-2 gap-3">
           <Link
             href="/ranking"
-            className="rounded-2xl bg-white p-5 shadow-sm active:scale-[0.98]"
+            className="rounded-2xl bg-[#1d1d1d] p-5 transition active:scale-[0.98]"
           >
-            <p className="text-2xl">🏆</p>
+            <div className="text-2xl">
+              🏆
+            </div>
 
-            <p className="mt-3 font-bold text-black">
+            <p className="mt-4 font-bold">
               Classement
             </p>
 
@@ -126,61 +184,76 @@ export default async function DashboardPage() {
 
           <Link
             href="/players"
-            className="rounded-2xl bg-white p-5 shadow-sm active:scale-[0.98]"
+            className="rounded-2xl bg-[#1d1d1d] p-5 transition active:scale-[0.98]"
           >
-            <p className="text-2xl">👥</p>
+            <div className="text-2xl">
+              👥
+            </div>
 
-            <p className="mt-3 font-bold text-black">
+            <p className="mt-4 font-bold">
               Joueurs
             </p>
 
             <p className="mt-1 text-sm text-gray-500">
-              Voir les profils
+              Découvrir la communauté
             </p>
           </Link>
         </div>
 
-        <div className="mt-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-black">
-              Mes derniers matchs
-            </h2>
+        {/* DERNIERS MATCHS */}
+        <div className="mt-9">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.15em] text-gray-500">
+                Activité
+              </p>
+
+              <h2 className="mt-1 text-2xl font-bold">
+                Derniers matchs
+              </h2>
+            </div>
 
             <Link
               href="/matches"
-              className="text-sm font-semibold text-gray-600"
+              className="text-sm font-semibold text-gray-400 transition hover:text-white"
             >
               Voir tout
             </Link>
           </div>
 
           {!matches || matches.length === 0 ? (
-            <div className="mt-4 rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-gray-600">
+            <div className="mt-5 rounded-2xl bg-[#1d1d1d] p-6">
+              <p className="text-gray-400">
                 Aucun match pour le moment.
               </p>
 
               <Link
                 href="/matches/new"
-                className="mt-4 inline-block font-semibold text-black"
+                className="mt-4 inline-block font-semibold text-white"
               >
                 Créer mon premier match →
               </Link>
             </div>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-3">
               {matches.map((match: Match) => (
                 <Link
                   key={match.id}
                   href={`/matches/${match.id}`}
-                  className="block rounded-2xl bg-white p-5 shadow-sm active:scale-[0.99]"
+                  className="flex items-center justify-between rounded-2xl bg-[#1d1d1d] p-5 transition active:scale-[0.99]"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#292929] text-lg">
+                      {match.sport === "tennis"
+                        ? "🎾"
+                        : "🟢"}
+                    </div>
+
                     <div>
-                      <p className="font-bold text-black">
+                      <p className="font-bold">
                         {match.sport === "tennis"
-                          ? "🎾 Tennis"
-                          : "🟢 Padel"}
+                          ? "Tennis"
+                          : "Padel"}
                       </p>
 
                       <p className="mt-1 text-sm text-gray-500">
@@ -189,11 +262,11 @@ export default async function DashboardPage() {
                           : "Double"}
                       </p>
                     </div>
-
-                    <span className="text-gray-400">
-                      →
-                    </span>
                   </div>
+
+                  <span className="text-xl text-gray-500">
+                    →
+                  </span>
                 </Link>
               ))}
             </div>
