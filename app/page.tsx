@@ -1,109 +1,93 @@
 import Link from "next/link";
 
-const features = [
-  {
-    href: "/dashboard",
-    emoji: "🏠",
-    title: "Tableau de bord",
-    description: "Retrouve ton activité et tes derniers matchs.",
-  },
-  {
-    href: "/matches/new",
-    emoji: "🎾",
-    title: "Nouveau match",
-    description: "Enregistre un match de tennis ou de padel.",
-  },
-  {
-    href: "/matches",
-    emoji: "📋",
-    title: "Mes matchs",
-    description: "Consulte tous tes matchs enregistrés.",
-  },
-  {
-    href: "/ranking",
-    emoji: "🏆",
-    title: "Classement",
-    description: "Consulte le classement tennis et padel.",
-  },
-  {
-    href: "/players",
-    emoji: "👥",
-    title: "Joueurs",
-    description: "Retrouve les joueurs et leurs points.",
-  },
-  {
-    href: "/stats",
-    emoji: "📊",
-    title: "Statistiques",
-    description: "Analyse tes performances.",
-  },
-  {
-    href: "/profile",
-    emoji: "👤",
-    title: "Mon profil",
-    description: "Modifie ton profil et consulte tes informations.",
-  },
-];
+function ArrowRightIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function TrophyIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-5 w-5"
+      aria-hidden="true"
+    >
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v2a4 4 0 0 0 4 4" />
+      <path d="M17 6h3v2a4 4 0 0 1-4 4" />
+    </svg>
+  );
+}
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-50 px-5 py-10">
-      <div className="mx-auto max-w-lg">
+    <main className="min-h-screen bg-background px-5 py-7 text-foreground">
+      <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center pb-8">
         <div className="mb-8 text-center">
-          <div className="mb-3 text-5xl">🎾</div>
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
+            <TrophyIcon />
+          </div>
 
-          <h1 className="text-3xl font-black text-gray-900">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+            Bienvenue
+          </p>
+
+          <h1 className="mt-2 text-3xl font-bold tracking-tight">
             SmashBreakPoint
           </h1>
 
-          <p className="mt-2 text-gray-500">
-            Ton application de suivi de matchs
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted">
+            Suis tes matchs, tes performances et ton classement tennis & padel.
           </p>
         </div>
 
-        <div className="grid gap-4">
-          {features.map((feature) => (
+        <div className="rounded-3xl border border-border bg-surface p-5">
+          <div className="mb-5">
+            <p className="text-lg font-bold">Bienvenue sur SmashBreakPoint</p>
+            <p className="mt-1 text-sm leading-5 text-muted">
+              Connecte-toi pour retrouver ton espace personnel ou crée ton
+              compte pour commencer.
+            </p>
+          </div>
+
+          <div className="grid gap-3">
             <Link
-              key={feature.href}
-              href={feature.href}
-              className="flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm transition hover:shadow-md active:scale-[0.99]"
+              href="/login"
+              className="flex min-h-14 items-center justify-between rounded-2xl bg-accent px-5 font-bold text-background transition active:scale-[0.99]"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-2xl">
-                {feature.emoji}
-              </div>
-
-              <div className="min-w-0">
-                <h2 className="font-bold text-gray-900">
-                  {feature.title}
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  {feature.description}
-                </p>
-              </div>
-
-              <div className="ml-auto text-xl text-gray-400">
-                →
-              </div>
+              <span>Se connecter</span>
+              <ArrowRightIcon />
             </Link>
-          ))}
+
+            <Link
+              href="/signup"
+              className="flex min-h-14 items-center justify-between rounded-2xl border border-border bg-surface-2 px-5 font-bold text-foreground transition hover:border-accent/40 active:scale-[0.99]"
+            >
+              <span>Créer un compte</span>
+              <ArrowRightIcon />
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3">
-          <Link
-            href="/login"
-            className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-center font-semibold text-gray-800"
-          >
-            Se connecter
-          </Link>
-
-          <Link
-            href="/signup"
-            className="rounded-xl bg-black px-4 py-3 text-center font-semibold text-white"
-          >
-            Créer un compte
-          </Link>
-        </div>
+        <p className="mt-6 text-center text-xs leading-5 text-muted">
+          En continuant, tu accèdes à ton espace personnel SmashBreakPoint.
+        </p>
       </div>
     </main>
   );
