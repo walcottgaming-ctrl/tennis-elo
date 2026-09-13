@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Tennis & Padel",
-    short_name: "Tennis & Padel",
+    name: "SmashBreakPoint",
+    short_name: "SmashBreakPoint",
     description:
       "Classement et suivi de matchs de tennis et de padel",
     start_url: "/dashboard",
