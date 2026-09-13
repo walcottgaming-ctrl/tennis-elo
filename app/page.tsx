@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "../src/supabase/server";
 
 function ArrowRightIcon() {
   return (
@@ -35,7 +37,17 @@ function TrophyIcon() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-background px-5 py-7 text-foreground">
       <div className="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-lg flex-col justify-center pb-8">
@@ -59,7 +71,10 @@ export default function Home() {
 
         <div className="rounded-3xl border border-border bg-surface p-5">
           <div className="mb-5">
-            <p className="text-lg font-bold">Bienvenue sur SmashBreakPoint</p>
+            <p className="text-lg font-bold">
+              Bienvenue sur SmashBreakPoint
+            </p>
+
             <p className="mt-1 text-sm leading-5 text-muted">
               Connecte-toi pour retrouver ton espace personnel ou crée ton
               compte pour commencer.
@@ -86,7 +101,7 @@ export default function Home() {
         </div>
 
         <p className="mt-6 text-center text-xs leading-5 text-muted">
-          En continuant, tu accèdes à ton espace personnel SmashBreakPoint.
+          Ton espace personnel pour suivre tes matchs et tes performances.
         </p>
       </div>
     </main>
