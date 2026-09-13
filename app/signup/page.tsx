@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { createClient } from "@/src/supabase/client";
+import Image from "next/image";
 
 export default function SignupPage() {
   const [username, setUsername] = useState("");
@@ -46,11 +47,13 @@ export default function SignupPage() {
         {/* LOGO */}
         <div className="text-center">
           <div className="mx-auto h-28 w-28 overflow-hidden rounded-[28px] bg-white shadow-lg">
-            <img
-              src="/icons/icon-192.png?v=2"
-              alt="SmashBreakPoint"
-              className="h-full w-full object-cover"
-            />
+            <Image
+  src="/icons/icon-192.png"
+  alt="SmashBreakPoint"
+  width={112}
+  height={112}
+  className="h-full w-full object-cover"
+/>
           </div>
 
           <p className="mt-6 text-base font-medium text-gray-400">
