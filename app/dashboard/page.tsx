@@ -208,6 +208,46 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
+        {/* SUPER TIE-BREAK */}
+        <Link
+          href="/supertiebreak"
+          className="group mt-4 flex items-center justify-between rounded-2xl border border-border bg-surface p-5 transition-all duration-200 hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
+        >
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                className="h-5 w-5"
+              >
+                <circle cx="12" cy="12" r="8.5" />
+                <path
+                  strokeLinecap="round"
+                  d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c-2.5 1.5-3.5 4-3.5 5.5s-1 4-3.5 5.5"
+                />
+              </svg>
+            </div>
+
+            <div className="min-w-0">
+              <p className="font-bold">
+                Super Tie-Break
+              </p>
+
+              <p className="mt-1 text-sm text-muted">
+                Ton classement indépendant
+              </p>
+            </div>
+          </div>
+
+          <span className="ml-4 text-lg text-muted-2 transition-transform duration-200 group-hover:translate-x-1">
+            →
+          </span>
+        </Link>
+
+
+
         {/* RACCOURCIS */}
         <section className="mt-9">
           <div className="flex items-end justify-between">

@@ -720,11 +720,9 @@ if (
                     </p>
 
                     <p className="mt-1 text-xs leading-5 text-muted">
-                      <p>
   La présence d&apos;un invité désactive automatiquement
   l&apos;impact ELO.
 </p>
-                    </p>
                   </div>
                 </div>
               </div>

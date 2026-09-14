@@ -99,7 +99,13 @@ function isSetComplete(
 }
 
 function getSetWinner(set: SetScore): 1 | 2 | null {
-  if (!isSetComplete(set.team1, set.team2, set.isMatchTiebreak)) {
+  if (
+    !isSetComplete(
+      set.team1,
+      set.team2,
+      set.isMatchTiebreak
+    )
+  ) {
     return null;
   }
 
@@ -140,6 +146,7 @@ function getPointPreview(
 
   const teamWins = getSetWins(completedSets, team);
   const opponentTeam = team === 1 ? 2 : 1;
+
   const opponentWins = getSetWins(
     completedSets,
     opponentTeam
@@ -323,6 +330,14 @@ function formatChange(value: number): string {
   return `${value}`;
 }
 
+function sportLabel(sport: Sport) {
+  return sport === "tennis" ? "Tennis" : "Padel";
+}
+
+function formatLabel(format: MatchFormat) {
+  return format === "singles" ? "Simple" : "Double";
+}
+
 export default function ResultPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -338,13 +353,9 @@ export default function ResultPage() {
   const [saving, setSaving] = useState(false);
   const [locked, setLocked] = useState(false);
 
-  const [match, setMatch] = useState<Match | null>(
-    null
-  );
+  const [match, setMatch] = useState<Match | null>(null);
 
-  const [players, setPlayers] = useState<
-    PlayerInfo[]
-  >([]);
+  const [players, setPlayers] = useState<PlayerInfo[]>([]);
 
   const [sets, setSets] = useState<SetScore[]>([
     emptySet(),
@@ -353,8 +364,9 @@ export default function ResultPage() {
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
   const [rankingDetail, setRankingDetail] =
-  useState<RankingDetail | null>(null);
+    useState<RankingDetail | null>(null);
 
   const [currentUserId, setCurrentUserId] =
     useState<string | null>(null);
@@ -387,9 +399,7 @@ export default function ResultPage() {
         .single();
 
       if (matchError || !matchData) {
-        setError(
-          "Impossible de charger ce match."
-        );
+        setError("Impossible de charger ce match.");
         setLoading(false);
         return;
       }
@@ -421,9 +431,7 @@ export default function ResultPage() {
         .order("created_at");
 
       if (playersError) {
-        setError(
-          "Impossible de charger les joueurs."
-        );
+        setError("Impossible de charger les joueurs.");
         setLoading(false);
         return;
       }
@@ -455,9 +463,7 @@ export default function ResultPage() {
               player.player_id === playerId
           );
 
-          const profile = (
-            profiles ?? []
-          ).find(
+          const profile = (profiles ?? []).find(
             (item) => item.id === playerId
           );
 
@@ -472,8 +478,7 @@ export default function ResultPage() {
 
           return {
             id: playerId,
-            team:
-              row?.team === 2 ? 2 : 1,
+            team: row?.team === 2 ? 2 : 1,
             points,
           };
         });
@@ -492,9 +497,7 @@ export default function ResultPage() {
         .order("set_number");
 
       if (setsError) {
-        setError(
-          "Impossible de charger les sets."
-        );
+        setError("Impossible de charger les sets.");
         setLoading(false);
         return;
       }
@@ -505,45 +508,34 @@ export default function ResultPage() {
       ) {
         const loadedSets: SetScore[] =
           existingSets.map((set) => ({
-            team1: Number(
-              set.team_1_score
-            ),
-            team2: Number(
-              set.team_2_score
-            ),
+            team1: Number(set.team_1_score),
+            team2: Number(set.team_2_score),
             tieBreakTeam1:
-              set.tie_break_team_1_score ===
-              null
+              set.tie_break_team_1_score === null
                 ? null
-                : Number(
-                    set.tie_break_team_1_score
-                  ),
+                : Number(set.tie_break_team_1_score),
             tieBreakTeam2:
-              set.tie_break_team_2_score ===
-              null
+              set.tie_break_team_2_score === null
                 ? null
-                : Number(
-                    set.tie_break_team_2_score
-                  ),
+                : Number(set.tie_break_team_2_score),
             isMatchTiebreak: Boolean(
               set.is_match_tiebreak
             ),
           }));
 
-                const {
-        data: rankingData,
-      } = await supabase
-        .from("ranking_history")
-        .select(
-          "old_points, new_points, points_change, base_points, bonus_bulle, bonus_double_bulle, bonus_victoire_propre, bonus_serie, bonus_performer, malus_fanny, malus_double_bulle, malus_contre_performance, amortisseur_tiebreak"
-        )
-        .eq("match_id", matchId)
-        .eq("player_id", user.id)
-        .maybeSingle();
+        const { data: rankingData } =
+          await supabase
+            .from("ranking_history")
+            .select(
+              "old_points, new_points, points_change, base_points, bonus_bulle, bonus_double_bulle, bonus_victoire_propre, bonus_serie, bonus_performer, malus_fanny, malus_double_bulle, malus_contre_performance, amortisseur_tiebreak"
+            )
+            .eq("match_id", matchId)
+            .eq("player_id", user.id)
+            .maybeSingle();
 
-      if (rankingData) {
-        setRankingDetail(rankingData);
-      }
+        if (rankingData) {
+          setRankingDetail(rankingData);
+        }
 
         setSets(loadedSets);
         setLocked(true);
@@ -589,15 +581,8 @@ export default function ResultPage() {
     [players, opponentTeam]
   );
 
-  const setWinsTeam1 = getSetWins(
-    sets,
-    1
-  );
-
-  const setWinsTeam2 = getSetWins(
-    sets,
-    2
-  );
+  const setWinsTeam1 = getSetWins(sets, 1);
+  const setWinsTeam2 = getSetWins(sets, 2);
 
   const matchFinished =
     setWinsTeam1 >= 2 ||
@@ -695,9 +680,7 @@ export default function ResultPage() {
     );
   }
 
-  function toggleMatchTiebreak(
-    index: number
-  ) {
+  function toggleMatchTiebreak(index: number) {
     if (locked) return;
 
     setSets((current) =>
@@ -741,10 +724,7 @@ export default function ResultPage() {
       return "Les deux premiers sets doivent être terminés.";
     }
 
-    const firstTwo = completed.slice(
-      0,
-      2
-    );
+    const firstTwo = completed.slice(0, 2);
 
     const firstWinner = getSetWinner(
       firstTwo[0]
@@ -754,16 +734,11 @@ export default function ResultPage() {
       firstTwo[1]
     );
 
-    if (
-      !firstWinner ||
-      !secondWinner
-    ) {
+    if (!firstWinner || !secondWinner) {
       return "Score de set invalide.";
     }
 
-    if (
-      firstWinner !== secondWinner
-    ) {
+    if (firstWinner !== secondWinner) {
       if (sets.length < 3) {
         return "À 1-1, il faut saisir un troisième set.";
       }
@@ -795,8 +770,7 @@ export default function ResultPage() {
     setError("");
     setMessage("");
 
-    const validationError =
-      validateSets();
+    const validationError = validateSets();
 
     if (validationError) {
       setError(validationError);
@@ -811,12 +785,11 @@ export default function ResultPage() {
     setSaving(true);
 
     try {
-      const {
-        error: deleteError,
-      } = await supabase
-        .from("sets")
-        .delete()
-        .eq("match_id", matchId);
+      const { error: deleteError } =
+        await supabase
+          .from("sets")
+          .delete()
+          .eq("match_id", matchId);
 
       if (deleteError) {
         throw new Error(
@@ -839,11 +812,10 @@ export default function ResultPage() {
         })
       );
 
-      const {
-        error: insertError,
-      } = await supabase
-        .from("sets")
-        .insert(rows);
+      const { error: insertError } =
+        await supabase
+          .from("sets")
+          .insert(rows);
 
       if (insertError) {
         throw new Error(
@@ -851,14 +823,13 @@ export default function ResultPage() {
         );
       }
 
-      const {
-        error: finishError,
-      } = await supabase.rpc(
-        "finish_match",
-        {
-          p_match_id: matchId,
-        }
-      );
+      const { error: finishError } =
+        await supabase.rpc(
+          "finish_match",
+          {
+            p_match_id: matchId,
+          }
+        );
 
       if (finishError) {
         throw new Error(
@@ -866,14 +837,13 @@ export default function ResultPage() {
         );
       }
 
-      const {
-        error: championError,
-      } = await supabase.rpc(
-        "refresh_champion_after_match",
-        {
-          p_match_id: matchId,
-        }
-      );
+      const { error: championError } =
+        await supabase.rpc(
+          "refresh_champion_after_match",
+          {
+            p_match_id: matchId,
+          }
+        );
 
       if (championError) {
         console.error(
@@ -882,7 +852,7 @@ export default function ResultPage() {
         );
       }
 
-            const {
+      const {
         data: rankingData,
         error: rankingDetailError,
       } = await supabase
@@ -901,8 +871,7 @@ export default function ResultPage() {
       setLocked(true);
 
       setMessage(
-        match.result_type ===
-          "friendly"
+        match.result_type === "friendly"
           ? "Résultat enregistré. Match amical : aucun point gagné ou perdu."
           : "Résultat enregistré et points mis à jour."
       );
@@ -919,11 +888,13 @@ export default function ResultPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 px-5 py-10">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <div className="mx-auto max-w-lg">
-          <p className="text-center text-gray-500">
-            Chargement du match...
-          </p>
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <p className="text-sm text-muted">
+              Chargement du match...
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -931,286 +902,336 @@ export default function ResultPage() {
 
   if (!match) {
     return (
-      <main className="min-h-screen bg-gray-50 px-5 py-10">
+      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
         <div className="mx-auto max-w-lg">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <h1 className="text-xl font-bold text-gray-900">
+          <button
+            type="button"
+            onClick={() => router.push("/matches")}
+            className="mb-6 text-sm font-semibold text-muted transition-colors hover:text-foreground"
+          >
+            ← Retour aux matchs
+          </button>
+
+          <section className="rounded-3xl border border-border bg-surface p-6">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-danger/10 text-danger">
+              !
+            </div>
+
+            <h1 className="text-2xl font-bold tracking-tight">
               Match introuvable
             </h1>
 
             {error && (
-              <p className="mt-3 text-sm text-red-600">
+              <p className="mt-3 text-sm leading-6 text-muted">
                 {error}
               </p>
             )}
 
             <button
               type="button"
-              onClick={() =>
-                router.push("/matches")
-              }
-              className="mt-6 w-full rounded-xl bg-black px-4 py-3 font-semibold text-white"
+              onClick={() => router.push("/matches")}
+              className="mt-6 flex min-h-14 w-full items-center justify-center rounded-2xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
             >
               Retour aux matchs
             </button>
-          </div>
+          </section>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-6 pb-28">
-      <div className="mx-auto max-w-lg">
+    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+      <div className="mx-auto max-w-lg pb-8">
         <button
           type="button"
-          onClick={() =>
-            router.push("/matches")
-          }
-          className="mb-5 text-sm font-medium text-gray-600"
+          onClick={() => router.push("/matches")}
+          className="mb-7 flex items-center gap-2 text-sm font-semibold text-muted transition-colors hover:text-foreground"
         >
-          ← Retour aux matchs
+          <span className="text-base">←</span>
+          Retour aux matchs
         </button>
 
-        <div className="mb-5">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Résultat du match
-          </h1>
-
-          <p className="mt-1 text-sm text-gray-500">
-            {match.sport === "tennis"
-              ? "🎾 Tennis"
-              : "🏓 Padel"}{" "}
-            ·{" "}
-            {match.format === "singles"
-              ? "Simple"
-              : "Double"}
-          </p>
-        </div>
-
-        {locked && (
-          <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p className="font-semibold text-amber-900">
-              🔒 Résultat verrouillé
-            </p>
-
-            <p className="mt-1 text-sm text-amber-800">
-              Ce résultat a déjà été enregistré.
-              Pour le corriger, supprime le match puis recrée-le.
-            </p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4">
-            <p className="text-sm font-medium text-red-800">
-              {error}
-            </p>
-          </div>
-        )}
-
-        {message && (
-          <div className="mb-5 rounded-2xl border border-green-200 bg-green-50 p-4">
-            <p className="text-sm font-medium text-green-800">
-              {message}
-            </p>
-          </div>
-        )}
-
-        <section className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="mb-5 flex items-center justify-between">
+        {/* Header */}
+        <header className="mb-7">
+          <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-gray-500">
-                Score
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+                {sportLabel(match.sport)}
               </p>
 
-              <p className="text-2xl font-bold text-gray-900">
-                {setWinsTeam1} -{" "}
+              <h1 className="mt-1 text-3xl font-bold tracking-tight">
+                Résultat du match
+              </h1>
+            </div>
+
+            <span className="rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-bold text-muted">
+              {match.result_type === "competitive"
+                ? "Compétitif"
+                : "Amical"}
+            </span>
+          </div>
+
+          <p className="text-sm leading-6 text-muted">
+            {formatLabel(match.format)}
+            {match.surface
+              ? ` · ${match.surface}`
+              : ""}
+            {match.duration_minutes
+              ? ` · ${match.duration_minutes} min`
+              : ""}
+          </p>
+        </header>
+
+        {/* Locked */}
+        {locked && (
+          <section className="mb-5 rounded-3xl border border-warning/20 bg-warning/10 p-5">
+            <div className="flex gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning">
+                🔒
+              </div>
+
+              <div>
+                <h2 className="font-bold text-foreground">
+                  Résultat verrouillé
+                </h2>
+
+                <p className="mt-1 text-sm leading-6 text-muted">
+                  Ce résultat a déjà été enregistré.
+                  Pour le corriger, supprime le match puis recrée-le.
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Error */}
+        {error && (
+          <section className="mb-5 rounded-3xl border border-danger/20 bg-danger/10 p-5">
+            <div className="flex gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/15 font-bold text-danger">
+                !
+              </div>
+
+              <p className="self-center text-sm leading-6 text-foreground">
+                {error}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Success */}
+        {message && (
+          <section className="mb-5 rounded-3xl border border-accent/20 bg-accent/10 p-5">
+            <div className="flex gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 font-bold text-accent">
+                ✓
+              </div>
+
+              <p className="self-center text-sm leading-6 text-foreground">
+                {message}
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Score hero */}
+        <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
+          <div className="mb-5 flex items-end justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                Score du match
+              </p>
+
+              <p className="mt-1 text-4xl font-bold tracking-tight">
+                {setWinsTeam1}
+                <span className="mx-2 text-muted-2">—</span>
                 {setWinsTeam2}
               </p>
             </div>
 
             {winner && (
               <div
-                className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                   userWon
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
+                    ? "bg-accent/10 text-accent"
+                    : "bg-danger/10 text-danger"
                 }`}
               >
-                {userWon
-                  ? "Victoire"
-                  : "Défaite"}
+                {userWon ? "Victoire" : "Défaite"}
               </div>
             )}
           </div>
 
-          <div className="space-y-4">
-            {sets.map(
-              (set, index) => {
-                const setWinner =
-                  getSetWinner(set);
+          <div className="space-y-3">
+            {sets.map((set, index) => {
+              const setWinner = getSetWinner(set);
 
-                return (
-                  <div
-                    key={index}
-                    className="rounded-2xl border border-gray-200 p-4"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <h2 className="font-semibold text-gray-900">
+              return (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-border bg-surface-2 p-4"
+                >
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold">
                         {set.isMatchTiebreak
                           ? "Super tie-break"
                           : `Set ${index + 1}`}
-                      </h2>
+                      </p>
 
-                      {setWinner && (
-                        <span className="text-xs font-semibold text-gray-500">
-                          {setWinner ===
-                          userTeam
+                      <p className="mt-0.5 text-xs text-muted">
+                        {setWinner
+                          ? setWinner === userTeam
                             ? "Vous remportez ce set"
-                            : "L'adversaire remporte ce set"}
-                        </span>
-                      )}
+                            : "L'adversaire remporte ce set"
+                          : "En cours"}
+                      </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-500">
-                          Vous
-                        </label>
-
-                        <input
-                          type="number"
-                          min="0"
-                          max={
-                            set.isMatchTiebreak
-                              ? 20
-                              : 7
-                          }
-                          value={set.team1}
-                          disabled={locked}
-                          onChange={(event) =>
-                            updateSet(
-                              index,
-                              "team1",
-                              event.target.value
-                            )
-                          }
-                          className="w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-xl font-bold outline-none focus:border-black disabled:bg-gray-100"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-500">
-                          Adversaire
-                        </label>
-
-                        <input
-                          type="number"
-                          min="0"
-                          max={
-                            set.isMatchTiebreak
-                              ? 20
-                              : 7
-                          }
-                          value={set.team2}
-                          disabled={locked}
-                          onChange={(event) =>
-                            updateSet(
-                              index,
-                              "team2",
-                              event.target.value
-                            )
-                          }
-                          className="w-full rounded-xl border border-gray-300 px-4 py-3 text-center text-xl font-bold outline-none focus:border-black disabled:bg-gray-100"
-                        />
-                      </div>
-                    </div>
-
-                    {!set.isMatchTiebreak &&
-                      (
-                        (
-                          set.team1 === 7 &&
-                          set.team2 === 6
-                        ) ||
-                        (
-                          set.team2 === 7 &&
-                          set.team1 === 6
-                        )
-                      ) && (
-                        <div className="mt-4">
-                          <p className="mb-2 text-xs font-medium text-gray-500">
-                            Score du tie-break
-                          </p>
-
-                          <div className="grid grid-cols-2 gap-3">
-                            <input
-                              type="number"
-                              min="0"
-                              value={
-                                set.tieBreakTeam1 ??
-                                ""
-                              }
-                              disabled={locked}
-                              placeholder="Vous"
-                              onChange={(event) =>
-                                updateTieBreak(
-                                  index,
-                                  "tieBreakTeam1",
-                                  event.target.value
-                                )
-                              }
-                              className="w-full rounded-xl border border-gray-300 px-4 py-2 text-center font-semibold disabled:bg-gray-100"
-                            />
-
-                            <input
-                              type="number"
-                              min="0"
-                              value={
-                                set.tieBreakTeam2 ??
-                                ""
-                              }
-                              disabled={locked}
-                              placeholder="Adversaire"
-                              onChange={(event) =>
-                                updateTieBreak(
-                                  index,
-                                  "tieBreakTeam2",
-                                  event.target.value
-                                )
-                              }
-                              className="w-full rounded-xl border border-gray-300 px-4 py-2 text-center font-semibold disabled:bg-gray-100"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                    {match.sport ===
-                      "padel" &&
-                      index === 2 && (
-                        <button
-                          type="button"
-                          disabled={locked}
-                          onClick={() =>
-                            toggleMatchTiebreak(
-                              index
-                            )
-                          }
-                          className={`mt-4 w-full rounded-xl border px-4 py-2 text-sm font-semibold ${
-                            set.isMatchTiebreak
-                              ? "border-black bg-black text-white"
-                              : "border-gray-300 bg-white text-gray-700"
-                          } disabled:opacity-50`}
-                        >
-                          {set.isMatchTiebreak
-                            ? "Super tie-break activé"
-                            : "Utiliser un super tie-break"}
-                        </button>
-                      )}
+                    {setWinner && (
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">
+                        ✓
+                      </span>
+                    )}
                   </div>
-                );
-              }
-            )}
+
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+                    <div>
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                        Vous
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max={
+                          set.isMatchTiebreak
+                            ? 20
+                            : 7
+                        }
+                        value={set.team1}
+                        disabled={locked}
+                        onChange={(event) =>
+                          updateSet(
+                            index,
+                            "team1",
+                            event.target.value
+                          )
+                        }
+                        className="h-16 w-full rounded-2xl border border-border bg-background px-3 text-center text-2xl font-bold text-foreground outline-none transition-all focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </div>
+
+                    <span className="pb-5 text-lg font-bold text-muted-2">
+                      —
+                    </span>
+
+                    <div>
+                      <label className="mb-2 block text-right text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                        Adversaire
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0"
+                        max={
+                          set.isMatchTiebreak
+                            ? 20
+                            : 7
+                        }
+                        value={set.team2}
+                        disabled={locked}
+                        onChange={(event) =>
+                          updateSet(
+                            index,
+                            "team2",
+                            event.target.value
+                          )
+                        }
+                        className="h-16 w-full rounded-2xl border border-border bg-background px-3 text-center text-2xl font-bold text-foreground outline-none transition-all focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                    </div>
+                  </div>
+
+                  {!set.isMatchTiebreak &&
+                    (
+                      (
+                        set.team1 === 7 &&
+                        set.team2 === 6
+                      ) ||
+                      (
+                        set.team2 === 7 &&
+                        set.team1 === 6
+                      )
+                    ) && (
+                      <div className="mt-4 border-t border-border pt-4">
+                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                          Score du tie-break
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="number"
+                            min="0"
+                            value={
+                              set.tieBreakTeam1 ?? ""
+                            }
+                            disabled={locked}
+                            placeholder="Vous"
+                            onChange={(event) =>
+                              updateTieBreak(
+                                index,
+                                "tieBreakTeam1",
+                                event.target.value
+                              )
+                            }
+                            className="h-12 w-full rounded-2xl border border-border bg-background px-3 text-center font-bold text-foreground outline-none transition-all focus:border-accent disabled:opacity-50"
+                          />
+
+                          <input
+                            type="number"
+                            min="0"
+                            value={
+                              set.tieBreakTeam2 ?? ""
+                            }
+                            disabled={locked}
+                            placeholder="Adversaire"
+                            onChange={(event) =>
+                              updateTieBreak(
+                                index,
+                                "tieBreakTeam2",
+                                event.target.value
+                              )
+                            }
+                            className="h-12 w-full rounded-2xl border border-border bg-background px-3 text-center font-bold text-foreground outline-none transition-all focus:border-accent disabled:opacity-50"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                  {match.sport === "padel" &&
+                    index === 2 && (
+                      <button
+                        type="button"
+                        disabled={locked}
+                        onClick={() =>
+                          toggleMatchTiebreak(index)
+                        }
+                        className={`mt-4 min-h-12 w-full rounded-2xl border px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98] ${
+                          set.isMatchTiebreak
+                            ? "border-accent bg-accent text-background"
+                            : "border-border bg-background text-foreground hover:border-accent/40"
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                      >
+                        {set.isMatchTiebreak
+                          ? "Super tie-break activé"
+                          : "Utiliser un super tie-break"}
+                      </button>
+                    )}
+                </div>
+              );
+            })}
           </div>
 
           {!locked &&
@@ -1220,7 +1241,7 @@ export default function ResultPage() {
               <button
                 type="button"
                 onClick={addThirdSet}
-                className="mt-4 w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-semibold text-gray-800"
+                className="mt-4 flex min-h-14 w-full items-center justify-center rounded-2xl border border-border bg-surface-2 px-5 font-bold text-foreground transition-all duration-200 hover:border-accent/40 hover:bg-surface active:scale-[0.98]"
               >
                 + Ajouter le 3e set
               </button>
@@ -1233,7 +1254,7 @@ export default function ResultPage() {
               disabled={
                 saving || !matchFinished
               }
-              className="mt-5 w-full rounded-xl bg-black px-4 py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-5 flex min-h-16 w-full items-center justify-center rounded-2xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-30"
             >
               {saving
                 ? "Enregistrement..."
@@ -1242,177 +1263,137 @@ export default function ResultPage() {
           )}
         </section>
 
-        {match.result_type ===
-          "competitive" &&
+        {/* Point preview */}
+        {match.result_type === "competitive" &&
           preview &&
           matchFinished && (
-            <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-              <div className="mb-4">
-                <h2 className="text-lg font-bold text-gray-900">
-                  📊 Aperçu des points
+            <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                  Classement
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold tracking-tight">
+                  Aperçu des points
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
-                  Ce calcul est basé sur le barème actuel.
+                <p className="mt-1 text-sm leading-6 text-muted">
+                  Estimation basée sur le barème actuel.
                 </p>
               </div>
 
-              <div className="mb-5 rounded-2xl bg-gray-100 p-4 text-center">
-                <p className="text-sm text-gray-500">
+              <div className="mb-5 rounded-2xl bg-surface-2 p-5 text-center">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
                   Évolution estimée
                 </p>
 
                 <p
-                  className={`mt-1 text-3xl font-black ${
+                  className={`mt-2 text-4xl font-bold tracking-tight ${
                     preview.total >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                      ? "text-accent"
+                      : "text-danger"
                   }`}
                 >
-                  {formatChange(
-                    preview.total
-                  )}
+                  {formatChange(preview.total)}
                 </p>
               </div>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>
-                    Points de base du match
-                  </span>
-                  <span className="font-semibold">
-                    {formatChange(
-                      preview.base
-                    )}
-                  </span>
-                </div>
+              <div className="space-y-1">
+                {[
+                  [
+                    "Points de base du match",
+                    preview.base,
+                  ],
+                  [
+                    "Set remporté sans concéder de jeu",
+                    preview.bulle,
+                  ],
+                  [
+                    "Match parfait",
+                    preview.doubleBulle,
+                  ],
+                  [
+                    "Victoire nette",
+                    preview.victoireNette,
+                  ],
+                  [
+                    "Série de victoires",
+                    preview.serie,
+                  ],
+                  [
+                    "Performance",
+                    preview.performance,
+                  ],
+                  [
+                    "Set blanc concédé",
+                    preview.fanny,
+                  ],
+                  [
+                    "Match sans jeu marqué",
+                    preview.doubleFanny,
+                  ],
+                  [
+                    "Contre-performance",
+                    preview.contrePerformance,
+                  ],
+                  [
+                    "Défaite serrée au jeu décisif",
+                    preview.tiebreak,
+                  ],
+                ]
+                  .filter(([, value]) => value !== 0)
+                  .map(([label, value]) => (
+                    <div
+                      key={String(label)}
+                      className="flex items-center justify-between gap-4 rounded-xl px-2 py-2.5"
+                    >
+                      <span className="text-sm text-muted">
+                        {label}
+                      </span>
 
-                {preview.bulle !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Set remporté sans concéder de jeu
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      +10
-                    </span>
-                  </div>
-                )}
-
-                {preview.doubleBulle !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Match parfait
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      +40
-                    </span>
-                  </div>
-                )}
-
-                {preview.victoireNette !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Victoire nette
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      +10
-                    </span>
-                  </div>
-                )}
-
-                {preview.serie !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Série de victoires
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      +{preview.serie}
-                    </span>
-                  </div>
-                )}
-
-                {preview.performance !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Performance
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      +15
-                    </span>
-                  </div>
-                )}
-
-                {preview.fanny !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Set blanc concédé
-                    </span>
-                    <span className="font-semibold text-red-600">
-                      -5
-                    </span>
-                  </div>
-                )}
-
-                {preview.doubleFanny !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Match sans jeu marqué
-                    </span>
-                    <span className="font-semibold text-red-600">
-                      -15
-                    </span>
-                  </div>
-                )}
-
-                {preview.contrePerformance !==
-                  0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Contre-performance
-                    </span>
-                    <span className="font-semibold text-red-600">
-                      -10
-                    </span>
-                  </div>
-                )}
-
-                {preview.tiebreak !== 0 && (
-                  <div className="flex justify-between">
-                    <span>
-                      Défaite serrée au jeu décisif
-                    </span>
-                    <span className="font-semibold text-green-600">
-                      +10
-                    </span>
-                  </div>
-                )}
+                      <span
+                        className={`text-sm font-bold ${
+                          Number(value) >= 0
+                            ? "text-accent"
+                            : "text-danger"
+                        }`}
+                      >
+                        {formatChange(Number(value))}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </section>
           )}
 
-                  {match.result_type === "competitive" &&
+        {/* Ranking detail */}
+        {match.result_type === "competitive" &&
           rankingDetail && (
-            <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-              <div className="mb-4">
-                <h2 className="text-lg font-bold text-gray-900">
-                  🎯 Détail des points
+            <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                  Résultat enregistré
+                </p>
+
+                <h2 className="mt-1 text-xl font-bold tracking-tight">
+                  Détail des points
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm leading-6 text-muted">
                   Calcul réellement enregistré dans le classement.
                 </p>
               </div>
 
-              <div className="mb-5 rounded-2xl bg-gray-100 p-4 text-center">
-                <p className="text-sm text-gray-500">
+              <div className="mb-5 rounded-2xl bg-surface-2 p-5 text-center">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
                   Évolution
                 </p>
 
                 <p
-                  className={`mt-1 text-3xl font-black ${
+                  className={`mt-2 text-4xl font-bold tracking-tight ${
                     rankingDetail.points_change >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
+                      ? "text-accent"
+                      : "text-danger"
                   }`}
                 >
                   {formatChange(
@@ -1420,251 +1401,230 @@ export default function ResultPage() {
                   )}
                 </p>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted">
                   {rankingDetail.old_points} →{" "}
                   {rankingDetail.new_points} points
                 </p>
               </div>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span>Points de base</span>
-                  <span className="font-semibold">
-                    {formatChange(
-                      rankingDetail.base_points
-                    )}
-                  </span>
-                </div>
+              <div className="space-y-1">
+                {[
+                  [
+                    "Points de base",
+                    rankingDetail.base_points,
+                  ],
+                  [
+                    "Set blanc remporté",
+                    rankingDetail.bonus_bulle,
+                  ],
+                  [
+                    "Match parfait",
+                    rankingDetail.bonus_double_bulle,
+                  ],
+                  [
+                    "Victoire nette",
+                    rankingDetail.bonus_victoire_propre,
+                  ],
+                  [
+                    "Série de victoires",
+                    rankingDetail.bonus_serie,
+                  ],
+                  [
+                    "Performance",
+                    rankingDetail.bonus_performer,
+                  ],
+                  [
+                    "Set blanc concédé",
+                    rankingDetail.malus_fanny,
+                  ],
+                  [
+                    "Match sans jeu marqué",
+                    rankingDetail.malus_double_bulle,
+                  ],
+                  [
+                    "Contre-performance",
+                    rankingDetail.malus_contre_performance,
+                  ],
+                  [
+                    "Défaite serrée au tie-break",
+                    rankingDetail.amortisseur_tiebreak,
+                  ],
+                ]
+                  .filter(([, value]) => value !== 0)
+                  .map(([label, value]) => (
+                    <div
+                      key={String(label)}
+                      className="flex items-center justify-between gap-4 rounded-xl px-2 py-2.5"
+                    >
+                      <span className="text-sm text-muted">
+                        {label}
+                      </span>
 
-                {rankingDetail.bonus_bulle !== 0 && (
-                  <div className="flex justify-between">
-                    <span>🎯 Set blanc remporté</span>
-                    <span className="font-semibold text-green-600">
-                      +{rankingDetail.bonus_bulle}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.bonus_double_bulle !== 0 && (
-                  <div className="flex justify-between">
-                    <span>💎 Match parfait</span>
-                    <span className="font-semibold text-green-600">
-                      +{rankingDetail.bonus_double_bulle}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.bonus_victoire_propre !== 0 && (
-                  <div className="flex justify-between">
-                    <span>⚡ Victoire nette</span>
-                    <span className="font-semibold text-green-600">
-                      +{rankingDetail.bonus_victoire_propre}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.bonus_serie !== 0 && (
-                  <div className="flex justify-between">
-                    <span>🔥 Série de victoires</span>
-                    <span className="font-semibold text-green-600">
-                      +{rankingDetail.bonus_serie}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.bonus_performer !== 0 && (
-                  <div className="flex justify-between">
-                    <span>🚀 Performance</span>
-                    <span className="font-semibold text-green-600">
-                      +{rankingDetail.bonus_performer}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.malus_fanny !== 0 && (
-                  <div className="flex justify-between">
-                    <span>⚠️ Set blanc concédé</span>
-                    <span className="font-semibold text-red-600">
-                      {rankingDetail.malus_fanny}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.malus_double_bulle !== 0 && (
-                  <div className="flex justify-between">
-                    <span>❌ Match sans jeu marqué</span>
-                    <span className="font-semibold text-red-600">
-                      {rankingDetail.malus_double_bulle}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.malus_contre_performance !== 0 && (
-                  <div className="flex justify-between">
-                    <span>📉 Contre-performance</span>
-                    <span className="font-semibold text-red-600">
-                      {rankingDetail.malus_contre_performance}
-                    </span>
-                  </div>
-                )}
-
-                {rankingDetail.amortisseur_tiebreak !== 0 && (
-                  <div className="flex justify-between">
-                    <span>🛡️ Défaite serrée au tie-break</span>
-                    <span className="font-semibold text-green-600">
-                      +{rankingDetail.amortisseur_tiebreak}
-                    </span>
-                  </div>
-                )}
+                      <span
+                        className={`text-sm font-bold ${
+                          Number(value) >= 0
+                            ? "text-accent"
+                            : "text-danger"
+                        }`}
+                      >
+                        {formatChange(Number(value))}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </section>
           )}
 
-        {match.result_type ===
-          "friendly" && (
-          <section className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
-            <h2 className="font-bold text-blue-900">
-              🤝 Match amical
-            </h2>
+        {/* Friendly */}
+        {match.result_type === "friendly" && (
+          <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
+            <div className="flex gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/10 text-lg">
+                🤝
+              </div>
 
-            <p className="mt-1 text-sm text-blue-800">
-              Ce match est enregistré dans tes statistiques,
-              mais il ne modifie pas les points du classement.
-            </p>
+              <div>
+                <h2 className="font-bold">
+                  Match amical
+                </h2>
+
+                <p className="mt-1 text-sm leading-6 text-muted">
+                  Ce match est enregistré dans tes statistiques,
+                  mais il ne modifie pas les points du classement.
+                </p>
+              </div>
+            </div>
           </section>
         )}
 
-        <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="mb-4 font-bold text-gray-900">
-            Barème des points
-          </h2>
+        {/* Scoring rules */}
+        <section className="rounded-3xl border border-border bg-surface p-5">
+          <div className="mb-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+              Classement
+            </p>
 
-          <div className="space-y-4 text-sm text-gray-600">
+            <h2 className="mt-1 text-xl font-bold tracking-tight">
+              Barème des points
+            </h2>
+
+            <p className="mt-1 text-sm leading-6 text-muted">
+              Les règles utilisées pour calculer ton classement.
+            </p>
+          </div>
+
+          <div className="space-y-6 text-sm">
             <div>
-              <p className="mb-2 font-semibold text-gray-900">
+              <p className="mb-3 font-bold">
                 Points de base du match
               </p>
 
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Victoire</span>
-                  <span className="font-semibold">
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted">
+                    Victoire
+                  </span>
+                  <span className="font-bold text-accent">
                     +25 pts
                   </span>
                 </div>
 
-                <div className="flex justify-between">
-                  <span>Défaite</span>
-                  <span className="font-semibold">
+                <div className="flex justify-between gap-4">
+                  <span className="text-muted">
+                    Défaite
+                  </span>
+                  <span className="font-bold text-danger">
                     -20 pts
                   </span>
                 </div>
               </div>
             </div>
 
-            <div>
-              <p className="mb-2 font-semibold text-gray-900">
+            <div className="border-t border-border pt-5">
+              <p className="mb-3 font-bold">
                 Bonus de performance
               </p>
 
-              <div className="space-y-2">
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Set remporté sans concéder de jeu (6-0)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    +10 pts
-                  </span>
-                </div>
+              <div className="space-y-3">
+                {[
+                  [
+                    "Set remporté sans concéder de jeu (6-0)",
+                    "+10 pts",
+                  ],
+                  [
+                    "Match parfait (6-0, 6-0)",
+                    "+40 pts",
+                  ],
+                  [
+                    "Victoire nette (2-0 avec 4 jeux concédés maximum)",
+                    "+10 pts",
+                  ],
+                  [
+                    "3 victoires consécutives",
+                    "+10 pts",
+                  ],
+                  [
+                    "5 victoires consécutives",
+                    "+20 pts",
+                  ],
+                  [
+                    "Performance face à un joueur mieux classé",
+                    "+15 pts",
+                  ],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex justify-between gap-4"
+                  >
+                    <span className="leading-5 text-muted">
+                      {label}
+                    </span>
 
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Match parfait (6-0, 6-0)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    +40 pts
-                  </span>
-                </div>
-
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Victoire nette (2-0 avec 4 jeux concédés maximum)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    +10 pts
-                  </span>
-                </div>
-
-                <div className="flex justify-between gap-4">
-                  <span>
-                    3 victoires consécutives
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    +10 pts
-                  </span>
-                </div>
-
-                <div className="flex justify-between gap-4">
-                  <span>
-                    5 victoires consécutives
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    +20 pts
-                  </span>
-                </div>
-
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Performance (victoire face à un joueur de rang supérieur)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    +15 pts
-                  </span>
-                </div>
+                    <span className="shrink-0 font-bold text-accent">
+                      {value}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div>
-              <p className="mb-2 font-semibold text-gray-900">
+            <div className="border-t border-border pt-5">
+              <p className="mb-3 font-bold">
                 Pénalités et atténuations
               </p>
 
-              <div className="space-y-2">
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Set blanc concédé (0-6)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    -5 pts
-                  </span>
-                </div>
+              <div className="space-y-3">
+                {[
+                  [
+                    "Set blanc concédé (0-6)",
+                    "-5 pts",
+                  ],
+                  [
+                    "Match sans jeu marqué (0-6, 0-6)",
+                    "-15 pts",
+                  ],
+                  [
+                    "Contre-performance face à un joueur moins bien classé",
+                    "-10 pts",
+                  ],
+                  [
+                    "Défaite serrée au jeu décisif dans le dernier set",
+                    "-10 pts au lieu de -20",
+                  ],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="flex justify-between gap-4"
+                  >
+                    <span className="leading-5 text-muted">
+                      {label}
+                    </span>
 
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Match sans jeu marqué (0-6, 0-6)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    -15 pts
-                  </span>
-                </div>
-
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Contre-performance (défaite face à un joueur de rang inférieur)
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    -10 pts
-                  </span>
-                </div>
-
-                <div className="flex justify-between gap-4">
-                  <span>
-                    Défaite serrée au jeu décisif dans le dernier set
-                  </span>
-                  <span className="font-semibold whitespace-nowrap">
-                    -10 pts au lieu de -20
-                  </span>
-                </div>
+                    <span className="shrink-0 font-bold text-danger">
+                      {value}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
