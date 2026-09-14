@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/src/supabase/client";
+import RankingProgression from "@/app/components/RankingProgression";
 
-type Sport = "tennis" | "padel";
+type Sport = "tennis" | "padel" | "super_tiebreak";
 
 type RankingHistory = {
   id: string;
@@ -33,6 +34,7 @@ type Profile = {
   username: string | null;
   points_tennis: number | null;
   points_padel: number | null;
+  points_super_tiebreak: number | null;
 };
 
 function TennisIcon() {
@@ -116,11 +118,27 @@ function formatTime(date: string) {
 }
 
 function getSportLabel(sport: Sport) {
-  return sport === "tennis" ? "Tennis" : "Padel";
+  if (sport === "tennis") {
+    return "Tennis";
+  }
+
+  if (sport === "padel") {
+    return "Padel";
+  }
+
+  return "Super Tie-Break";
 }
 
 function getSportIcon(sport: Sport) {
-  return sport === "tennis" ? <TennisIcon /> : <PadelIcon />;
+  if (sport === "tennis") {
+    return <TennisIcon />;
+  }
+
+  if (sport === "padel") {
+    return <PadelIcon />;
+  }
+
+  return <TennisIcon />;
 }
 
 function getPositiveDetails(item: RankingHistory) {
@@ -141,10 +159,10 @@ function getNegativeDetails(item: RankingHistory) {
     ["Amortisseur tie-break", item.amortisseur_tiebreak],
   ].filter(([, value]) => value !== null && value !== 0);
 }
+
 const supabase = createClient();
 
 export default function RankingHistoryPage() {
-
   const [history, setHistory] = useState<RankingHistory[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [sport, setSport] = useState<Sport>("tennis");
@@ -166,43 +184,44 @@ export default function RankingHistoryPage() {
         return;
       }
 
-      const [{ data: profileData, error: profileError }, { data: historyData, error: historyError }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select(
-              "id, first_name, last_name, username, points_tennis, points_padel"
-            )
-            .eq("id", user.id)
-            .single(),
+      const [
+        { data: profileData, error: profileError },
+        { data: historyData, error: historyError },
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select(
+            "id, first_name, last_name, username, points_tennis, points_padel, points_super_tiebreak"
+          )
+          .eq("id", user.id)
+          .single(),
 
-          supabase
-            .from("ranking_history")
-            .select(
-              `
-                id,
-                player_id,
-                sport,
-                old_points,
-                new_points,
-                points_change,
-                base_points,
-                bonus_bulle,
-                bonus_double_bulle,
-                bonus_victoire_propre,
-                bonus_serie,
-                bonus_performer,
-                malus_fanny,
-                malus_double_bulle,
-                malus_contre_performance,
-                amortisseur_tiebreak,
-                created_at
-              `
-            )
-            .eq("player_id", user.id)
-            .order("created_at", { ascending: false }),
-
-        ]);
+        supabase
+          .from("ranking_history")
+          .select(
+            `
+              id,
+              player_id,
+              sport,
+              old_points,
+              new_points,
+              points_change,
+              base_points,
+              bonus_bulle,
+              bonus_double_bulle,
+              bonus_victoire_propre,
+              bonus_serie,
+              bonus_performer,
+              malus_fanny,
+              malus_double_bulle,
+              malus_contre_performance,
+              amortisseur_tiebreak,
+              created_at
+            `
+          )
+          .eq("player_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
       if (profileError) {
         console.error(profileError);
@@ -223,17 +242,16 @@ export default function RankingHistoryPage() {
     loadHistory();
   }, []);
 
-  const filteredHistory = history.filter((item) => item.sport === sport);
+  const filteredHistory = history.filter(
+    (item) => item.sport === sport
+  );
 
   const currentPoints =
     sport === "tennis"
       ? profile?.points_tennis ?? 0
-      : profile?.points_padel ?? 0;
-
-  const totalChanges = filteredHistory.reduce(
-    (total, item) => total + (item.points_change ?? 0),
-    0
-  );
+      : sport === "padel"
+        ? profile?.points_padel ?? 0
+        : profile?.points_super_tiebreak ?? 0;
 
   return (
     <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
@@ -263,11 +281,11 @@ export default function RankingHistoryPage() {
         </header>
 
         {/* Sport selector */}
-        <div className="mb-5 grid grid-cols-2 gap-2 rounded-3xl border border-border bg-surface p-2">
+        <div className="mb-5 grid grid-cols-3 gap-2 rounded-3xl border border-border bg-surface p-2">
           <button
             type="button"
             onClick={() => setSport("tennis")}
-            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
+            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-bold transition ${
               sport === "tennis"
                 ? "border-accent bg-accent text-background"
                 : "border-border bg-surface-2 text-muted"
@@ -280,7 +298,7 @@ export default function RankingHistoryPage() {
           <button
             type="button"
             onClick={() => setSport("padel")}
-            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
+            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-bold transition ${
               sport === "padel"
                 ? "border-accent bg-accent text-background"
                 : "border-border bg-surface-2 text-muted"
@@ -288,6 +306,18 @@ export default function RankingHistoryPage() {
           >
             <PadelIcon />
             Padel
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSport("super_tiebreak")}
+            className={`flex min-h-14 items-center justify-center rounded-2xl border px-3 text-xs font-bold transition ${
+              sport === "super_tiebreak"
+                ? "border-accent bg-accent text-background"
+                : "border-border bg-surface-2 text-muted"
+            }`}
+          >
+            Super TB
           </button>
         </div>
 
@@ -301,7 +331,9 @@ export default function RankingHistoryPage() {
 
               <p className="mt-2 text-4xl font-bold tracking-tight">
                 {currentPoints}
-                <span className="ml-1 text-lg font-bold text-accent">pts</span>
+                <span className="ml-1 text-lg font-bold text-accent">
+                  pts
+                </span>
               </p>
 
               <p className="mt-1 text-sm text-muted">
@@ -311,25 +343,6 @@ export default function RankingHistoryPage() {
 
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
               {getSportIcon(sport)}
-            </div>
-          </div>
-
-          <div className="mt-5 border-t border-border pt-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted">Évolution cumulée</span>
-
-              <span
-                className={`font-bold ${
-                  totalChanges > 0
-                    ? "text-accent"
-                    : totalChanges < 0
-                      ? "text-danger"
-                      : "text-muted"
-                }`}
-              >
-                {totalChanges > 0 ? "+" : ""}
-                {totalChanges} pts
-              </span>
             </div>
           </div>
         </section>
@@ -346,14 +359,16 @@ export default function RankingHistoryPage() {
         {/* Error */}
         {!loading && message && (
           <div className="rounded-2xl border border-danger/20 bg-danger/5 p-4">
-            <p className="text-sm font-medium text-danger">{message}</p>
+            <p className="text-sm font-medium text-danger">
+              {message}
+            </p>
           </div>
         )}
 
-        {/* Empty */}
-        {!loading && !message && filteredHistory.length === 0 && (
+        {/* Empty state */}
+        {!loading && !message && profile && filteredHistory.length === 0 && (
           <div className="rounded-3xl border border-border bg-surface p-6 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted">
               {getSportIcon(sport)}
             </div>
 
@@ -362,20 +377,31 @@ export default function RankingHistoryPage() {
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-muted">
-              Vos changements de points en {getSportLabel(sport).toLowerCase()}
-              apparaîtront ici après vos matchs.
+              Vos changements de points en{" "}
+              {getSportLabel(sport).toLowerCase()} apparaîtront ici après vos
+              matchs.
             </p>
           </div>
         )}
 
+        {/* Progression */}
+        {!loading && !message && profile && (
+          <RankingProgression
+            userId={profile.id}
+            sport={sport}
+            currentPoints={currentPoints}
+          />
+        )}
+
         {/* History */}
         {!loading && !message && filteredHistory.length > 0 && (
-          <section>
+          <section className="mt-5">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
                   Dernières évolutions
                 </p>
+
                 <h2 className="mt-1 text-xl font-bold tracking-tight">
                   Votre parcours
                 </h2>
@@ -383,7 +409,9 @@ export default function RankingHistoryPage() {
 
               <span className="rounded-full bg-surface-2 px-3 py-1.5 text-xs font-bold text-muted">
                 {filteredHistory.length}{" "}
-                {filteredHistory.length > 1 ? "évolutions" : "évolution"}
+                {filteredHistory.length > 1
+                  ? "évolutions"
+                  : "évolution"}
               </span>
             </div>
 
@@ -466,6 +494,7 @@ export default function RankingHistoryPage() {
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
                           Avant
                         </p>
+
                         <p className="mt-1 text-lg font-bold">
                           {item.old_points ?? 0}
                         </p>
@@ -477,6 +506,7 @@ export default function RankingHistoryPage() {
                         <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
                           Après
                         </p>
+
                         <p className="mt-1 text-lg font-bold">
                           {item.new_points ?? 0}
                         </p>
@@ -500,6 +530,7 @@ export default function RankingHistoryPage() {
                                 <span className="text-muted">
                                   Points de base
                                 </span>
+
                                 <span className="font-bold">
                                   {item.base_points > 0 ? "+" : ""}
                                   {item.base_points}
@@ -512,7 +543,10 @@ export default function RankingHistoryPage() {
                               key={`positive-${label}`}
                               className="flex items-center justify-between text-sm"
                             >
-                              <span className="text-muted">{label}</span>
+                              <span className="text-muted">
+                                {label}
+                              </span>
+
                               <span className="font-bold text-accent">
                                 +{value}
                               </span>
@@ -524,7 +558,10 @@ export default function RankingHistoryPage() {
                               key={`negative-${label}`}
                               className="flex items-center justify-between text-sm"
                             >
-                              <span className="text-muted">{label}</span>
+                              <span className="text-muted">
+                                {label}
+                              </span>
+
                               <span className="font-bold text-danger">
                                 {Number(value) > 0 ? "-" : ""}
                                 {Math.abs(Number(value))}

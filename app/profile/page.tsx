@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
+import Image from "next/image";
 
 function UserIcon() {
   return (
@@ -85,6 +86,22 @@ function LogoutIcon() {
   );
 }
 
+type ProfileData = {
+  first_name: string | null;
+  last_name: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  dominant_hand: string | null;
+  playing_style: string | null;
+  backhand_style: string | null;
+  preferred_surface: string | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+};
+
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
+const AVATAR_SIGNED_URL_EXPIRY = 60 * 60;
+
 export default function ProfilePage() {
   const router = useRouter();
 
@@ -92,6 +109,19 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
+
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const [dominantHand, setDominantHand] = useState("");
+  const [playingStyle, setPlayingStyle] = useState("");
+  const [backhandStyle, setBackhandStyle] = useState("");
+  const [preferredSurface, setPreferredSurface] = useState("");
+  const [heightCm, setHeightCm] = useState("");
+  const [weightKg, setWeightKg] = useState("");
+
+  const [currentUserId, setCurrentUserId] = useState("");
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -110,18 +140,56 @@ export default function ProfilePage() {
         return;
       }
 
+      setCurrentUserId(user.id);
       setEmail(user.email ?? "");
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("first_name, last_name, username")
+        .select(
+          "first_name, last_name, username, avatar_url, dominant_hand, playing_style, backhand_style, preferred_surface, height_cm, weight_kg"
+        )
         .eq("id", user.id)
         .single();
 
       if (profile) {
-        setFirstName(profile.first_name ?? "");
-        setLastName(profile.last_name ?? "");
-        setUsername(profile.username ?? "");
+        const typedProfile = profile as ProfileData;
+
+        setFirstName(typedProfile.first_name ?? "");
+        setLastName(typedProfile.last_name ?? "");
+        setUsername(typedProfile.username ?? "");
+
+        const storedAvatarPath = typedProfile.avatar_url ?? null;
+        setAvatarPath(storedAvatarPath);
+
+        if (storedAvatarPath) {
+          const { data: signedUrlData } = await supabase.storage
+            .from("avatars")
+            .createSignedUrl(
+              storedAvatarPath,
+              AVATAR_SIGNED_URL_EXPIRY
+            );
+
+          setAvatarUrl(signedUrlData?.signedUrl ?? null);
+        } else {
+          setAvatarUrl(null);
+        }
+
+        setDominantHand(typedProfile.dominant_hand ?? "");
+        setPlayingStyle(typedProfile.playing_style ?? "");
+        setBackhandStyle(typedProfile.backhand_style ?? "");
+        setPreferredSurface(typedProfile.preferred_surface ?? "");
+
+        setHeightCm(
+          typedProfile.height_cm !== null
+            ? String(typedProfile.height_cm)
+            : ""
+        );
+
+        setWeightKg(
+          typedProfile.weight_kg !== null
+            ? String(typedProfile.weight_kg)
+            : ""
+        );
       }
 
       setLoading(false);
@@ -130,11 +198,171 @@ export default function ProfilePage() {
     loadProfile();
   }, []);
 
+  async function handleAvatarUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+
+    if (!file || !currentUserId) {
+      return;
+    }
+
+    setMessage("");
+
+    if (!file.type.startsWith("image/")) {
+      setMessage("Le fichier doit être une image.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      setMessage("La photo ne doit pas dépasser 5 Mo.");
+      event.target.value = "";
+      return;
+    }
+
+    setUploadingAvatar(true);
+
+    const supabase = createClient();
+
+    const extension =
+      file.name.split(".").pop()?.toLowerCase() || "jpg";
+
+    const filePath = `${currentUserId}/avatar-${Date.now()}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type,
+      });
+
+    if (uploadError) {
+      setMessage(
+        `Impossible d'envoyer la photo : ${uploadError.message}`
+      );
+      setUploadingAvatar(false);
+      event.target.value = "";
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: filePath,
+      })
+      .eq("id", currentUserId);
+
+    if (updateError) {
+      await supabase.storage.from("avatars").remove([filePath]);
+
+      setMessage(
+        `Impossible de sauvegarder la photo : ${updateError.message}`
+      );
+      setUploadingAvatar(false);
+      event.target.value = "";
+      return;
+    }
+
+    const { data: signedUrlData } = await supabase.storage
+      .from("avatars")
+      .createSignedUrl(filePath, AVATAR_SIGNED_URL_EXPIRY);
+
+    if (!signedUrlData?.signedUrl) {
+      setMessage(
+        "La photo a été enregistrée, mais son affichage est impossible pour le moment."
+      );
+      setUploadingAvatar(false);
+      event.target.value = "";
+      return;
+    }
+
+    if (avatarPath && avatarPath !== filePath) {
+      await supabase.storage.from("avatars").remove([avatarPath]);
+    }
+
+    setAvatarPath(filePath);
+    setAvatarUrl(signedUrlData.signedUrl);
+    setMessage("Photo de profil mise à jour.");
+    setUploadingAvatar(false);
+    event.target.value = "";
+  }
+
+  async function handleAvatarDelete() {
+    if (!currentUserId || !avatarPath) {
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setMessage("");
+
+    const supabase = createClient();
+
+    const { error: removeError } = await supabase.storage
+      .from("avatars")
+      .remove([avatarPath]);
+
+    if (removeError) {
+      setMessage(
+        `Impossible de supprimer la photo : ${removeError.message}`
+      );
+      setUploadingAvatar(false);
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        avatar_url: null,
+      })
+      .eq("id", currentUserId);
+
+    if (updateError) {
+      setMessage(
+        `Impossible de mettre à jour le profil : ${updateError.message}`
+      );
+      setUploadingAvatar(false);
+      return;
+    }
+
+    setAvatarPath(null);
+    setAvatarUrl(null);
+    setMessage("Photo de profil supprimée.");
+    setUploadingAvatar(false);
+  }
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setSaving(true);
     setMessage("");
+
+    const height = heightCm.trim()
+      ? Number.parseInt(heightCm, 10)
+      : null;
+
+    const weight = weightKg.trim()
+      ? Number.parseInt(weightKg, 10)
+      : null;
+
+    if (
+      (height !== null && Number.isNaN(height)) ||
+      (weight !== null && Number.isNaN(weight))
+    ) {
+      setMessage("La taille et le poids doivent être des nombres.");
+      setSaving(false);
+      return;
+    }
+
+    if (
+      (height !== null && (height < 120 || height > 230)) ||
+      (weight !== null && (weight < 30 || weight > 200))
+    ) {
+      setMessage("Vérifie la taille et le poids renseignés.");
+      setSaving(false);
+      return;
+    }
 
     const supabase = createClient();
 
@@ -154,6 +382,12 @@ export default function ProfilePage() {
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
         username: username.trim() || null,
+        dominant_hand: dominantHand || null,
+        playing_style: playingStyle || null,
+        backhand_style: backhandStyle || null,
+        preferred_surface: preferredSurface || null,
+        height_cm: height,
+        weight_kg: weight,
       })
       .eq("id", user.id);
 
@@ -187,10 +421,28 @@ export default function ProfilePage() {
     );
   }
 
+  if (!currentUserId) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background px-5 text-foreground">
+        <div className="text-center">
+          <p className="text-sm font-medium text-muted">
+            Tu dois être connecté pour accéder à ton profil.
+          </p>
+
+          <Link
+            href="/login"
+            className="mt-4 inline-flex min-h-12 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background"
+          >
+            Se connecter
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
       <div className="mx-auto max-w-lg pb-8">
-        {/* Header */}
         <header className="mb-7">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted">
             Mon compte
@@ -201,12 +453,82 @@ export default function ProfilePage() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Gère tes informations personnelles et accède à tes espaces.
+            Gère tes informations personnelles et ton profil joueur.
           </p>
         </header>
 
-        {/* Profile form */}
         <section className="rounded-3xl border border-border bg-surface p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+              <UserIcon />
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                Identité
+              </p>
+
+              <h2 className="mt-1 text-lg font-bold">
+                Photo de profil
+              </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted">
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt="Photo de profil"
+                  width={96}
+                  height={96}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <UserIcon />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <label
+                htmlFor="avatar"
+                className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-sm font-bold text-background transition-opacity hover:opacity-90"
+              >
+                {uploadingAvatar
+                  ? "Traitement..."
+                  : avatarUrl
+                    ? "Modifier la photo"
+                    : "Ajouter une photo"}
+              </label>
+
+              <input
+                id="avatar"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleAvatarUpload}
+                disabled={uploadingAvatar}
+                className="hidden"
+              />
+
+              {avatarUrl && (
+                <button
+                  type="button"
+                  onClick={handleAvatarDelete}
+                  disabled={uploadingAvatar}
+                  className="mt-2 min-h-10 w-full rounded-2xl border border-danger/20 bg-danger/5 px-4 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Supprimer la photo
+                </button>
+              )}
+
+              <p className="mt-2 text-xs leading-5 text-muted">
+                JPG, PNG ou WebP · 5 Mo maximum
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-5 rounded-3xl border border-border bg-surface p-5">
           <div className="mb-5 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
               <UserIcon />
@@ -224,7 +546,6 @@ export default function ProfilePage() {
           </div>
 
           <form onSubmit={handleSave} className="space-y-4">
-            {/* Email */}
             <div>
               <label
                 htmlFor="email"
@@ -252,7 +573,6 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            {/* First name */}
             <div>
               <label
                 htmlFor="firstName"
@@ -271,7 +591,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Last name */}
             <div>
               <label
                 htmlFor="lastName"
@@ -290,7 +609,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Username */}
             <div>
               <label
                 htmlFor="username"
@@ -309,7 +627,170 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Save */}
+            <div className="border-t border-border pt-5">
+              <div className="mb-4">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                  Profil joueur
+                </p>
+
+                <p className="mt-1 text-sm leading-5 text-muted">
+                  Ces informations permettent de mieux présenter ton
+                  profil sportif.
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="dominantHand"
+                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                >
+                  Main dominante
+                </label>
+
+                <select
+                  id="dominantHand"
+                  value={dominantHand}
+                  onChange={(event) =>
+                    setDominantHand(event.target.value)
+                  }
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                >
+                  <option value="">Non renseignée</option>
+                  <option value="right">Droitier</option>
+                  <option value="left">Gaucher</option>
+                  <option value="ambidextrous">Ambidextre</option>
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <label
+                  htmlFor="playingStyle"
+                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                >
+                  Style de jeu
+                </label>
+
+                <select
+                  id="playingStyle"
+                  value={playingStyle}
+                  onChange={(event) =>
+                    setPlayingStyle(event.target.value)
+                  }
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                >
+                  <option value="">Non renseigné</option>
+                  <option value="attacker">Attaquant</option>
+                  <option value="defender">Défenseur</option>
+                  <option value="all_rounder">Polyvalent</option>
+                  <option value="serve_volley">Serveur-volée</option>
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <label
+                  htmlFor="backhandStyle"
+                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                >
+                  Revers
+                </label>
+
+                <select
+                  id="backhandStyle"
+                  value={backhandStyle}
+                  onChange={(event) =>
+                    setBackhandStyle(event.target.value)
+                  }
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                >
+                  <option value="">Non renseigné</option>
+                  <option value="one_hand">Une main</option>
+                  <option value="two_hands">Deux mains</option>
+                </select>
+              </div>
+
+              <div className="mt-4">
+                <label
+                  htmlFor="preferredSurface"
+                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                >
+                  Surface préférée
+                </label>
+
+                <select
+                  id="preferredSurface"
+                  value={preferredSurface}
+                  onChange={(event) =>
+                    setPreferredSurface(event.target.value)
+                  }
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                >
+                  <option value="">Non renseignée</option>
+                  <option value="hard">Dur</option>
+                  <option value="clay">Terre battue</option>
+                  <option value="indoor">Indoor</option>
+                  <option value="grass">Gazon</option>
+                </select>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="heightCm"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                  >
+                    Taille
+                  </label>
+
+                  <div className="relative">
+                    <input
+                      id="heightCm"
+                      type="number"
+                      min="120"
+                      max="230"
+                      value={heightCm}
+                      onChange={(event) =>
+                        setHeightCm(event.target.value)
+                      }
+                      placeholder="180"
+                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                    />
+
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
+                      cm
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="weightKg"
+                    className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                  >
+                    Poids
+                  </label>
+
+                  <div className="relative">
+                    <input
+                      id="weightKg"
+                      type="number"
+                      min="30"
+                      max="200"
+                      value={weightKg}
+                      onChange={(event) =>
+                        setWeightKg(event.target.value)
+                      }
+                      placeholder="75"
+                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                    />
+
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
+                      kg
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={saving}
@@ -344,7 +825,6 @@ export default function ProfilePage() {
           )}
         </section>
 
-        {/* Account links */}
         <section className="mt-5">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">
             Mon espace
@@ -399,7 +879,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* Logout */}
         <section className="mt-7">
           <button
             type="button"
