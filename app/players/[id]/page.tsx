@@ -53,6 +53,7 @@ type DoublePartnerStats = {
   wins: number;
   losses: number;
   winRate: number;
+  maxWinStreak: number;
 };
 
 type PageProps = {
@@ -494,13 +495,6 @@ export default async function PlayerPage({
         )
       : 0;
 
-  /*
-   * Head-to-head :
-   * - Tennis + Padel
-   * - Simple uniquement
-   * - minimum 2 confrontations
-   * - trié par nombre de confrontations
-   */
   const headToHeadMap = new Map<
     string,
     {
@@ -622,12 +616,15 @@ export default async function PlayerPage({
    * - minimum 2 matchs ensemble
    * - partenaire = joueur présent dans la même équipe
    * - trié par nombre de matchs ensemble
+   * - calcul de la série maximale de victoires ensemble
    */
   const doublePartnerMap = new Map<
     string,
     {
-      wins: number;
-      losses: number;
+      matches: Array<{
+        createdAt: string;
+        won: boolean;
+      }>;
     }
   >();
 
@@ -708,17 +705,15 @@ export default async function PlayerPage({
       doublePartnerMap.get(
         partnerLink.player_id
       ) ?? {
-        wins: 0,
-        losses: 0,
+        matches: [],
       };
 
-    if (
-      ownTeamSetWins > opponentTeamSetWins
-    ) {
-      current.wins++;
-    } else {
-      current.losses++;
-    }
+    current.matches.push({
+      createdAt: match.created_at,
+      won:
+        ownTeamSetWins >
+        opponentTeamSetWins,
+    });
 
     doublePartnerMap.set(
       partnerLink.player_id,
@@ -740,22 +735,57 @@ export default async function PlayerPage({
             return null;
           }
 
+          const orderedMatches =
+            [...result.matches].sort(
+              (a, b) =>
+                new Date(
+                  a.createdAt
+                ).getTime() -
+                new Date(
+                  b.createdAt
+                ).getTime()
+            );
+
+          let wins = 0;
+          let losses = 0;
+          let currentWinStreak = 0;
+          let maxWinStreak = 0;
+
+          for (const matchResult of orderedMatches) {
+            if (matchResult.won) {
+              wins++;
+              currentWinStreak++;
+
+              if (
+                currentWinStreak >
+                maxWinStreak
+              ) {
+                maxWinStreak =
+                  currentWinStreak;
+              }
+            } else {
+              losses++;
+              currentWinStreak = 0;
+            }
+          }
+
           const matches =
-            result.wins + result.losses;
+            wins + losses;
 
           return {
             partnerId,
             partnerName:
               getPlayerName(partner),
             matches,
-            wins: result.wins,
-            losses: result.losses,
+            wins,
+            losses,
             winRate:
               matches > 0
                 ? Math.round(
-                    (result.wins / matches) * 100
+                    (wins / matches) * 100
                   )
                 : 0,
+            maxWinStreak,
           };
         }
       )
@@ -999,29 +1029,44 @@ export default async function PlayerPage({
                 <Link
                   key={item.partnerId}
                   href={`/players/${item.partnerId}`}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/15 hover:bg-surface-2 active:scale-[0.99]"
+                  className="block rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/15 hover:bg-surface-2 active:scale-[0.99]"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">
-                      {item.partnerName}
-                    </p>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">
+                        {item.partnerName}
+                      </p>
 
-                    <p className="mt-1 text-xs text-muted">
-                      {item.matches}{" "}
-                      {item.matches > 1
-                        ? "matchs ensemble"
-                        : "match ensemble"}
-                    </p>
+                      <p className="mt-1 text-xs text-muted">
+                        {item.matches}{" "}
+                        {item.matches > 1
+                          ? "matchs ensemble"
+                          : "match ensemble"}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className="text-sm font-semibold">
+                        {item.wins} V · {item.losses} D
+                      </p>
+
+                      <p className="mt-1 text-xs text-muted">
+                        {item.winRate}% de victoire
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="ml-4 shrink-0 text-right">
-                    <p className="text-sm font-semibold">
-                      {item.wins} V · {item.losses} D
-                    </p>
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2.5">
+                    <span className="text-xs font-semibold text-muted">
+                      Meilleure série
+                    </span>
 
-                    <p className="mt-1 text-xs text-muted">
-                      {item.winRate}% de victoire
-                    </p>
+                    <span className="text-xs font-bold">
+                      {item.maxWinStreak}{" "}
+                      {item.maxWinStreak > 1
+                        ? "victoires"
+                        : "victoire"}
+                    </span>
                   </div>
                 </Link>
               ))}

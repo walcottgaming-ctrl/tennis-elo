@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import BottomNav from "@/app/components/BottomNav";
+import MatchReactions from "@/app/components/MatchReactions";
 
 type Profile = {
   id: string;
@@ -49,6 +50,12 @@ type RankingHistory = {
   malus_double_bulle: number;
   malus_contre_performance: number;
   amortisseur_tiebreak: number;
+};
+
+type MatchReaction = {
+  id: string;
+  user_id: string;
+  reaction: string;
 };
 
 function playerName(player: MatchPlayer | null) {
@@ -230,7 +237,16 @@ export default async function SuperTieBreakMatchPage({
     .eq("match_id", id)
     .eq("sport", "super_tiebreak");
 
+  const { data: matchReactions } = await supabase
+    .from("match_reactions")
+    .select("id, user_id, reaction")
+    .eq("match_id", id)
+    .order("created_at", { ascending: true });
+
   const history: RankingHistory[] = historyData ?? [];
+
+  const typedReactions =
+    (matchReactions ?? []) as MatchReaction[];
 
   const team1 = match.match_players.find(
     (player) => player.team === 1
@@ -345,6 +361,13 @@ export default async function SuperTieBreakMatchPage({
             </p>
           </div>
         </section>
+
+        {/* REACTIONS */}
+        <MatchReactions
+          matchId={match.id}
+          currentUserId={user.id}
+          initialReactions={typedReactions}
+        />
 
         {/* POINTS */}
         {winnerHistory && loserHistory && (

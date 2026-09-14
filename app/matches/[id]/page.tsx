@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/src/supabase/server";
+import MatchReactions from "@/app/components/MatchReactions";
 
 type Profile = {
   id: string;
@@ -58,6 +59,12 @@ type RankingHistory = {
   amortisseur_tiebreak: number;
   created_at: string;
   profiles: Profile | Profile[] | null;
+};
+
+type MatchReaction = {
+  id: string;
+  user_id: string;
+  reaction: string;
 };
 
 function getProfile(
@@ -412,6 +419,10 @@ export default async function MatchDetailPage({
 
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: match, error: matchError } = await supabase
     .from("matches")
     .select(`
@@ -537,6 +548,12 @@ export default async function MatchDetailPage({
     .eq("match_id", id)
     .order("created_at", { ascending: true });
 
+  const { data: matchReactions } = await supabase
+    .from("match_reactions")
+    .select("id, user_id, reaction")
+    .eq("match_id", id)
+    .order("created_at", { ascending: true });
+
   const team1 = typedMatch.match_players.filter(
     (player) => player.team === 1
   );
@@ -547,6 +564,8 @@ export default async function MatchDetailPage({
 
   const typedSets = (sets ?? []) as SetRow[];
   const typedHistory = (rankingHistory ?? []) as RankingHistory[];
+  const typedReactions =
+    (matchReactions ?? []) as MatchReaction[];
 
   const winnerTeam = getWinnerTeam(typedSets);
 
@@ -803,6 +822,13 @@ export default async function MatchDetailPage({
             )}
           </div>
         </section>
+
+        {/* Reactions */}
+        <MatchReactions
+          matchId={typedMatch.id}
+          currentUserId={user?.id ?? null}
+          initialReactions={typedReactions}
+        />
 
         {/* Ranking history */}
         {typedHistory.length > 0 && (
