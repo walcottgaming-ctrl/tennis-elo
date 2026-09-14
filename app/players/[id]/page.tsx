@@ -37,6 +37,24 @@ type MatchResult = {
   scores: string[];
 };
 
+type HeadToHeadStats = {
+  opponentId: string;
+  opponentName: string;
+  matches: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+};
+
+type DoublePartnerStats = {
+  partnerId: string;
+  partnerName: string;
+  matches: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+};
+
 type PageProps = {
   params: Promise<{
     id: string;
@@ -266,9 +284,7 @@ export default async function PlayerPage({
   const { data: matchesData } =
     await supabase
       .from("matches")
-      .select(
-        "id, sport, format, created_at"
-      )
+      .select("id, sport, format, created_at")
       .order("created_at", {
         ascending: false,
       });
@@ -478,6 +494,297 @@ export default async function PlayerPage({
         )
       : 0;
 
+  /*
+   * Head-to-head :
+   * - Tennis + Padel
+   * - Simple uniquement
+   * - minimum 2 confrontations
+   * - trié par nombre de confrontations
+   */
+  const headToHeadMap = new Map<
+    string,
+    {
+      wins: number;
+      losses: number;
+    }
+  >();
+
+  for (const item of history) {
+    if (item.match.format !== "singles") {
+      continue;
+    }
+
+    if (
+      item.match.sport !== "tennis" &&
+      item.match.sport !== "padel"
+    ) {
+      continue;
+    }
+
+    const playerLink =
+      matchPlayers.find(
+        (matchPlayer) =>
+          matchPlayer.match_id === item.match.id &&
+          matchPlayer.player_id === id
+      );
+
+    if (!playerLink) {
+      continue;
+    }
+
+    const opponent =
+      matchPlayers.find(
+        (matchPlayer) =>
+          matchPlayer.match_id === item.match.id &&
+          matchPlayer.player_id !== id &&
+          matchPlayer.team !== playerLink.team
+      );
+
+    if (!opponent) {
+      continue;
+    }
+
+    const current =
+      headToHeadMap.get(opponent.player_id) ?? {
+        wins: 0,
+        losses: 0,
+      };
+
+    if (item.result === "Victoire") {
+      current.wins++;
+    } else {
+      current.losses++;
+    }
+
+    headToHeadMap.set(
+      opponent.player_id,
+      current
+    );
+  }
+
+  const headToHeadStats: HeadToHeadStats[] =
+    Array.from(headToHeadMap.entries())
+      .map(
+        ([opponentId, result]) => {
+          const opponent =
+            players.find(
+              (playerData) =>
+                playerData.id === opponentId
+            );
+
+          if (!opponent) {
+            return null;
+          }
+
+          const matches =
+            result.wins + result.losses;
+
+          return {
+            opponentId,
+            opponentName:
+              getPlayerName(opponent),
+            matches,
+            wins: result.wins,
+            losses: result.losses,
+            winRate:
+              matches > 0
+                ? Math.round(
+                    (result.wins / matches) * 100
+                  )
+                : 0,
+          };
+        }
+      )
+      .filter(
+        (
+          item
+        ): item is HeadToHeadStats =>
+          item !== null
+      )
+      .filter(
+        (item) => item.matches >= 2
+      )
+      .sort((a, b) => {
+        if (b.matches !== a.matches) {
+          return b.matches - a.matches;
+        }
+
+        return b.winRate - a.winRate;
+      });
+
+  const topHeadToHeadStats =
+    headToHeadStats.slice(0, 5);
+
+  /*
+   * Partenaires de double :
+   * - Tennis + Padel
+   * - Double uniquement
+   * - minimum 2 matchs ensemble
+   * - partenaire = joueur présent dans la même équipe
+   * - trié par nombre de matchs ensemble
+   */
+  const doublePartnerMap = new Map<
+    string,
+    {
+      wins: number;
+      losses: number;
+    }
+  >();
+
+  for (const match of playerMatches) {
+    if (match.format !== "doubles") {
+      continue;
+    }
+
+    if (
+      match.sport !== "tennis" &&
+      match.sport !== "padel"
+    ) {
+      continue;
+    }
+
+    const playerLink =
+      matchPlayers.find(
+        (matchPlayer) =>
+          matchPlayer.match_id === match.id &&
+          matchPlayer.player_id === id
+      );
+
+    if (!playerLink) {
+      continue;
+    }
+
+    const partnerLink =
+      matchPlayers.find(
+        (matchPlayer) =>
+          matchPlayer.match_id === match.id &&
+          matchPlayer.team === playerLink.team &&
+          matchPlayer.player_id !== id
+      );
+
+    if (!partnerLink) {
+      continue;
+    }
+
+    const matchSets = sets.filter(
+      (set) =>
+        set.match_id === match.id
+    );
+
+    if (matchSets.length === 0) {
+      continue;
+    }
+
+    let ownTeamSetWins = 0;
+    let opponentTeamSetWins = 0;
+
+    for (const set of matchSets) {
+      const ownTeamScore =
+        playerLink.team === 1
+          ? set.team_1_score
+          : set.team_2_score;
+
+      const opponentTeamScore =
+        playerLink.team === 1
+          ? set.team_2_score
+          : set.team_1_score;
+
+      if (ownTeamScore > opponentTeamScore) {
+        ownTeamSetWins++;
+      }
+
+      if (opponentTeamScore > ownTeamScore) {
+        opponentTeamSetWins++;
+      }
+    }
+
+    if (
+      ownTeamSetWins === opponentTeamSetWins
+    ) {
+      continue;
+    }
+
+    const current =
+      doublePartnerMap.get(
+        partnerLink.player_id
+      ) ?? {
+        wins: 0,
+        losses: 0,
+      };
+
+    if (
+      ownTeamSetWins > opponentTeamSetWins
+    ) {
+      current.wins++;
+    } else {
+      current.losses++;
+    }
+
+    doublePartnerMap.set(
+      partnerLink.player_id,
+      current
+    );
+  }
+
+  const doublePartnerStats: DoublePartnerStats[] =
+    Array.from(doublePartnerMap.entries())
+      .map(
+        ([partnerId, result]) => {
+          const partner =
+            players.find(
+              (playerData) =>
+                playerData.id === partnerId
+            );
+
+          if (!partner) {
+            return null;
+          }
+
+          const matches =
+            result.wins + result.losses;
+
+          return {
+            partnerId,
+            partnerName:
+              getPlayerName(partner),
+            matches,
+            wins: result.wins,
+            losses: result.losses,
+            winRate:
+              matches > 0
+                ? Math.round(
+                    (result.wins / matches) * 100
+                  )
+                : 0,
+          };
+        }
+      )
+      .filter(
+        (
+          item
+        ): item is DoublePartnerStats =>
+          item !== null
+      )
+      .filter(
+        (item) => item.matches >= 2
+      )
+      .sort((a, b) => {
+        if (b.matches !== a.matches) {
+          return b.matches - a.matches;
+        }
+
+        if (b.winRate !== a.winRate) {
+          return b.winRate - a.winRate;
+        }
+
+        return a.partnerName.localeCompare(
+          b.partnerName
+        );
+      });
+
+  const topDoublePartnerStats =
+    doublePartnerStats.slice(0, 5);
+
   const recentHistory =
     history.slice(0, 10);
 
@@ -615,6 +922,112 @@ export default async function PlayerPage({
             </div>
           </div>
         </section>
+
+        {topHeadToHeadStats.length > 0 && (
+          <section className="mt-7">
+            <div className="flex items-center gap-2 text-muted">
+              <TrophyIcon />
+
+              <p className="text-xs font-bold uppercase tracking-[0.16em]">
+                Confrontations
+              </p>
+            </div>
+
+            <h2 className="mt-1 text-xl font-bold tracking-tight">
+              Head-to-head
+            </h2>
+
+            <p className="mt-1 text-sm leading-5 text-muted">
+              Tes adversaires les plus affrontés en simple.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {topHeadToHeadStats.map((item) => (
+                <Link
+                  key={item.opponentId}
+                  href={`/players/${item.opponentId}`}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/15 hover:bg-surface-2 active:scale-[0.99]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">
+                      {item.opponentName}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      {item.matches}{" "}
+                      {item.matches > 1
+                        ? "confrontations"
+                        : "confrontation"}
+                    </p>
+                  </div>
+
+                  <div className="ml-4 shrink-0 text-right">
+                    <p className="text-sm font-semibold">
+                      {item.wins} V · {item.losses} D
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      {item.winRate}% de victoire
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {topDoublePartnerStats.length > 0 && (
+          <section className="mt-7">
+            <div className="flex items-center gap-2 text-muted">
+              <TrophyIcon />
+
+              <p className="text-xs font-bold uppercase tracking-[0.16em]">
+                Double
+              </p>
+            </div>
+
+            <h2 className="mt-1 text-xl font-bold tracking-tight">
+              Partenaires
+            </h2>
+
+            <p className="mt-1 text-sm leading-5 text-muted">
+              Tes partenaires de double les plus utilisés.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {topDoublePartnerStats.map((item) => (
+                <Link
+                  key={item.partnerId}
+                  href={`/players/${item.partnerId}`}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/15 hover:bg-surface-2 active:scale-[0.99]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">
+                      {item.partnerName}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      {item.matches}{" "}
+                      {item.matches > 1
+                        ? "matchs ensemble"
+                        : "match ensemble"}
+                    </p>
+                  </div>
+
+                  <div className="ml-4 shrink-0 text-right">
+                    <p className="text-sm font-semibold">
+                      {item.wins} V · {item.losses} D
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      {item.winRate}% de victoire
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-6 rounded-3xl border border-border bg-surface p-5">
           <div className="flex items-center gap-3">
