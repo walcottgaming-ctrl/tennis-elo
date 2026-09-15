@@ -22,7 +22,6 @@ type DashboardPageProps = {
 };
 
 export default function DashboardPage({
-  displayName,
   tennisPoints,
   padelPoints,
   superTiebreakPoints,
@@ -49,21 +48,13 @@ export default function DashboardPage({
     <main className="min-h-screen bg-background px-5 py-7 text-foreground">
       <div className="mx-auto max-w-lg pb-8">
         {/* HEADER */}
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-muted">
-              Bonjour
-            </p>
-
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">
-              {displayName}
-            </h1>
-          </div>
+        <header className="flex items-center justify-between gap-3">
+          <SportModeSwitcher />
 
           <Link
             href="/profile"
             aria-label="Mon profil"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-muted transition-all duration-200 hover:text-white active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-muted transition-all duration-200 hover:text-white active:scale-95"
           >
             <svg
               viewBox="0 0 24 24"
@@ -80,8 +71,6 @@ export default function DashboardPage({
             </svg>
           </Link>
         </header>
-
-        <SportModeSwitcher />
 
         {/* POINTS */}
         <DashboardPoints

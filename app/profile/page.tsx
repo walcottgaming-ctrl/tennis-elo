@@ -2,9 +2,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
-import Image from "next/image";
 
 function UserIcon() {
   return (
@@ -86,21 +86,135 @@ function LogoutIcon() {
   );
 }
 
+function ChevronIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      className="h-4 w-4"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
 type ProfileData = {
   first_name: string | null;
   last_name: string | null;
   username: string | null;
   avatar_url: string | null;
+
   dominant_hand: string | null;
   playing_style: string | null;
   backhand_style: string | null;
   preferred_surface: string | null;
+
   height_cm: number | null;
   weight_kg: number | null;
+
+  forehand_style: string | null;
+  backhand_preference: string | null;
+  down_the_line_style: string | null;
+  cross_court_style: string | null;
+  volley_level: string | null;
+  serve_style: string | null;
+  court_position: string | null;
+  player_strength: string | null;
+  player_weakness: string | null;
 };
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const AVATAR_SIGNED_URL_EXPIRY = 60 * 60;
+
+const selectClassName =
+  "min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent";
+
+const labelClassName =
+  "mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted";
+
+const displayValues: Record<string, string> = {
+  right: "Droitier",
+  left: "Gaucher",
+  ambidextrous: "Ambidextre",
+
+  attacker: "Attaquant",
+  defender: "Défenseur",
+  all_rounder: "Polyvalent",
+  serve_volley: "Serveur-volée",
+
+  one_hand: "Une main",
+  two_hands: "Deux mains",
+
+  clay: "Terre battue",
+  hard: "Dur",
+  indoor: "Indoor",
+  grass: "Gazon",
+
+  baseline: "Fond de court",
+  all_court: "Tout le court",
+  net: "Filet",
+
+  serve: "Service",
+  forehand: "Coup droit",
+  backhand: "Revers",
+  return: "Retour",
+  volley: "Volée",
+  movement: "Déplacement",
+  mental: "Mental",
+
+  flat: "À plat",
+  topspin: "Lifté",
+  heavy_topspin: "Très lifté",
+  varied: "Varié",
+
+  occasional: "Occasionnel",
+  regular: "Régulier",
+  weapon: "Arme principale",
+
+  defensive: "Défensif",
+  offensive: "Offensif",
+
+  weak: "Faible",
+  average: "Correct",
+  good: "Bon",
+
+  placement: "Placement",
+  power: "Puissance",
+  variation: "Variation",
+  kick: "Kick / lift",
+};
+
+function formatValue(value: string) {
+  return displayValues[value] ?? value;
+}
+
+function CharacteristicCard({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface-2 p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+        {label}
+      </p>
+
+      <p
+        className={`mt-1.5 text-sm font-bold ${
+          value && accent ? "text-accent" : "text-foreground"
+        }`}
+      >
+        {value || "Non renseigné"}
+      </p>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -121,8 +235,17 @@ export default function ProfilePage() {
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
 
-  const [currentUserId, setCurrentUserId] = useState("");
+  const [forehandStyle, setForehandStyle] = useState("");
+  const [backhandPreference, setBackhandPreference] = useState("");
+  const [downTheLineStyle, setDownTheLineStyle] = useState("");
+  const [crossCourtStyle, setCrossCourtStyle] = useState("");
+  const [volleyLevel, setVolleyLevel] = useState("");
+  const [serveStyle, setServeStyle] = useState("");
+  const [courtPosition, setCourtPosition] = useState("");
+  const [playerStrength, setPlayerStrength] = useState("");
+  const [playerWeakness, setPlayerWeakness] = useState("");
 
+  const [currentUserId, setCurrentUserId] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,7 +269,27 @@ export default function ProfilePage() {
       const { data: profile } = await supabase
         .from("profiles")
         .select(
-          "first_name, last_name, username, avatar_url, dominant_hand, playing_style, backhand_style, preferred_surface, height_cm, weight_kg"
+          `
+            first_name,
+            last_name,
+            username,
+            avatar_url,
+            dominant_hand,
+            playing_style,
+            backhand_style,
+            preferred_surface,
+            height_cm,
+            weight_kg,
+            forehand_style,
+            backhand_preference,
+            down_the_line_style,
+            cross_court_style,
+            volley_level,
+            serve_style,
+            court_position,
+            player_strength,
+            player_weakness
+          `
         )
         .eq("id", user.id)
         .single();
@@ -159,6 +302,7 @@ export default function ProfilePage() {
         setUsername(typedProfile.username ?? "");
 
         const storedAvatarPath = typedProfile.avatar_url ?? null;
+
         setAvatarPath(storedAvatarPath);
 
         if (storedAvatarPath) {
@@ -170,14 +314,14 @@ export default function ProfilePage() {
             );
 
           setAvatarUrl(signedUrlData?.signedUrl ?? null);
-        } else {
-          setAvatarUrl(null);
         }
 
         setDominantHand(typedProfile.dominant_hand ?? "");
         setPlayingStyle(typedProfile.playing_style ?? "");
         setBackhandStyle(typedProfile.backhand_style ?? "");
-        setPreferredSurface(typedProfile.preferred_surface ?? "");
+        setPreferredSurface(
+          typedProfile.preferred_surface ?? ""
+        );
 
         setHeightCm(
           typedProfile.height_cm !== null
@@ -189,6 +333,42 @@ export default function ProfilePage() {
           typedProfile.weight_kg !== null
             ? String(typedProfile.weight_kg)
             : ""
+        );
+
+        setForehandStyle(
+          typedProfile.forehand_style ?? ""
+        );
+
+        setBackhandPreference(
+          typedProfile.backhand_preference ?? ""
+        );
+
+        setDownTheLineStyle(
+          typedProfile.down_the_line_style ?? ""
+        );
+
+        setCrossCourtStyle(
+          typedProfile.cross_court_style ?? ""
+        );
+
+        setVolleyLevel(
+          typedProfile.volley_level ?? ""
+        );
+
+        setServeStyle(
+          typedProfile.serve_style ?? ""
+        );
+
+        setCourtPosition(
+          typedProfile.court_position ?? ""
+        );
+
+        setPlayerStrength(
+          typedProfile.player_strength ?? ""
+        );
+
+        setPlayerWeakness(
+          typedProfile.player_weakness ?? ""
         );
       }
 
@@ -228,7 +408,8 @@ export default function ProfilePage() {
     const extension =
       file.name.split(".").pop()?.toLowerCase() || "jpg";
 
-    const filePath = `${currentUserId}/avatar-${Date.now()}.${extension}`;
+    const filePath =
+      `${currentUserId}/avatar-${Date.now()}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
@@ -255,7 +436,9 @@ export default function ProfilePage() {
       .eq("id", currentUserId);
 
     if (updateError) {
-      await supabase.storage.from("avatars").remove([filePath]);
+      await supabase.storage
+        .from("avatars")
+        .remove([filePath]);
 
       setMessage(
         `Impossible de sauvegarder la photo : ${updateError.message}`
@@ -267,11 +450,14 @@ export default function ProfilePage() {
 
     const { data: signedUrlData } = await supabase.storage
       .from("avatars")
-      .createSignedUrl(filePath, AVATAR_SIGNED_URL_EXPIRY);
+      .createSignedUrl(
+        filePath,
+        AVATAR_SIGNED_URL_EXPIRY
+      );
 
     if (!signedUrlData?.signedUrl) {
       setMessage(
-        "La photo a été enregistrée, mais son affichage est impossible pour le moment."
+        "La photo est enregistrée, mais son affichage est impossible pour le moment."
       );
       setUploadingAvatar(false);
       event.target.value = "";
@@ -279,7 +465,9 @@ export default function ProfilePage() {
     }
 
     if (avatarPath && avatarPath !== filePath) {
-      await supabase.storage.from("avatars").remove([avatarPath]);
+      await supabase.storage
+        .from("avatars")
+        .remove([avatarPath]);
     }
 
     setAvatarPath(filePath);
@@ -350,7 +538,9 @@ export default function ProfilePage() {
       (height !== null && Number.isNaN(height)) ||
       (weight !== null && Number.isNaN(weight))
     ) {
-      setMessage("La taille et le poids doivent être des nombres.");
+      setMessage(
+        "La taille et le poids doivent être des nombres."
+      );
       setSaving(false);
       return;
     }
@@ -382,12 +572,24 @@ export default function ProfilePage() {
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
         username: username.trim() || null,
+
         dominant_hand: dominantHand || null,
         playing_style: playingStyle || null,
         backhand_style: backhandStyle || null,
         preferred_surface: preferredSurface || null,
+
         height_cm: height,
         weight_kg: weight,
+
+        forehand_style: forehandStyle || null,
+        backhand_preference: backhandPreference || null,
+        down_the_line_style: downTheLineStyle || null,
+        cross_court_style: crossCourtStyle || null,
+        volley_level: volleyLevel || null,
+        serve_style: serveStyle || null,
+        court_position: courtPosition || null,
+        player_strength: playerStrength || null,
+        player_weakness: playerWeakness || null,
       })
       .eq("id", user.id);
 
@@ -442,7 +644,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-      <div className="mx-auto max-w-lg pb-8">
+      <div className="mx-auto max-w-lg">
         <header className="mb-7">
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted">
             Mon compte
@@ -453,379 +655,846 @@ export default function ProfilePage() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Gère tes informations personnelles et ton profil joueur.
+            Ton identité et ton profil de joueur.
           </p>
         </header>
 
-        <section className="rounded-3xl border border-border bg-surface p-5">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <UserIcon />
-            </div>
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Identité
-              </p>
-
-              <h2 className="mt-1 text-lg font-bold">
-                Photo de profil
-              </h2>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted">
-              {avatarUrl ? (
-                <Image
-                  src={avatarUrl}
-                  alt="Photo de profil"
-                  width={96}
-                  height={96}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
+        <form
+          onSubmit={handleSave}
+          className="space-y-5"
+        >
+          {/* PHOTO */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
                 <UserIcon />
-              )}
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                  Identité
+                </p>
+
+                <h2 className="mt-1 text-lg font-bold">
+                  Photo de profil
+                </h2>
+              </div>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <label
-                htmlFor="avatar"
-                className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-sm font-bold text-background transition-opacity hover:opacity-90"
-              >
-                {uploadingAvatar
-                  ? "Traitement..."
-                  : avatarUrl
-                    ? "Modifier la photo"
-                    : "Ajouter une photo"}
-              </label>
+            <div className="flex items-center gap-4">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted">
+                {avatarUrl ? (
+                  <Image
+                    src={avatarUrl}
+                    alt="Photo de profil"
+                    width={96}
+                    height={96}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserIcon />
+                )}
+              </div>
 
-              <input
-                id="avatar"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleAvatarUpload}
-                disabled={uploadingAvatar}
-                className="hidden"
-              />
-
-              {avatarUrl && (
-                <button
-                  type="button"
-                  onClick={handleAvatarDelete}
-                  disabled={uploadingAvatar}
-                  className="mt-2 min-h-10 w-full rounded-2xl border border-danger/20 bg-danger/5 px-4 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+              <div className="min-w-0 flex-1">
+                <label
+                  htmlFor="avatar"
+                  className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-sm font-bold text-background transition-opacity hover:opacity-90"
                 >
-                  Supprimer la photo
-                </button>
-              )}
+                  {uploadingAvatar
+                    ? "Traitement..."
+                    : avatarUrl
+                      ? "Modifier la photo"
+                      : "Ajouter une photo"}
+                </label>
 
-              <p className="mt-2 text-xs leading-5 text-muted">
-                JPG, PNG ou WebP · 5 Mo maximum
-              </p>
+                <input
+                  id="avatar"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarUpload}
+                  disabled={uploadingAvatar}
+                  className="hidden"
+                />
+
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleAvatarDelete}
+                    disabled={uploadingAvatar}
+                    className="mt-2 min-h-10 w-full rounded-2xl border border-danger/20 bg-danger/5 px-4 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Supprimer la photo
+                  </button>
+                )}
+
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  JPG, PNG ou WebP · 5 Mo maximum
+                </p>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="mt-5 rounded-3xl border border-border bg-surface p-5">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <UserIcon />
-            </div>
-
-            <div>
+          {/* INFORMATIONS */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div className="mb-5">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Informations
+                01 · Informations
               </p>
 
-              <h2 className="mt-1 text-lg font-bold">
+              <h2 className="mt-1 text-xl font-bold tracking-tight">
                 Profil personnel
               </h2>
             </div>
-          </div>
 
-          <form onSubmit={handleSave} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
-              >
-                Adresse e-mail
-              </label>
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="email"
+                  className={labelClassName}
+                >
+                  Adresse e-mail
+                </label>
 
-              <div className="relative">
-                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
-                  <MailIcon />
+                <div className="relative">
+                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
+                    <MailIcon />
+                  </div>
+
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    disabled
+                    className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 pl-12 pr-4 text-sm font-medium text-muted outline-none"
+                  />
                 </div>
-
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 pl-12 pr-4 text-sm font-medium text-muted outline-none"
-                />
-              </div>
-
-              <p className="mt-2 text-xs text-muted">
-                Ton adresse e-mail ne peut pas être modifiée ici.
-              </p>
-            </div>
-
-            <div>
-              <label
-                htmlFor="firstName"
-                className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
-              >
-                Prénom
-              </label>
-
-              <input
-                id="firstName"
-                type="text"
-                value={firstName}
-                onChange={(event) => setFirstName(event.target.value)}
-                placeholder="Ton prénom"
-                className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="lastName"
-                className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
-              >
-                Nom
-              </label>
-
-              <input
-                id="lastName"
-                type="text"
-                value={lastName}
-                onChange={(event) => setLastName(event.target.value)}
-                placeholder="Ton nom"
-                className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="username"
-                className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
-              >
-                Nom d&apos;utilisateur
-              </label>
-
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="Ton pseudo"
-                className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-              />
-            </div>
-
-            <div className="border-t border-border pt-5">
-              <div className="mb-4">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  Profil joueur
-                </p>
-
-                <p className="mt-1 text-sm leading-5 text-muted">
-                  Ces informations permettent de mieux présenter ton
-                  profil sportif.
-                </p>
               </div>
 
               <div>
                 <label
-                  htmlFor="dominantHand"
-                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                  htmlFor="firstName"
+                  className={labelClassName}
                 >
-                  Main dominante
+                  Prénom
                 </label>
 
-                <select
-                  id="dominantHand"
-                  value={dominantHand}
+                <input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
                   onChange={(event) =>
-                    setDominantHand(event.target.value)
+                    setFirstName(event.target.value)
                   }
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
-                >
-                  <option value="">Non renseignée</option>
-                  <option value="right">Droitier</option>
-                  <option value="left">Gaucher</option>
-                  <option value="ambidextrous">Ambidextre</option>
-                </select>
+                  placeholder="Ton prénom"
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                />
               </div>
 
-              <div className="mt-4">
+              <div>
                 <label
-                  htmlFor="playingStyle"
-                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                  htmlFor="lastName"
+                  className={labelClassName}
                 >
-                  Style de jeu
+                  Nom
                 </label>
 
-                <select
-                  id="playingStyle"
-                  value={playingStyle}
+                <input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
                   onChange={(event) =>
-                    setPlayingStyle(event.target.value)
+                    setLastName(event.target.value)
                   }
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
-                >
-                  <option value="">Non renseigné</option>
-                  <option value="attacker">Attaquant</option>
-                  <option value="defender">Défenseur</option>
-                  <option value="all_rounder">Polyvalent</option>
-                  <option value="serve_volley">Serveur-volée</option>
-                </select>
+                  placeholder="Ton nom"
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                />
               </div>
 
-              <div className="mt-4">
+              <div>
                 <label
-                  htmlFor="backhandStyle"
-                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                  htmlFor="username"
+                  className={labelClassName}
                 >
-                  Revers
+                  Nom d&apos;utilisateur
                 </label>
 
-                <select
-                  id="backhandStyle"
-                  value={backhandStyle}
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
                   onChange={(event) =>
-                    setBackhandStyle(event.target.value)
+                    setUsername(event.target.value)
                   }
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
-                >
-                  <option value="">Non renseigné</option>
-                  <option value="one_hand">Une main</option>
-                  <option value="two_hands">Deux mains</option>
-                </select>
+                  placeholder="Ton pseudo"
+                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* PROFIL SPORTIF */}
+          <section className="rounded-3xl border border-border bg-surface p-5">
+            <div className="mb-6">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                02 · Joueur
+              </p>
+
+              <h2 className="mt-1 text-xl font-bold tracking-tight">
+                Profil sportif
+              </h2>
+
+              <p className="mt-2 text-sm leading-5 text-muted">
+                Les caractéristiques qui définissent ton jeu.
+              </p>
+            </div>
+
+            {/* FICHE JOUEUR */}
+            <div className="mb-7">
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                    ADN du joueur
+                  </p>
+
+                  <p className="mt-1 text-sm text-muted">
+                    Ton identité sur le court.
+                  </p>
+                </div>
               </div>
 
-              <div className="mt-4">
-                <label
-                  htmlFor="preferredSurface"
-                  className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
-                >
-                  Surface préférée
-                </label>
+              <div className="grid grid-cols-2 gap-3">
+                <CharacteristicCard
+                  label="Main dominante"
+                  value={formatValue(dominantHand)}
+                  accent
+                />
 
-                <select
-                  id="preferredSurface"
-                  value={preferredSurface}
-                  onChange={(event) =>
-                    setPreferredSurface(event.target.value)
-                  }
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
-                >
-                  <option value="">Non renseignée</option>
-                  <option value="hard">Dur</option>
-                  <option value="clay">Terre battue</option>
-                  <option value="indoor">Indoor</option>
-                  <option value="grass">Gazon</option>
-                </select>
+                <CharacteristicCard
+                  label="Revers"
+                  value={formatValue(backhandStyle)}
+                  accent
+                />
+
+                <CharacteristicCard
+                  label="Style"
+                  value={formatValue(playingStyle)}
+                  accent
+                />
+
+                <CharacteristicCard
+                  label="Zone préférée"
+                  value={formatValue(courtPosition)}
+                  accent
+                />
+
+                <CharacteristicCard
+                  label="Surface"
+                  value={formatValue(preferredSurface)}
+                />
+
+                <CharacteristicCard
+                  label="Point fort"
+                  value={formatValue(playerStrength)}
+                  accent
+                />
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
+              {(playerWeakness || heightCm || weightKg) && (
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <CharacteristicCard
+                    label="Point à améliorer"
+                    value={formatValue(playerWeakness)}
+                  />
+
+                  <CharacteristicCard
+                    label="Morphologie"
+                    value={
+                      heightCm && weightKg
+                        ? `${heightCm} cm · ${weightKg} kg`
+                        : heightCm
+                          ? `${heightCm} cm`
+                          : weightKg
+                            ? `${weightKg} kg`
+                            : ""
+                    }
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* MORPHOLOGIE */}
+            <div className="border-t border-border pt-6">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                Morphologie
+              </p>
+
+              <div className="space-y-4">
                 <div>
                   <label
-                    htmlFor="heightCm"
-                    className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                    htmlFor="dominantHand"
+                    className={labelClassName}
                   >
-                    Taille
+                    Main dominante
                   </label>
 
-                  <div className="relative">
-                    <input
-                      id="heightCm"
-                      type="number"
-                      min="120"
-                      max="230"
-                      value={heightCm}
-                      onChange={(event) =>
-                        setHeightCm(event.target.value)
-                      }
-                      placeholder="180"
-                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-                    />
-
-                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
-                      cm
-                    </span>
-                  </div>
+                  <select
+                    id="dominantHand"
+                    value={dominantHand}
+                    onChange={(event) =>
+                      setDominantHand(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseignée
+                    </option>
+                    <option value="right">
+                      Droitier
+                    </option>
+                    <option value="left">
+                      Gaucher
+                    </option>
+                    <option value="ambidextrous">
+                      Ambidextre
+                    </option>
+                  </select>
                 </div>
 
                 <div>
                   <label
-                    htmlFor="weightKg"
-                    className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted"
+                    htmlFor="backhandStyle"
+                    className={labelClassName}
                   >
-                    Poids
+                    Revers
                   </label>
 
-                  <div className="relative">
-                    <input
-                      id="weightKg"
-                      type="number"
-                      min="30"
-                      max="200"
-                      value={weightKg}
-                      onChange={(event) =>
-                        setWeightKg(event.target.value)
-                      }
-                      placeholder="75"
-                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-                    />
+                  <select
+                    id="backhandStyle"
+                    value={backhandStyle}
+                    onChange={(event) =>
+                      setBackhandStyle(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="one_hand">
+                      Une main
+                    </option>
+                    <option value="two_hands">
+                      Deux mains
+                    </option>
+                  </select>
+                </div>
 
-                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
-                      kg
-                    </span>
+                <div>
+                  <label
+                    htmlFor="preferredSurface"
+                    className={labelClassName}
+                  >
+                    Surface préférée
+                  </label>
+
+                  <select
+                    id="preferredSurface"
+                    value={preferredSurface}
+                    onChange={(event) =>
+                      setPreferredSurface(
+                        event.target.value
+                      )
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseignée
+                    </option>
+                    <option value="clay">
+                      Terre battue
+                    </option>
+                    <option value="hard">
+                      Dur
+                    </option>
+                    <option value="indoor">
+                      Indoor
+                    </option>
+                    <option value="grass">
+                      Gazon
+                    </option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      htmlFor="heightCm"
+                      className={labelClassName}
+                    >
+                      Taille
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        id="heightCm"
+                        type="number"
+                        min="120"
+                        max="230"
+                        value={heightCm}
+                        onChange={(event) =>
+                          setHeightCm(event.target.value)
+                        }
+                        placeholder="180"
+                        className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                      />
+
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
+                        cm
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="weightKg"
+                      className={labelClassName}
+                    >
+                      Poids
+                    </label>
+
+                    <div className="relative">
+                      <input
+                        id="weightKg"
+                        type="number"
+                        min="30"
+                        max="200"
+                        value={weightKg}
+                        onChange={(event) =>
+                          setWeightKg(event.target.value)
+                        }
+                        placeholder="75"
+                        className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                      />
+
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
+                        kg
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={saving}
-              className="min-h-16 w-full rounded-2xl bg-accent px-5 text-left text-background transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <span className="flex items-center justify-between gap-4">
-                <span>
-                  <span className="block text-sm font-bold">
-                    {saving
-                      ? "Enregistrement..."
-                      : "Enregistrer mon profil"}
-                  </span>
+            {/* ADN */}
+            <div className="mt-7 border-t border-border pt-6">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                ADN du joueur
+              </p>
 
-                  <span className="mt-1 block text-xs font-medium opacity-70">
-                    Mettre à jour mes informations
-                  </span>
-                </span>
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="playingStyle"
+                    className={labelClassName}
+                  >
+                    Style général
+                  </label>
 
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/10 text-lg">
-                  →
-                </span>
-              </span>
-            </button>
-          </form>
+                  <select
+                    id="playingStyle"
+                    value={playingStyle}
+                    onChange={(event) =>
+                      setPlayingStyle(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="attacker">
+                      Attaquant
+                    </option>
+                    <option value="defender">
+                      Défenseur
+                    </option>
+                    <option value="all_rounder">
+                      Polyvalent
+                    </option>
+                    <option value="serve_volley">
+                      Serveur-volée
+                    </option>
+                  </select>
+                </div>
 
+                <div>
+                  <label
+                    htmlFor="courtPosition"
+                    className={labelClassName}
+                  >
+                    Zone préférée
+                  </label>
+
+                  <select
+                    id="courtPosition"
+                    value={courtPosition}
+                    onChange={(event) =>
+                      setCourtPosition(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseignée
+                    </option>
+                    <option value="baseline">
+                      Fond de court
+                    </option>
+                    <option value="all_court">
+                      Tout le court
+                    </option>
+                    <option value="net">
+                      Filet
+                    </option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      htmlFor="playerStrength"
+                      className={labelClassName}
+                    >
+                      Point fort
+                    </label>
+
+                    <select
+                      id="playerStrength"
+                      value={playerStrength}
+                      onChange={(event) =>
+                        setPlayerStrength(event.target.value)
+                      }
+                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-3 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                    >
+                      <option value="">
+                        Non renseigné
+                      </option>
+                      <option value="serve">
+                        Service
+                      </option>
+                      <option value="forehand">
+                        Coup droit
+                      </option>
+                      <option value="backhand">
+                        Revers
+                      </option>
+                      <option value="return">
+                        Retour
+                      </option>
+                      <option value="volley">
+                        Volée
+                      </option>
+                      <option value="movement">
+                        Déplacement
+                      </option>
+                      <option value="mental">
+                        Mental
+                      </option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="playerWeakness"
+                      className={labelClassName}
+                    >
+                      Point faible
+                    </label>
+
+                    <select
+                      id="playerWeakness"
+                      value={playerWeakness}
+                      onChange={(event) =>
+                        setPlayerWeakness(event.target.value)
+                      }
+                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-3 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                    >
+                      <option value="">
+                        Non renseigné
+                      </option>
+                      <option value="serve">
+                        Service
+                      </option>
+                      <option value="forehand">
+                        Coup droit
+                      </option>
+                      <option value="backhand">
+                        Revers
+                      </option>
+                      <option value="return">
+                        Retour
+                      </option>
+                      <option value="volley">
+                        Volée
+                      </option>
+                      <option value="movement">
+                        Déplacement
+                      </option>
+                      <option value="mental">
+                        Mental
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* TECHNIQUE */}
+            <div className="mt-7 border-t border-border pt-6">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                Technique
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="forehandStyle"
+                    className={labelClassName}
+                  >
+                    Coup droit
+                  </label>
+
+                  <select
+                    id="forehandStyle"
+                    value={forehandStyle}
+                    onChange={(event) =>
+                      setForehandStyle(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="flat">
+                      À plat
+                    </option>
+                    <option value="topspin">
+                      Lifté
+                    </option>
+                    <option value="heavy_topspin">
+                      Très lifté
+                    </option>
+                    <option value="varied">
+                      Varié
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="backhandPreference"
+                    className={labelClassName}
+                  >
+                    Style de revers
+                  </label>
+
+                  <select
+                    id="backhandPreference"
+                    value={backhandPreference}
+                    onChange={(event) =>
+                      setBackhandPreference(
+                        event.target.value
+                      )
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="flat">
+                      À plat
+                    </option>
+                    <option value="topspin">
+                      Lifté
+                    </option>
+                    <option value="varied">
+                      Varié
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="downTheLineStyle"
+                    className={labelClassName}
+                  >
+                    Jeu long de ligne
+                  </label>
+
+                  <select
+                    id="downTheLineStyle"
+                    value={downTheLineStyle}
+                    onChange={(event) =>
+                      setDownTheLineStyle(
+                        event.target.value
+                      )
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="occasional">
+                      Occasionnel
+                    </option>
+                    <option value="regular">
+                      Régulier
+                    </option>
+                    <option value="weapon">
+                      Arme principale
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="crossCourtStyle"
+                    className={labelClassName}
+                  >
+                    Jeu croisé
+                  </label>
+
+                  <select
+                    id="crossCourtStyle"
+                    value={crossCourtStyle}
+                    onChange={(event) =>
+                      setCrossCourtStyle(
+                        event.target.value
+                      )
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="defensive">
+                      Défensif
+                    </option>
+                    <option value="regular">
+                      Régulier
+                    </option>
+                    <option value="offensive">
+                      Offensif
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="volleyLevel"
+                    className={labelClassName}
+                  >
+                    Niveau à la volée
+                  </label>
+
+                  <select
+                    id="volleyLevel"
+                    value={volleyLevel}
+                    onChange={(event) =>
+                      setVolleyLevel(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="weak">
+                      Faible
+                    </option>
+                    <option value="average">
+                      Correct
+                    </option>
+                    <option value="good">
+                      Bon
+                    </option>
+                    <option value="weapon">
+                      Arme principale
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="serveStyle"
+                    className={labelClassName}
+                  >
+                    Style de service
+                  </label>
+
+                  <select
+                    id="serveStyle"
+                    value={serveStyle}
+                    onChange={(event) =>
+                      setServeStyle(event.target.value)
+                    }
+                    className={selectClassName}
+                  >
+                    <option value="">
+                      Non renseigné
+                    </option>
+                    <option value="placement">
+                      Placement
+                    </option>
+                    <option value="power">
+                      Puissance
+                    </option>
+                    <option value="variation">
+                      Variation
+                    </option>
+                    <option value="kick">
+                      Kick / lift
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* MESSAGE */}
           {message && (
-            <div className="mt-4 rounded-2xl border border-accent/20 bg-accent/5 p-4">
+            <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4">
               <p className="text-sm font-medium text-accent">
                 {message}
               </p>
             </div>
           )}
-        </section>
 
-        <section className="mt-5">
+          {/* SAVE */}
+          <button
+            type="submit"
+            disabled={saving}
+            className="min-h-16 w-full rounded-2xl bg-accent px-5 text-left text-background transition-opacity hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="flex items-center justify-between gap-4">
+              <span>
+                <span className="block text-sm font-bold">
+                  {saving
+                    ? "Enregistrement..."
+                    : "Enregistrer mon profil"}
+                </span>
+
+                <span className="mt-1 block text-xs font-medium opacity-70">
+                  Informations personnelles et profil joueur
+                </span>
+              </span>
+
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/10 text-lg">
+                →
+              </span>
+            </span>
+          </button>
+        </form>
+
+        {/* MON ESPACE */}
+        <section className="mt-7">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">
             Mon espace
           </p>
@@ -836,7 +1505,7 @@ export default function ProfilePage() {
               className="group flex min-h-16 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
             >
               <span className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted transition-colors group-hover:bg-accent/10 group-hover:text-accent">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted group-hover:bg-accent/10 group-hover:text-accent">
                   <FriendsIcon />
                 </span>
 
@@ -851,7 +1520,9 @@ export default function ProfilePage() {
                 </span>
               </span>
 
-              <span className="text-lg text-muted">→</span>
+              <span className="text-muted transition-transform group-hover:translate-x-0.5">
+                <ChevronIcon />
+              </span>
             </Link>
 
             <Link
@@ -859,7 +1530,7 @@ export default function ProfilePage() {
               className="group flex min-h-16 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
             >
               <span className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted transition-colors group-hover:bg-accent/10 group-hover:text-accent">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted group-hover:bg-accent/10 group-hover:text-accent">
                   <StatsIcon />
                 </span>
 
@@ -874,12 +1545,15 @@ export default function ProfilePage() {
                 </span>
               </span>
 
-              <span className="text-lg text-muted">→</span>
+              <span className="text-muted transition-transform group-hover:translate-x-0.5">
+                <ChevronIcon />
+              </span>
             </Link>
           </div>
         </section>
 
-        <section className="mt-7">
+        {/* LOGOUT */}
+        <section className="mt-5">
           <button
             type="button"
             onClick={handleLogout}
