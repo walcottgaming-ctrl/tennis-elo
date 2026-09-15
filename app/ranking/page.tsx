@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/src/supabase/client";
+import SportIcon from "@/app/components/SportIcon";
+import { useSportMode } from "@/app/context/SportModeContext";
+
+type Sport = "tennis" | "padel" | "super_tiebreak";
 
 type Player = {
   id: string;
@@ -11,11 +15,12 @@ type Player = {
   username: string | null;
   points_tennis: number | null;
   points_padel: number | null;
+  points_super_tiebreak: number | null;
 };
 
 type Match = {
   id: string;
-  sport: "tennis" | "padel";
+  sport: Sport;
   format: "singles" | "doubles";
   created_at: string;
 };
@@ -49,8 +54,6 @@ type MatchHistory = {
   scores: string[];
 };
 
-type Sport = "tennis" | "padel";
-
 type Division = {
   name: string;
   icon: string;
@@ -74,38 +77,6 @@ function TrophyIcon() {
       <path d="M12 12v4" />
       <path d="M8 20h8" />
       <path d="M9 16h6" />
-    </svg>
-  );
-}
-
-function TennisIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-5 w-5"
-      stroke="currentColor"
-      strokeWidth="1.7"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M5.5 5.5c3.2 2 5 4.8 5 8.2s-1.8 6.2-5 8.2" />
-      <path d="M18.5 5.5c-3.2 2-5 4.8-5 8.2s1.8 6.2 5 8.2" />
-    </svg>
-  );
-}
-
-function PadelIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-5 w-5"
-      stroke="currentColor"
-      strokeWidth="1.7"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M8 4.5c1.5 2 1.7 4.1.7 6.1-1 2-2.8 3.4-5.2 4" />
-      <path d="M16 19.5c-1.5-2-1.7-4.1-.7-6.1 1-2 2.8-3.4 5.2-4" />
     </svg>
   );
 }
@@ -184,9 +155,9 @@ function ArrowUpIcon() {
   );
 }
 
-
-
 export default function RankingPage() {
+  const { mode } = useSportMode();
+
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>([]);
@@ -194,8 +165,6 @@ export default function RankingPage() {
   const [championHistory, setChampionHistory] = useState<
     ChampionHistory[]
   >([]);
-
-  const [sport, setSport] = useState<Sport>("tennis");
 
   const [openPlayer, setOpenPlayer] = useState<string | null>(null);
 
@@ -222,7 +191,7 @@ export default function RankingPage() {
       } = await supabase
         .from("profiles")
         .select(
-          "id, first_name, last_name, username, points_tennis, points_padel"
+          "id, first_name, last_name, username, points_tennis, points_padel, points_super_tiebreak"
         );
 
       if (playersError) {
@@ -329,11 +298,27 @@ export default function RankingPage() {
   }
 
   function getPlayerPoints(player: Player) {
-    if (sport === "tennis") {
+    if (mode === "tennis") {
       return player.points_tennis ?? 1000;
     }
 
-    return player.points_padel ?? 1000;
+    if (mode === "padel") {
+      return player.points_padel ?? 1000;
+    }
+
+    return player.points_super_tiebreak ?? 1000;
+  }
+
+  function getSportLabel() {
+    if (mode === "tennis") {
+      return "Tennis";
+    }
+
+    if (mode === "padel") {
+      return "Padel";
+    }
+
+    return "Super Tie-Break";
   }
 
   function getDivision(points: number): Division {
@@ -386,7 +371,7 @@ export default function RankingPage() {
     };
   }
 
-  function getChampion(sportValue: Sport) {
+  function getChampion(sportValue: "tennis" | "padel") {
     return championHistory.find(
       (item) =>
         item.sport === sportValue &&
@@ -395,15 +380,23 @@ export default function RankingPage() {
   }
 
   function isChampion(playerId: string) {
-    const champion = getChampion(sport);
+    if (mode === "super_tiebreak") {
+      return false;
+    }
+
+    const champion = getChampion(mode);
 
     return champion?.player_id === playerId;
   }
 
   function getChampionStreak(playerId: string) {
+    if (mode === "super_tiebreak") {
+      return 0;
+    }
+
     const champion = championHistory.find(
       (item) =>
-        item.sport === sport &&
+        item.sport === mode &&
         item.player_id === playerId &&
         item.ended_at === null
     );
@@ -412,9 +405,13 @@ export default function RankingPage() {
   }
 
   function getChampionStartedAt(playerId: string) {
+    if (mode === "super_tiebreak") {
+      return null;
+    }
+
     const champion = championHistory.find(
       (item) =>
-        item.sport === sport &&
+        item.sport === mode &&
         item.player_id === playerId &&
         item.ended_at === null
     );
@@ -456,7 +453,7 @@ export default function RankingPage() {
           item.id === playerMatchPlayer.match_id
       );
 
-      if (!match || match.sport !== sport) {
+      if (!match || match.sport !== mode) {
         continue;
       }
 
@@ -552,6 +549,8 @@ export default function RankingPage() {
     );
   }
 
+  const sportLabel = getSportLabel();
+
   const rankedPlayers = [...players].sort(
     (a, b) =>
       getPlayerPoints(b) -
@@ -562,7 +561,10 @@ export default function RankingPage() {
 
   const topPlayer = rankedPlayers[0] ?? null;
 
-  const currentChampion = getChampion(sport);
+  const currentChampion =
+    mode === "super_tiebreak"
+      ? null
+      : getChampion(mode);
 
   const currentChampionPlayer = currentChampion
     ? players.find(
@@ -583,7 +585,10 @@ export default function RankingPage() {
         <header>
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <TrophyIcon />
+              <SportIcon
+                sport={mode}
+                className="h-5 w-5"
+              />
             </div>
 
             <div>
@@ -592,14 +597,14 @@ export default function RankingPage() {
               </p>
 
               <h1 className="mt-1 text-3xl font-bold tracking-tight">
-                Qui domine ?
+                {sportLabel}
               </h1>
             </div>
           </div>
 
           <p className="mt-4 text-sm leading-6 text-muted">
             Gagne des points à chaque match et grimpe
-            progressivement dans le classement.
+            progressivement dans le classement {sportLabel}.
           </p>
         </header>
 
@@ -612,44 +617,6 @@ export default function RankingPage() {
             </p>
           </div>
         )}
-
-        {/* SPORT SELECTOR */}
-
-        <section className="mt-7">
-          <div className="grid grid-cols-2 gap-2 rounded-3xl border border-border bg-surface p-2">
-            <button
-              type="button"
-              onClick={() => {
-                setSport("tennis");
-                setOpenPlayer(null);
-              }}
-              className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition ${
-                sport === "tennis"
-                  ? "bg-accent text-background"
-                  : "bg-surface-2 text-muted hover:text-foreground"
-              }`}
-            >
-              <TennisIcon />
-              Tennis
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSport("padel");
-                setOpenPlayer(null);
-              }}
-              className={`flex min-h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold transition ${
-                sport === "padel"
-                  ? "bg-accent text-background"
-                  : "bg-surface-2 text-muted hover:text-foreground"
-              }`}
-            >
-              <PadelIcon />
-              Padel
-            </button>
-          </div>
-        </section>
 
         {/* CHAMPION */}
 
@@ -673,10 +640,7 @@ export default function RankingPage() {
                   </h2>
 
                   <p className="mt-1 text-sm text-muted">
-                    N°1{" "}
-                    {sport === "tennis"
-                      ? "Tennis"
-                      : "Padel"}
+                    N°1 {sportLabel}
                   </p>
                 </div>
 
@@ -1114,10 +1078,7 @@ export default function RankingPage() {
                               </p>
 
                               <p className="mt-1 text-xs text-muted">
-                                {sport === "tennis"
-                                  ? "Tennis"
-                                  : "Padel"}{" "}
-                                · Division{" "}
+                                {sportLabel} · Division{" "}
                                 {division.name}
                               </p>
                             </div>
@@ -1205,17 +1166,22 @@ export default function RankingPage() {
                                 (item) => (
                                   <Link
                                     key={item.match.id}
-                                    href={`/matches/${item.match.id}`}
+                                    href={
+                                      item.match.sport ===
+                                      "super_tiebreak"
+                                        ? `/supertiebreak/${item.match.id}`
+                                        : `/matches/${item.match.id}`
+                                    }
                                     className="block rounded-2xl border border-border bg-surface p-4 transition hover:border-white/10 hover:bg-surface-2"
                                   >
                                     <div className="flex items-start gap-3">
                                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-muted">
-                                        {item.match.sport ===
-                                        "tennis" ? (
-                                          <TennisIcon />
-                                        ) : (
-                                          <PadelIcon />
-                                        )}
+                                        <SportIcon
+                                          sport={
+                                            item.match.sport
+                                          }
+                                          className="h-5 w-5"
+                                        />
                                       </div>
 
                                       <div className="min-w-0 flex-1">
@@ -1229,10 +1195,13 @@ export default function RankingPage() {
                                             </p>
 
                                             <p className="mt-1 text-xs text-muted">
-                                              {item.match.format ===
-                                              "singles"
-                                                ? "Simple"
-                                                : "Double"}{" "}
+                                              {item.match.sport ===
+                                              "super_tiebreak"
+                                                ? "Super Tie-Break"
+                                                : item.match.format ===
+                                                    "singles"
+                                                  ? "Simple"
+                                                  : "Double"}{" "}
                                               ·{" "}
                                               {new Date(
                                                 item.match.created_at
@@ -1293,25 +1262,24 @@ export default function RankingPage() {
           </div>
         </section>
 
-<Link
-  href="/ranking/history"
-  className="mt-4 flex min-h-14 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
->
-  <div>
-    <p className="text-sm font-bold text-foreground">
-      Historique des points
-    </p>
-    <p className="mt-0.5 text-xs text-muted">
-      Voir l&apos;évolution de vos points
-    </p>
-  </div>
+        <Link
+          href="/ranking/history"
+          className="mt-4 flex min-h-14 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
+        >
+          <div>
+            <p className="text-sm font-bold text-foreground">
+              Historique des points
+            </p>
 
-  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-    →
-  </div>
-</Link>
+            <p className="mt-0.5 text-xs text-muted">
+              Voir l&apos;évolution de vos points
+            </p>
+          </div>
 
-
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            →
+          </div>
+        </Link>
 
         {/* POINTS EXPLANATION */}
 
@@ -1326,31 +1294,48 @@ export default function RankingPage() {
                 Comment fonctionnent les points ?
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Une victoire rapporte{" "}
-                <span className="font-semibold text-foreground">
-                  +25 points
-                </span>{" "}
-                et une défaite fait perdre{" "}
-                <span className="font-semibold text-foreground">
-                  20 points
-                </span>
-                .
-              </p>
+              {mode === "super_tiebreak" ? (
+                <>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Le classement Super Tie-Break utilise
+                    son propre système de points, indépendant
+                    des classements Tennis et Padel.
+                  </p>
 
-              <p className="mt-3 text-sm leading-6 text-muted">
-                Des bonus récompensent les grosses
-                performances : bulle, double bulle,
-                victoire propre, série de victoires
-                et victoire contre un joueur mieux
-                classé.
-              </p>
+                  <p className="mt-3 text-sm leading-6 text-muted">
+                    Les résultats Super Tie-Break n&apos;affectent
+                    donc pas tes points Tennis ou Padel.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Une victoire rapporte{" "}
+                    <span className="font-semibold text-foreground">
+                      +25 points
+                    </span>{" "}
+                    et une défaite fait perdre{" "}
+                    <span className="font-semibold text-foreground">
+                      20 points
+                    </span>
+                    .
+                  </p>
 
-              <p className="mt-3 text-sm leading-6 text-muted">
-                Les défaites peuvent également entraîner
-                des malus selon le score et le niveau
-                de l&apos;adversaire.
-              </p>
+                  <p className="mt-3 text-sm leading-6 text-muted">
+                    Des bonus récompensent les grosses
+                    performances : bulle, double bulle,
+                    victoire propre, série de victoires
+                    et victoire contre un joueur mieux
+                    classé.
+                  </p>
+
+                  <p className="mt-3 text-sm leading-6 text-muted">
+                    Les défaites peuvent également entraîner
+                    des malus selon le score et le niveau
+                    de l&apos;adversaire.
+                  </p>
+                </>
+              )}
 
               <p className="mt-3 text-sm leading-6 text-muted">
                 Plus tes points augmentent, plus tu
@@ -1358,18 +1343,20 @@ export default function RankingPage() {
                 Argent, Or, Platine puis Diamant.
               </p>
 
-              <div className="mt-4 flex items-start gap-2 rounded-2xl bg-accent/5 p-3">
-                <div className="mt-0.5 shrink-0 text-accent">
-                  <CrownIcon />
-                </div>
+              {mode !== "super_tiebreak" && (
+                <div className="mt-4 flex items-start gap-2 rounded-2xl bg-accent/5 p-3">
+                  <div className="mt-0.5 shrink-0 text-accent">
+                    <CrownIcon />
+                  </div>
 
-                <p className="text-xs font-medium leading-5 text-muted">
-                  Le joueur actuellement premier est le
-                  Champion. Son compteur indique combien
-                  de matchs il a conservé la première
-                  place.
-                </p>
-              </div>
+                  <p className="text-xs font-medium leading-5 text-muted">
+                    Le joueur actuellement premier est le
+                    Champion. Son compteur indique combien
+                    de matchs il a conservé la première
+                    place.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </section>

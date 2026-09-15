@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import BottomNav from "@/app/components/BottomNav";
+import SportIcon from "@/app/components/SportIcon";
 
 type Profile = {
   id: string;
@@ -179,19 +180,10 @@ export default async function SuperTiebreakPage() {
             </div>
 
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
+              <SportIcon
+                sport="super_tiebreak"
                 className="h-6 w-6"
-              >
-                <circle cx="12" cy="12" r="8.5" />
-                <path
-                  strokeLinecap="round"
-                  d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c-2.5 1.5-3.5 4-3.5 5.5s-1 4-3.5 5.5"
-                />
-              </svg>
+              />
             </div>
           </div>
 

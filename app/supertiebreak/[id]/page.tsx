@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
-import BottomNav from "@/app/components/BottomNav";
 import MatchReactions from "@/app/components/MatchReactions";
+import SportIcon from "@/app/components/SportIcon";
 
 type Profile = {
   id: string;
@@ -146,14 +146,16 @@ export default async function SuperTieBreakMatchPage({
     sport: matchData.sport,
     format: matchData.format,
     result_type: matchData.result_type,
-    match_players: (matchData.match_players ?? []).map((player) => ({
-      player_id: player.player_id,
-      team: player.team,
-      guest_name: player.guest_name,
-      profiles: Array.isArray(player.profiles)
-        ? player.profiles[0] ?? null
-        : player.profiles ?? null,
-    })),
+    match_players: (matchData.match_players ?? []).map(
+      (player) => ({
+        player_id: player.player_id,
+        team: player.team,
+        guest_name: player.guest_name,
+        profiles: Array.isArray(player.profiles)
+          ? player.profiles[0] ?? null
+          : player.profiles ?? null,
+      })
+    ),
   };
 
   if (match.match_players.length !== 2) {
@@ -181,28 +183,42 @@ export default async function SuperTieBreakMatchPage({
         <div className="mx-auto max-w-lg">
           <Link
             href="/supertiebreak"
-            className="text-sm font-medium text-muted transition-colors hover:text-foreground"
+            className="inline-flex min-h-10 items-center text-sm font-medium text-muted transition-colors hover:text-foreground"
           >
             ← Super Tie-Break
           </Link>
 
           <div className="mt-8 rounded-3xl border border-border bg-surface p-6">
-            <p className="text-sm leading-6 text-muted">
-              Le résultat de ce match n&apos;a pas encore été enregistré.
-            </p>
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                <SportIcon
+                  sport="super_tiebreak"
+                  className="h-5 w-5"
+                />
+              </div>
+
+              <div>
+                <h1 className="font-bold">
+                  Résultat non enregistré
+                </h1>
+
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Le résultat de ce match n&apos;a pas encore été
+                  enregistré.
+                </p>
+              </div>
+            </div>
 
             {match.created_by === user.id && (
               <Link
                 href={`/supertiebreak/${id}/result`}
-                className="mt-5 inline-flex font-semibold text-accent"
+                className="mt-5 inline-flex min-h-10 items-center font-semibold text-accent"
               >
                 Enregistrer le résultat →
               </Link>
             )}
           </div>
         </div>
-
-        <BottomNav />
       </main>
     );
   }
@@ -241,7 +257,9 @@ export default async function SuperTieBreakMatchPage({
     .from("match_reactions")
     .select("id, user_id, reaction")
     .eq("match_id", id)
-    .order("created_at", { ascending: true });
+    .order("created_at", {
+      ascending: true,
+    });
 
   const history: RankingHistory[] = historyData ?? [];
 
@@ -260,7 +278,8 @@ export default async function SuperTieBreakMatchPage({
     notFound();
   }
 
-  const team1Won = set.team_1_score > set.team_2_score;
+  const team1Won =
+    set.team_1_score > set.team_2_score;
 
   const winner = team1Won ? team1 : team2;
   const loser = team1Won ? team2 : team1;
@@ -288,21 +307,32 @@ export default async function SuperTieBreakMatchPage({
       <div className="mx-auto max-w-lg">
         <Link
           href="/supertiebreak"
-          className="text-sm font-medium text-muted transition-colors hover:text-foreground"
+          className="inline-flex min-h-10 items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
         >
           ← Super Tie-Break
         </Link>
 
         <header className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-            Match terminé
-          </p>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <SportIcon
+                sport="super_tiebreak"
+                className="h-5 w-5"
+              />
+            </div>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Super Tie-Break
-          </h1>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+                Match terminé
+              </p>
 
-          <p className="mt-2 text-sm text-muted">
+              <h1 className="mt-1 text-3xl font-bold tracking-tight">
+                Super Tie-Break
+              </h1>
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm text-muted">
             {formatDate(match.created_at)}
           </p>
         </header>
@@ -312,7 +342,9 @@ export default async function SuperTieBreakMatchPage({
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 p-6">
             <div className="min-w-0 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent">
-                <span className="text-sm font-bold">1</span>
+                <span className="text-sm font-bold">
+                  1
+                </span>
               </div>
 
               <p className="mt-3 truncate text-sm font-bold">
@@ -336,7 +368,9 @@ export default async function SuperTieBreakMatchPage({
 
             <div className="min-w-0 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-muted">
-                <span className="text-sm font-bold">2</span>
+                <span className="text-sm font-bold">
+                  2
+                </span>
               </div>
 
               <p className="mt-3 truncate text-sm font-bold">
@@ -377,6 +411,7 @@ export default async function SuperTieBreakMatchPage({
             </p>
 
             <div className="mt-3 space-y-3">
+              {/* VAINQUEUR */}
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -402,11 +437,15 @@ export default async function SuperTieBreakMatchPage({
                   </p>
 
                   <p className="font-bold">
-                    {winnerHistory.new_points.toLocaleString("fr-FR")} pts
+                    {winnerHistory.new_points.toLocaleString(
+                      "fr-FR"
+                    )}{" "}
+                    pts
                   </p>
                 </div>
               </div>
 
+              {/* PERDANT */}
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -438,7 +477,10 @@ export default async function SuperTieBreakMatchPage({
                   </p>
 
                   <p className="font-bold">
-                    {loserHistory.new_points.toLocaleString("fr-FR")} pts
+                    {loserHistory.new_points.toLocaleString(
+                      "fr-FR"
+                    )}{" "}
+                    pts
                   </p>
                 </div>
               </div>
@@ -453,6 +495,7 @@ export default async function SuperTieBreakMatchPage({
               Calcul des points
             </p>
 
+            {/* VAINQUEUR */}
             <div className="mt-3 rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <p className="font-bold">
@@ -460,7 +503,9 @@ export default async function SuperTieBreakMatchPage({
                 </p>
 
                 <p className="text-sm font-bold text-accent">
-                  {formatPointsChange(winnerHistory.points_change)}
+                  {formatPointsChange(
+                    winnerHistory.points_change
+                  )}
                 </p>
               </div>
 
@@ -537,6 +582,7 @@ export default async function SuperTieBreakMatchPage({
               </div>
             </div>
 
+            {/* PERDANT */}
             <div className="mt-3 rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <p className="font-bold">
@@ -544,7 +590,9 @@ export default async function SuperTieBreakMatchPage({
                 </p>
 
                 <p className="text-sm font-bold text-danger">
-                  {formatPointsChange(loserHistory.points_change)}
+                  {formatPointsChange(
+                    loserHistory.points_change
+                  )}
                 </p>
               </div>
 
@@ -618,8 +666,6 @@ export default async function SuperTieBreakMatchPage({
           Retour au Super Tie-Break
         </Link>
       </div>
-
-      <BottomNav />
     </main>
   );
 }

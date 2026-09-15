@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
+import SportIcon from "@/app/components/SportIcon";
 
 type Player = {
   id: string;
@@ -303,19 +304,10 @@ export default function NewSuperTiebreakPage() {
               </div>
 
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
+                <SportIcon
+                  sport="super_tiebreak"
                   className="h-5 w-5"
-                >
-                  <circle cx="12" cy="12" r="8.5" />
-                  <path
-                    strokeLinecap="round"
-                    d="M8 12h8M12 8v8"
-                  />
-                </svg>
+                />
               </div>
             </div>
 
@@ -416,16 +408,16 @@ export default function NewSuperTiebreakPage() {
                 <div className="flex items-center justify-between rounded-2xl border border-accent/20 bg-accent/5 px-4 py-4">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-accent">
-                      Équipe 1
+                      Joueur 1
                     </p>
 
                     <p className="mt-1 text-sm font-bold">
-                      Moi
+                      Toi
                     </p>
                   </div>
 
                   <span className="text-sm font-bold text-accent">
-                    {">"} Toi
+                    Toi
                   </span>
                 </div>
 
@@ -439,7 +431,7 @@ export default function NewSuperTiebreakPage() {
                 <div className="flex items-center justify-between rounded-2xl border border-border bg-surface-2 px-4 py-4">
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-wide text-muted">
-                      Équipe 2
+                      Joueur 2
                     </p>
 
                     <p className="mt-1 truncate text-sm font-bold">

@@ -8,6 +8,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
+import SportIcon from "@/app/components/SportIcon";
+
 
 type Sport = "tennis" | "padel";
 type Format = "singles" | "doubles";
@@ -350,19 +352,7 @@ export default function NewMatchPage() {
               </div>
 
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  className="h-5 w-5"
-                >
-                  <circle cx="12" cy="12" r="8.5" />
-                  <path
-                    strokeLinecap="round"
-                    d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c2.5 1.5 3.5 4 3.5 5.5s-1 4-3.5 5.5"
-                  />
-                </svg>
+                <SportIcon sport={sport} className="h-5 w-5" />
               </div>
             </div>
 
@@ -377,19 +367,7 @@ export default function NewMatchPage() {
                 }`}
               >
                 <span className="flex items-center justify-center gap-2">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.7"
-                    className="h-5 w-5"
-                  >
-                    <circle cx="12" cy="12" r="8.5" />
-                    <path
-                      strokeLinecap="round"
-                      d="M7 6.5c2.5 1.5 3.5 4 3.5 5.5S9.5 16 7 17.5M17 6.5c2.5 1.5 3.5 4 3.5 5.5s-1 4-3.5 5.5"
-                    />
-                  </svg>
+                  <SportIcon sport="tennis" className="h-5 w-5" />
                   Tennis
                 </span>
               </button>
@@ -404,9 +382,7 @@ export default function NewMatchPage() {
                 }`}
               >
                 <span className="flex items-center justify-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-md border-2 border-current text-[9px] font-black">
-                    P
-                  </span>
+                  <SportIcon sport="padel" className="h-5 w-5" />
                   Padel
                 </span>
               </button>

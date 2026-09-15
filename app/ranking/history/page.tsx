@@ -4,8 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/src/supabase/client";
 import RankingProgression from "@/app/components/RankingProgression";
+import SportIcon from "@/app/components/SportIcon";
+import {
+  useSportMode,
+  type SportMode,
+} from "@/app/context/SportModeContext";
 
-type Sport = "tennis" | "padel" | "super_tiebreak";
+type Sport = SportMode;
 
 type RankingHistory = {
   id: string;
@@ -36,41 +41,6 @@ type Profile = {
   points_padel: number | null;
   points_super_tiebreak: number | null;
 };
-
-function TennisIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M5 5c3 1 5 3 6 6s0 6-2 8" />
-      <path d="M19 19c-3-1-5-3-6-6s0-6 2-8" />
-    </svg>
-  );
-}
-
-function PadelIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-    >
-      <rect x="5" y="3" width="14" height="18" rx="3" />
-      <circle cx="9" cy="8" r="1" />
-      <circle cx="15" cy="8" r="1" />
-      <circle cx="9" cy="13" r="1" />
-      <circle cx="15" cy="13" r="1" />
-      <circle cx="12" cy="17" r="1" />
-    </svg>
-  );
-}
 
 function ArrowUpIcon() {
   return (
@@ -130,15 +100,12 @@ function getSportLabel(sport: Sport) {
 }
 
 function getSportIcon(sport: Sport) {
-  if (sport === "tennis") {
-    return <TennisIcon />;
-  }
-
-  if (sport === "padel") {
-    return <PadelIcon />;
-  }
-
-  return <TennisIcon />;
+  return (
+    <SportIcon
+      sport={sport}
+      className="h-5 w-5"
+    />
+  );
 }
 
 function getPositiveDetails(item: RankingHistory) {
@@ -163,9 +130,10 @@ function getNegativeDetails(item: RankingHistory) {
 const supabase = createClient();
 
 export default function RankingHistoryPage() {
+  const { mode } = useSportMode();
+
   const [history, setHistory] = useState<RankingHistory[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [sport, setSport] = useState<Sport>("tennis");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -243,13 +211,13 @@ export default function RankingHistoryPage() {
   }, []);
 
   const filteredHistory = history.filter(
-    (item) => item.sport === sport
+    (item) => item.sport === mode
   );
 
   const currentPoints =
-    sport === "tennis"
+    mode === "tennis"
       ? profile?.points_tennis ?? 0
-      : sport === "padel"
+      : mode === "padel"
         ? profile?.points_padel ?? 0
         : profile?.points_super_tiebreak ?? 0;
 
@@ -280,53 +248,12 @@ export default function RankingHistoryPage() {
           </p>
         </header>
 
-        {/* Sport selector */}
-        <div className="mb-5 grid grid-cols-3 gap-2 rounded-3xl border border-border bg-surface p-2">
-          <button
-            type="button"
-            onClick={() => setSport("tennis")}
-            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-bold transition ${
-              sport === "tennis"
-                ? "border-accent bg-accent text-background"
-                : "border-border bg-surface-2 text-muted"
-            }`}
-          >
-            <TennisIcon />
-            Tennis
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSport("padel")}
-            className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-bold transition ${
-              sport === "padel"
-                ? "border-accent bg-accent text-background"
-                : "border-border bg-surface-2 text-muted"
-            }`}
-          >
-            <PadelIcon />
-            Padel
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSport("super_tiebreak")}
-            className={`flex min-h-14 items-center justify-center rounded-2xl border px-3 text-xs font-bold transition ${
-              sport === "super_tiebreak"
-                ? "border-accent bg-accent text-background"
-                : "border-border bg-surface-2 text-muted"
-            }`}
-          >
-            Super TB
-          </button>
-        </div>
-
         {/* Current points */}
         <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                {getSportLabel(sport)}
+                {getSportLabel(mode)}
               </p>
 
               <p className="mt-2 text-4xl font-bold tracking-tight">
@@ -342,7 +269,7 @@ export default function RankingHistoryPage() {
             </div>
 
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              {getSportIcon(sport)}
+              {getSportIcon(mode)}
             </div>
           </div>
         </section>
@@ -369,7 +296,7 @@ export default function RankingHistoryPage() {
         {!loading && !message && profile && filteredHistory.length === 0 && (
           <div className="rounded-3xl border border-border bg-surface p-6 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted">
-              {getSportIcon(sport)}
+              {getSportIcon(mode)}
             </div>
 
             <h2 className="mt-4 text-lg font-bold">
@@ -378,7 +305,7 @@ export default function RankingHistoryPage() {
 
             <p className="mt-2 text-sm leading-6 text-muted">
               Vos changements de points en{" "}
-              {getSportLabel(sport).toLowerCase()} apparaîtront ici après vos
+              {getSportLabel(mode).toLowerCase()} apparaîtront ici après vos
               matchs.
             </p>
           </div>
@@ -388,7 +315,7 @@ export default function RankingHistoryPage() {
         {!loading && !message && profile && (
           <RankingProgression
             userId={profile.id}
-            sport={sport}
+            sport={mode}
             currentPoints={currentPoints}
           />
         )}

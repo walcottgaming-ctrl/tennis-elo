@@ -13,12 +13,25 @@
 
   --accent: #c7f000;
   --accent-dark: #9dbd00;
+  --accent-glow: rgba(199, 240, 0, 0.035);
 
   --success: #7ee787;
   --danger: #ff6b6b;
   --warning: #f5c451;
 
   --border: rgba(255, 255, 255, 0.07);
+}
+
+html[data-sport-mode="padel"] {
+  --accent: #38a8ff;
+  --accent-dark: #1684d8;
+  --accent-glow: rgba(56, 168, 255, 0.035);
+}
+
+html[data-sport-mode="super_tiebreak"] {
+  --accent: #ff9f43;
+  --accent-dark: #e57f1f;
+  --accent-glow: rgba(255, 159, 67, 0.035);
 }
 
 @theme inline {
@@ -58,7 +71,7 @@ body {
   background:
     radial-gradient(
       circle at top,
-      rgba(199, 240, 0, 0.035),
+      var(--accent-glow),
       transparent 30%
     ),
     var(--background);

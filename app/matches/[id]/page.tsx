@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/src/supabase/server";
 import MatchReactions from "@/app/components/MatchReactions";
+import SportIcon from "@/app/components/SportIcon";
 
 type Profile = {
   id: string;
@@ -9,6 +10,7 @@ type Profile = {
   last_name: string | null;
   points_tennis: number;
   points_padel: number;
+  points_super_tiebreak: number;
 };
 
 type MatchPlayer = {
@@ -20,7 +22,7 @@ type MatchPlayer = {
 
 type Match = {
   id: string;
-  sport: "tennis" | "padel";
+  sport: "tennis" | "padel" | "super_tiebreak";
   format: "singles" | "doubles";
   match_type: "group_match" | "quick_1v1";
   result_type: "competitive" | "friendly";
@@ -43,7 +45,7 @@ type SetRow = {
 type RankingHistory = {
   id: string;
   player_id: string;
-  sport: "tennis" | "padel";
+  sport: "tennis" | "padel" | "super_tiebreak";
   old_points: number;
   new_points: number;
   points_change: number;
@@ -97,17 +99,28 @@ function getPlayerName(
 
 function getPoints(
   profile: Profile | null,
-  sport: "tennis" | "padel"
+  sport: "tennis" | "padel" | "super_tiebreak"
 ) {
   if (!profile) return null;
 
-  return sport === "tennis"
-    ? profile.points_tennis
-    : profile.points_padel;
+  if (sport === "tennis") {
+    return profile.points_tennis;
+  }
+
+  if (sport === "padel") {
+    return profile.points_padel;
+  }
+
+  return profile.points_super_tiebreak;
 }
 
-function formatSport(sport: string) {
-  return sport === "tennis" ? "Tennis" : "Padel";
+function formatSport(
+  sport: "tennis" | "padel" | "super_tiebreak"
+) {
+  if (sport === "tennis") return "Tennis";
+  if (sport === "padel") return "Padel";
+
+  return "Super Tie-Break";
 }
 
 function formatFormat(format: string) {
@@ -160,69 +173,6 @@ function getWinnerTeam(sets: SetRow[]) {
   if (team2Wins >= 2) return 2;
 
   return null;
-}
-
-function SportIcon({
-  sport,
-  className = "h-5 w-5",
-}: {
-  sport: "tennis" | "padel";
-  className?: string;
-}) {
-  if (sport === "tennis") {
-    return (
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        className={className}
-        aria-hidden="true"
-      >
-        <circle
-          cx="12"
-          cy="12"
-          r="8.5"
-          stroke="currentColor"
-          strokeWidth="1.7"
-        />
-        <path
-          d="M6.5 5.5c2.8 1.4 4.5 3.6 5.1 6.3.6 2.8-.1 5.2-2 7.2M17.5 5.5c-2.8 1.4-4.5 3.6-5.1 6.3-.6 2.8.1 5.2 2 7.2"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-        />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <rect
-        x="4"
-        y="3"
-        width="16"
-        height="18"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <path
-        d="M4 8h16M4 16h16M8 3v5M16 3v5M8 16v5M16 16v5"
-        stroke="currentColor"
-        strokeWidth="1.7"
-      />
-      <circle
-        cx="12"
-        cy="12"
-        r="1.5"
-        fill="currentColor"
-      />
-    </svg>
-  );
 }
 
 function TrophyIcon({
@@ -444,7 +394,8 @@ export default async function MatchDetailPage({
           first_name,
           last_name,
           points_tennis,
-          points_padel
+          points_padel,
+          points_super_tiebreak
         )
       )
     `)
@@ -542,7 +493,8 @@ export default async function MatchDetailPage({
         first_name,
         last_name,
         points_tennis,
-        points_padel
+        points_padel,
+        points_super_tiebreak
       )
     `)
     .eq("match_id", id)

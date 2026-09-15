@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import DashboardPoints from "@/app/components/DashboardPoints";
-import SportIcon from "@/app/components/SportIcon";
 import SportModeSwitcher from "@/app/components/SportModeSwitcher";
+import SportIcon from "@/app/components/SportIcon";
+import DashboardPoints from "@/app/components/DashboardPoints";
 import { useSportMode } from "@/app/context/SportModeContext";
 
 type Match = {
@@ -13,7 +13,7 @@ type Match = {
   created_at: string;
 };
 
-type DashboardPageProps = {
+type DashboardContentProps = {
   displayName: string;
   tennisPoints: number;
   padelPoints: number;
@@ -21,33 +21,45 @@ type DashboardPageProps = {
   matches: Match[];
 };
 
-export default function DashboardPage({
+function getSportLabel(
+  mode: "tennis" | "padel" | "super_tiebreak"
+) {
+  if (mode === "tennis") {
+    return "Tennis";
+  }
+
+  if (mode === "padel") {
+    return "Padel";
+  }
+
+  return "Super Tie-Break";
+}
+
+function getFormatLabel(
+  format: "singles" | "doubles"
+) {
+  return format === "singles" ? "Simple" : "Double";
+}
+
+export default function DashboardContent({
   displayName,
   tennisPoints,
   padelPoints,
   superTiebreakPoints,
   matches,
-}: DashboardPageProps) {
+}: DashboardContentProps) {
   const { mode } = useSportMode();
 
-  const safeTennisPoints = tennisPoints ?? 1000;
-  const safePadelPoints = padelPoints ?? 1000;
-  const safeSuperTiebreakPoints = superTiebreakPoints ?? 1000;
-
-  const filteredMatches = (matches ?? [])
+  const filteredMatches = matches
     .filter((match) => match.sport === mode)
     .slice(0, 5);
 
-  const sportLabel =
-    mode === "tennis"
-      ? "Tennis"
-      : mode === "padel"
-        ? "Padel"
-        : "Super Tie-Break";
+  const sportLabel = getSportLabel(mode);
 
   return (
     <main className="min-h-screen bg-background px-5 py-7 text-foreground">
       <div className="mx-auto max-w-lg pb-8">
+
         {/* HEADER */}
         <header className="flex items-center justify-between">
           <div>
@@ -85,9 +97,9 @@ export default function DashboardPage({
 
         {/* POINTS */}
         <DashboardPoints
-          tennisPoints={safeTennisPoints}
-          padelPoints={safePadelPoints}
-          superTiebreakPoints={safeSuperTiebreakPoints}
+          tennisPoints={tennisPoints}
+          padelPoints={padelPoints}
+          superTiebreakPoints={superTiebreakPoints}
         />
 
         {/* NOUVEAU MATCH */}
@@ -113,12 +125,12 @@ export default function DashboardPage({
             </p>
           </div>
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-background/10 text-xl">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-background/10 text-xl transition-transform duration-200 group-hover:translate-x-0.5">
             +
           </div>
         </Link>
 
-        {/* EXPLORER */}
+        {/* EXPLORATION DU MODE */}
         <section className="mt-9">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
@@ -279,15 +291,11 @@ export default function DashboardPage({
 
                     <div className="min-w-0">
                       <p className="font-bold">
-                        {sportLabel}
+                        {getSportLabel(match.sport)}
                       </p>
 
                       <p className="mt-1 text-sm text-muted">
-                        {mode === "super_tiebreak"
-                          ? "Super Tie-Break"
-                          : match.format === "singles"
-                            ? "Simple"
-                            : "Double"}
+                        {getFormatLabel(match.format)}
                       </p>
                     </div>
                   </div>

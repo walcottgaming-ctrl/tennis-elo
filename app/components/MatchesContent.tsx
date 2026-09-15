@@ -1,26 +1,31 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { createClient } from "@/src/supabase/client";
 import SportIcon from "@/app/components/SportIcon";
 import { useSportMode } from "@/app/context/SportModeContext";
 
 type Sport = "tennis" | "padel" | "super_tiebreak";
 
-type Profile = {
-  first_name: string | null;
-  last_name: string | null;
-  username: string | null;
-  points_tennis: number;
-  points_padel: number;
-};
-
 type MatchPlayer = {
   player_id: string | null;
   team: number;
   guest_name: string | null;
-  profiles: Profile | Profile[] | null;
+  profiles:
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        username: string | null;
+        points_tennis: number;
+        points_padel: number;
+      }
+    | {
+        first_name: string | null;
+        last_name: string | null;
+        username: string | null;
+        points_tennis: number;
+        points_padel: number;
+      }[]
+    | null;
 };
 
 type Match = {
@@ -45,6 +50,14 @@ type RankingHistoryRow = {
   match_id: string;
   player_id: string;
   points_change: number;
+};
+
+type MatchesContentProps = {
+  currentUserId: string;
+  matches: Match[];
+  sets: SetRow[];
+  rankingHistory: RankingHistoryRow[];
+  errorMessage: string | null;
 };
 
 function getProfile(player: MatchPlayer) {
@@ -100,13 +113,13 @@ function getWinnerTeam(
   }
 
   if (match.sport === "super_tiebreak") {
-    const set = matchSets[0];
+    const finalSet = matchSets[0];
 
-    if (set.team_1_score === set.team_2_score) {
+    if (finalSet.team_1_score === finalSet.team_2_score) {
       return null;
     }
 
-    return set.team_1_score > set.team_2_score
+    return finalSet.team_1_score > finalSet.team_2_score
       ? 1
       : 2;
   }
@@ -151,7 +164,7 @@ function formatScore(
     return `${set.team_1_score} - ${set.team_2_score}`;
   }
 
-  return [...matchSets]
+  return matchSets
     .sort((a, b) => a.set_number - b.set_number)
     .map(
       (set) =>
@@ -168,161 +181,14 @@ function formatDate(date: string) {
   }).format(new Date(date));
 }
 
-export default function MatchesPage() {
+export default function MatchesContent({
+  currentUserId,
+  matches,
+  sets,
+  rankingHistory,
+  errorMessage,
+}: MatchesContentProps) {
   const { mode } = useSportMode();
-
-  const [currentUserId, setCurrentUserId] = useState("");
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [sets, setSets] = useState<SetRow[]>([]);
-  const [rankingHistory, setRankingHistory] = useState<
-    RankingHistoryRow[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(
-    null
-  );
-
-  useEffect(() => {
-    async function loadMatches() {
-      const supabase = createClient();
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      setCurrentUserId(user.id);
-
-      const { data: matchesData, error: matchesError } =
-        await supabase
-          .from("matches")
-          .select(`
-            id,
-            sport,
-            format,
-            result_type,
-            created_at,
-            match_players (
-              player_id,
-              team,
-              guest_name,
-              profiles (
-                first_name,
-                last_name,
-                username,
-                points_tennis,
-                points_padel
-              )
-            )
-          `)
-          .eq("created_by", user.id)
-          .order("created_at", {
-            ascending: false,
-          });
-
-      if (matchesError) {
-        setErrorMessage(matchesError.message);
-        setLoading(false);
-        return;
-      }
-
-      const typedMatches = (matchesData ?? []) as Match[];
-
-      setMatches(typedMatches);
-
-      const matchIds = typedMatches.map(
-        (match) => match.id
-      );
-
-      if (matchIds.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const { data: setsData } = await supabase
-        .from("sets")
-        .select(`
-          id,
-          match_id,
-          set_number,
-          team_1_score,
-          team_2_score,
-          is_match_tiebreak
-        `)
-        .in("match_id", matchIds)
-        .order("set_number", {
-          ascending: true,
-        });
-
-      setSets((setsData ?? []) as SetRow[]);
-
-      const { data: historyData } = await supabase
-        .from("ranking_history")
-        .select(`
-          match_id,
-          player_id,
-          points_change
-        `)
-        .in("match_id", matchIds);
-
-      setRankingHistory(
-        (historyData ?? []) as RankingHistoryRow[]
-      );
-
-      setLoading(false);
-    }
-
-    void loadMatches();
-  }, []);
-
-  if (!currentUserId && !loading) {
-    return (
-      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-            SmashBreakPoint
-          </p>
-
-          <h1 className="mt-3 text-3xl font-bold tracking-tight">
-            Connexion requise
-          </h1>
-
-          <p className="mt-3 leading-6 text-muted">
-            Connecte-toi pour retrouver tes matchs et ton historique.
-          </p>
-
-          <Link
-            href="/login"
-            className="mt-7 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98]"
-          >
-            Se connecter
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg">
-          <div className="h-3 w-24 animate-pulse rounded-full bg-surface-2" />
-          <div className="mt-4 h-9 w-56 animate-pulse rounded-xl bg-surface-2" />
-          <div className="mt-3 h-4 w-72 animate-pulse rounded-full bg-surface-2" />
-
-          <div className="mt-8 space-y-4">
-            <div className="h-36 animate-pulse rounded-3xl bg-surface" />
-            <div className="h-36 animate-pulse rounded-3xl bg-surface" />
-            <div className="h-36 animate-pulse rounded-3xl bg-surface" />
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   const filteredMatches = matches.filter(
     (match) => match.sport === mode
@@ -421,8 +287,8 @@ export default function MatchesPage() {
             </h2>
 
             <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted">
-              Aucun match de{" "}
-              {getSportLabel(mode).toLowerCase()} n’est encore enregistré.
+              Aucun match de {getSportLabel(mode).toLowerCase()} n’est
+              encore enregistré.
             </p>
 
             <Link
@@ -460,15 +326,16 @@ export default function MatchesPage() {
                   item.player_id === currentUserId
               );
 
-              const pointsChange = history.reduce(
-                (total, item) =>
-                  total + item.points_change,
-                0
-              );
+              const pointsChange =
+                history.reduce(
+                  (total, item) =>
+                    total + item.points_change,
+                  0
+                );
 
               const isWinner =
                 winnerTeam !== null &&
-                players.some(
+                team1Players.concat(team2Players).some(
                   (player) =>
                     player.player_id === currentUserId &&
                     player.team === winnerTeam
@@ -539,16 +406,16 @@ export default function MatchesPage() {
 
                   <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <div
-                      className={
+                      className={`min-w-0 ${
                         winnerTeam === 1
-                          ? "min-w-0 text-foreground"
-                          : "min-w-0 text-muted"
-                      }
+                          ? "text-foreground"
+                          : "text-muted"
+                      }`}
                     >
                       <div className="space-y-1">
                         {team1Players.map((player, index) => (
                           <p
-                            key={`${player.player_id ?? "player"}-1-${index}`}
+                            key={`${player.player_id ?? "guest"}-1-${index}`}
                             className={`truncate text-sm ${
                               player.player_id === currentUserId
                                 ? "font-bold"
@@ -582,16 +449,16 @@ export default function MatchesPage() {
                     </div>
 
                     <div
-                      className={
+                      className={`min-w-0 text-right ${
                         winnerTeam === 2
-                          ? "min-w-0 text-right text-foreground"
-                          : "min-w-0 text-right text-muted"
-                      }
+                          ? "text-foreground"
+                          : "text-muted"
+                      }`}
                     >
                       <div className="space-y-1">
                         {team2Players.map((player, index) => (
                           <p
-                            key={`${player.player_id ?? "player"}-2-${index}`}
+                            key={`${player.player_id ?? "guest"}-2-${index}`}
                             className={`truncate text-sm ${
                               player.player_id === currentUserId
                                 ? "font-bold"

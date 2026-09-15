@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
+import SportIcon from "@/app/components/SportIcon";
 
 type Profile = {
   id: string;
@@ -28,13 +29,14 @@ type Match = {
   match_players: MatchPlayer[];
 };
 
-
-
 function playerName(player: MatchPlayer | null) {
   if (!player) return "Joueur";
 
   if (player.profiles) {
-    const fullName = [player.profiles.first_name, player.profiles.last_name]
+    const fullName = [
+      player.profiles.first_name,
+      player.profiles.last_name,
+    ]
       .filter(Boolean)
       .join(" ")
       .trim();
@@ -137,7 +139,9 @@ export default function SuperTieBreakResultPage() {
       }
 
       if (normalizedMatch.match_players.length !== 2) {
-        setError("Ce Super Tie-Break doit opposer exactement deux joueurs.");
+        setError(
+          "Ce Super Tie-Break doit opposer exactement deux joueurs."
+        );
         setLoading(false);
         return;
       }
@@ -147,7 +151,9 @@ export default function SuperTieBreakResultPage() {
           (player) => !player.player_id
         )
       ) {
-        setError("Les deux joueurs doivent être des comptes enregistrés.");
+        setError(
+          "Les deux joueurs doivent être des comptes enregistrés."
+        );
         setLoading(false);
         return;
       }
@@ -337,9 +343,16 @@ export default function SuperTieBreakResultPage() {
         </Link>
 
         <header className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-            Résultat
-          </p>
+          <div className="flex items-center gap-2">
+            <SportIcon
+              sport="super_tiebreak"
+              className="h-4 w-4 text-accent"
+            />
+
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
+              Résultat
+            </p>
+          </div>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight">
             Super Tie-Break

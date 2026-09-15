@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/src/supabase/server";
+import SportIcon from "@/app/components/SportIcon";
 
 type Player = {
   id: string;
@@ -124,45 +125,6 @@ function ChartIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="m7 15 3-4 3 2 5-6"
-      />
-    </svg>
-  );
-}
-
-function TennisIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path
-        strokeLinecap="round"
-        d="M5.5 5.5c3.2 2.2 5 4.7 5 8.2s-1.8 6-5 8.2M18.5 5.5c-3.2 2.2-5 4.7-5 8.2s1.8 6 5 8.2"
-      />
-    </svg>
-  );
-}
-
-function PadelIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <rect x="5" y="3" width="14" height="18" rx="2.5" />
-      <path
-        strokeLinecap="round"
-        strokeDasharray="1 3"
-        d="M9 7v10M13 7v10M17 7v10"
       />
     </svg>
   );
@@ -862,7 +824,10 @@ export default async function PlayerPage({
         <section className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-border bg-surface p-5">
             <div className="flex items-center gap-2 text-muted">
-              <TennisIcon />
+              <SportIcon
+                sport="tennis"
+                className="h-4 w-4"
+              />
 
               <p className="text-xs font-bold uppercase tracking-[0.14em]">
                 Tennis
@@ -880,7 +845,10 @@ export default async function PlayerPage({
 
           <div className="rounded-2xl border border-border bg-surface p-5">
             <div className="flex items-center gap-2 text-muted">
-              <PadelIcon />
+              <SportIcon
+                sport="padel"
+                className="h-4 w-4"
+              />
 
               <p className="text-xs font-bold uppercase tracking-[0.14em]">
                 Padel
@@ -1094,7 +1062,10 @@ export default async function PlayerPage({
           <div className="mt-5 space-y-3">
             <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
               <div className="flex items-center gap-3">
-                <TennisIcon />
+                <SportIcon
+                  sport="tennis"
+                  className="h-5 w-5"
+                />
 
                 <span className="text-sm font-semibold">
                   Tennis
@@ -1108,7 +1079,10 @@ export default async function PlayerPage({
 
             <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
               <div className="flex items-center gap-3">
-                <PadelIcon />
+                <SportIcon
+                  sport="padel"
+                  className="h-5 w-5"
+                />
 
                 <span className="text-sm font-semibold">
                   Padel
@@ -1158,7 +1132,10 @@ export default async function PlayerPage({
           {recentHistory.length === 0 ? (
             <div className="mt-4 rounded-3xl border border-border bg-surface p-7 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted">
-                <TennisIcon />
+                <SportIcon
+                  sport="tennis"
+                  className="h-5 w-5"
+                />
               </div>
 
               <p className="mt-4 font-bold">
@@ -1182,12 +1159,10 @@ export default async function PlayerPage({
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-2 text-sm font-bold">
-                          {item.match.sport ===
-                          "tennis" ? (
-                            <TennisIcon />
-                          ) : (
-                            <PadelIcon />
-                          )}
+                          <SportIcon
+                            sport={item.match.sport}
+                            className="h-4 w-4"
+                          />
 
                           <span>
                             {item.match.sport ===

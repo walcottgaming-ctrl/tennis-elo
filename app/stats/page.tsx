@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/src/supabase/server";
+import SportIcon from "@/app/components/SportIcon";
 
 type Match = {
   id: string;
@@ -65,41 +66,6 @@ function TrophyIcon() {
       <path d="M12 13v4" />
       <path d="M8 20h8" />
       <path d="M9 17h6" />
-    </svg>
-  );
-}
-
-function TennisIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M5 5c3 1 5 3 6 6s0 6-2 8" />
-      <path d="M19 19c-3-1-5-3-6-6s0-6 2-8" />
-    </svg>
-  );
-}
-
-function PadelIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="h-5 w-5"
-    >
-      <rect x="5" y="3" width="14" height="18" rx="3" />
-      <circle cx="9" cy="8" r="1" />
-      <circle cx="15" cy="8" r="1" />
-      <circle cx="9" cy="13" r="1" />
-      <circle cx="15" cy="13" r="1" />
-      <circle cx="12" cy="17" r="1" />
     </svg>
   );
 }
@@ -748,7 +714,10 @@ export default async function StatsPage() {
             <div className="rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <TennisIcon />
+                  <SportIcon
+                    sport="tennis"
+                    className="h-5 w-5"
+                  />
                 </div>
 
                 <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
@@ -779,7 +748,10 @@ export default async function StatsPage() {
             <div className="rounded-2xl border border-border bg-surface p-5">
               <div className="flex items-center justify-between">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                  <PadelIcon />
+                  <SportIcon
+                    sport="padel"
+                    className="h-5 w-5"
+                  />
                 </div>
 
                 <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
@@ -838,9 +810,18 @@ export default async function StatsPage() {
                     className="flex items-center justify-between gap-3 rounded-2xl bg-surface-2 p-4"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-bold">
-                        {item.sport === "tennis" ? "Tennis" : "Padel"}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <SportIcon
+                          sport={item.sport}
+                          className="h-4 w-4"
+                        />
+
+                        <p className="text-sm font-bold">
+                          {item.sport === "tennis"
+                            ? "Tennis"
+                            : "Padel"}
+                        </p>
+                      </div>
 
                       <p className="mt-1 text-xs text-muted">
                         {formatDate(item.created_at)}
@@ -876,7 +857,10 @@ export default async function StatsPage() {
         <section className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-border bg-surface p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <TennisIcon />
+              <SportIcon
+                sport="tennis"
+                className="h-5 w-5"
+              />
             </div>
 
             <p className="mt-4 text-sm font-medium text-muted">
@@ -894,7 +878,10 @@ export default async function StatsPage() {
 
           <div className="rounded-2xl border border-border bg-surface p-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <PadelIcon />
+              <SportIcon
+                sport="padel"
+                className="h-5 w-5"
+              />
             </div>
 
             <p className="mt-4 text-sm font-medium text-muted">

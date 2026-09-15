@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
+import SportIcon from "@/app/components/SportIcon";
 
 type Sport = "tennis" | "padel";
 type MatchFormat = "singles" | "doubles";
@@ -401,6 +402,16 @@ export default function ResultPage() {
       if (matchError || !matchData) {
         setError("Impossible de charger ce match.");
         setLoading(false);
+        return;
+      }
+
+      if (
+        matchData.sport !== "tennis" &&
+        matchData.sport !== "padel"
+      ) {
+        router.replace(
+          `/supertiebreak/${matchId}/result`
+        );
         return;
       }
 
@@ -954,15 +965,16 @@ export default function ResultPage() {
 
         {/* Header */}
         <header className="mb-7">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <SportIcon
+                sport={match.sport}
+                className="h-4 w-4 text-accent"
+              />
+
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
                 {sportLabel(match.sport)}
               </p>
-
-              <h1 className="mt-1 text-3xl font-bold tracking-tight">
-                Résultat du match
-              </h1>
             </div>
 
             <span className="rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-bold text-muted">
@@ -972,7 +984,7 @@ export default function ResultPage() {
             </span>
           </div>
 
-          <p className="text-sm leading-6 text-muted">
+          <p className="mt-3 text-sm leading-6 text-muted">
             {formatLabel(match.format)}
             {match.surface
               ? ` · ${match.surface}`
@@ -1524,6 +1536,7 @@ export default function ResultPage() {
                   <span className="text-muted">
                     Victoire
                   </span>
+
                   <span className="font-bold text-accent">
                     +25 pts
                   </span>
@@ -1533,6 +1546,7 @@ export default function ResultPage() {
                   <span className="text-muted">
                     Défaite
                   </span>
+
                   <span className="font-bold text-danger">
                     -20 pts
                   </span>
