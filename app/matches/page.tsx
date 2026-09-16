@@ -197,32 +197,49 @@ export default function MatchesPage() {
 
       setCurrentUserId(user.id);
 
-      const { data: matchesData, error: matchesError } =
-        await supabase
-          .from("matches")
-          .select(`
-            id,
-            sport,
-            format,
-            result_type,
-            created_at,
-            match_players (
-              player_id,
-              team,
-              guest_name,
-              profiles (
-                first_name,
-                last_name,
-                username,
-                points_tennis,
-                points_padel
-              )
-            )
-          `)
-          .eq("created_by", user.id)
-          .order("created_at", {
-            ascending: false,
-          });
+      const { data: playerMatches, error: playerMatchesError } =
+  await supabase
+    .from("match_players")
+    .select("match_id")
+    .eq("player_id", user.id);
+
+if (playerMatchesError) {
+  console.error("Erreur récupération des matchs du joueur :", playerMatchesError);
+  return;
+}
+
+const playerMatchIds = (playerMatches ?? []).map(
+  (row) => row.match_id
+);
+
+if (playerMatchIds.length === 0) {
+  return;
+}
+
+const { data: matchesData, error: matchesError } =
+  await supabase
+    .from("matches")
+    .select(`
+      id,
+      sport,
+      format,
+      result_type,
+      created_at,
+      match_players (
+        player_id,
+        team,
+        guest_name,
+        profiles (
+          first_name,
+          last_name,
+          username,
+          points_tennis,
+          points_padel
+        )
+      )
+    `)
+    .in("id", playerMatchIds)
+    .order("created_at", { ascending: false });
 
       if (matchesError) {
         setErrorMessage(matchesError.message);
@@ -324,9 +341,14 @@ export default function MatchesPage() {
     );
   }
 
-  const filteredMatches = matches.filter(
-    (match) => match.sport === mode
-  );
+  const filteredMatches = (matches ?? [])
+  .filter((match) => match.sport === mode)
+  .sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
+  )
+  .slice(0, 5);
 
   const totalMatches = filteredMatches.length;
 

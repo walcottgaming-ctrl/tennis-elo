@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { createClient } from "@/src/supabase/client";
 import DashboardPoints from "@/app/components/DashboardPoints";
 import SportIcon from "@/app/components/SportIcon";
 import SportModeSwitcher from "@/app/components/SportModeSwitcher";
@@ -18,23 +21,90 @@ type DashboardPageProps = {
   tennisPoints: number;
   padelPoints: number;
   superTiebreakPoints: number;
-  matches: Match[];
+  matches?: Match[];
 };
 
 export default function DashboardPage({
   tennisPoints,
   padelPoints,
   superTiebreakPoints,
-  matches,
 }: DashboardPageProps) {
   const { mode } = useSportMode();
 
+  const [matches, setMatches] = useState<Match[]>([]);
+
+  useEffect(() => {
+    async function loadMatches() {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return;
+      }
+
+      const { data: playerMatches, error: playerMatchesError } =
+  await supabase
+    .from("match_players")
+    .select("match_id")
+    .eq("player_id", user.id);
+
+if (playerMatchesError) {
+  console.error(
+    "Erreur récupération des matchs du joueur :",
+    playerMatchesError
+  );
+  return;
+}
+
+const playerMatchIds = (playerMatches ?? []).map(
+  (row) => row.match_id
+);
+
+if (playerMatchIds.length === 0) {
+  setMatches([]);
+  return;
+}
+
+const { data, error } = await supabase
+  .from("matches")
+  .select("id, sport, format, created_at")
+  .in("id", playerMatchIds)
+  .order("created_at", { ascending: false })
+  .limit(20);
+
+if (error) {
+  console.error("Erreur Dashboard matches :", error);
+  return;
+}
+
+setMatches((data ?? []) as Match[]);
+
+      if (error) {
+        console.error("Erreur Dashboard matches :", error);
+        return;
+      }
+
+      setMatches((data ?? []) as Match[]);
+    }
+
+    void loadMatches();
+  }, []);
+
   const safeTennisPoints = tennisPoints ?? 1000;
   const safePadelPoints = padelPoints ?? 1000;
-  const safeSuperTiebreakPoints = superTiebreakPoints ?? 1000;
+  const safeSuperTiebreakPoints =
+    superTiebreakPoints ?? 1000;
 
-  const filteredMatches = (matches ?? [])
+  const filteredMatches = matches
     .filter((match) => match.sport === mode)
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    )
     .slice(0, 5);
 
   const sportLabel =
@@ -47,6 +117,7 @@ export default function DashboardPage({
   return (
     <main className="min-h-screen bg-background px-5 py-7 text-foreground">
       <div className="mx-auto max-w-lg pb-8">
+
         {/* HEADER */}
         <header className="flex items-center justify-between gap-3">
           <SportModeSwitcher />
@@ -144,9 +215,7 @@ export default function DashboardPage({
                 </svg>
               </div>
 
-              <p className="mt-5 font-bold">
-                Classement
-              </p>
+              <p className="mt-5 font-bold">Classement</p>
 
               <p className="mt-1 text-sm text-muted">
                 Ton classement {sportLabel}
@@ -178,9 +247,7 @@ export default function DashboardPage({
                 </svg>
               </div>
 
-              <p className="mt-5 font-bold">
-                Joueurs
-              </p>
+              <p className="mt-5 font-bold">Joueurs</p>
 
               <p className="mt-1 text-sm text-muted">
                 Découvre la communauté

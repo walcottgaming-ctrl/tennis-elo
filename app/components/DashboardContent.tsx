@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
 import SportModeSwitcher from "@/app/components/SportModeSwitcher";
 import SportIcon from "@/app/components/SportIcon";
 import DashboardPoints from "@/app/components/DashboardPoints";
 import { useSportMode } from "@/app/context/SportModeContext";
+import { createClient } from "@/src/supabase/client";
 
 type Match = {
   id: string;
@@ -18,292 +21,132 @@ type DashboardContentProps = {
   tennisPoints: number;
   padelPoints: number;
   superTiebreakPoints: number;
-  matches: Match[];
+  matches?: Match[];
 };
-
-function getSportLabel(
-  mode: "tennis" | "padel" | "super_tiebreak"
-) {
-  if (mode === "tennis") {
-    return "Tennis";
-  }
-
-  if (mode === "padel") {
-    return "Padel";
-  }
-
-  return "Super Tie-Break";
-}
-
-function getFormatLabel(
-  format: "singles" | "doubles"
-) {
-  return format === "singles" ? "Simple" : "Double";
-}
 
 export default function DashboardContent({
   displayName,
   tennisPoints,
   padelPoints,
   superTiebreakPoints,
-  matches,
 }: DashboardContentProps) {
   const { mode } = useSportMode();
 
+  const [matches, setMatches] = useState<Match[]>([]);
+
+  useEffect(() => {
+    async function loadMatches() {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.error("Utilisateur introuvable :", userError);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("matches")
+        .select("id, sport, format, created_at")
+    
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+
+      if (error) {
+        console.error("Erreur chargement matchs Dashboard :", error);
+        return;
+      }
+
+      setMatches((data ?? []) as Match[]);
+    }
+
+    loadMatches();
+  }, []);
+
   const filteredMatches = matches
     .filter((match) => match.sport === mode)
+    .sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
+    )
     .slice(0, 5);
 
-  const sportLabel = getSportLabel(mode);
-
   return (
-    <main className="min-h-screen bg-background px-5 py-7 text-foreground">
-      <div className="mx-auto max-w-lg pb-8">
-
-        {/* HEADER */}
-        <header className="flex items-center justify-between">
+    <main className="min-h-screen bg-white px-4 py-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted">
-              Bonjour
-            </p>
-
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">
+            <p className="text-sm text-gray-500">Bienvenue</p>
+            <h1 className="text-2xl font-bold text-gray-900">
               {displayName}
             </h1>
           </div>
 
-          <Link
-            href="/profile"
-            aria-label="Mon profil"
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-surface text-muted transition-all duration-200 hover:text-white active:scale-95"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="h-5 w-5"
-            >
-              <circle cx="12" cy="8" r="3.5" />
-              <path
-                strokeLinecap="round"
-                d="M5 20c.8-3.8 3.1-5.8 7-5.8s6.2 2 7 5.8"
-              />
-            </svg>
-          </Link>
-        </header>
+          <SportModeSwitcher />
+        </div>
 
-        <SportModeSwitcher />
-
-        {/* POINTS */}
         <DashboardPoints
           tennisPoints={tennisPoints}
           padelPoints={padelPoints}
           superTiebreakPoints={superTiebreakPoints}
         />
 
-        {/* NOUVEAU MATCH */}
-        <Link
-          href={
-            mode === "super_tiebreak"
-              ? "/supertiebreak/new"
-              : "/matches/new"
-          }
-          className="group mt-4 flex min-h-16 items-center justify-between rounded-2xl bg-accent px-5 text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98]"
-        >
-          <div>
-            <p className="font-bold">
-              {mode === "super_tiebreak"
-                ? "Nouveau Super Tie-Break"
-                : "Nouveau match"}
-            </p>
-
-            <p className="mt-0.5 text-sm font-medium text-background/60">
-              {mode === "super_tiebreak"
-                ? "Lance un nouveau duel"
-                : `Enregistre ton résultat ${sportLabel}`}
-            </p>
-          </div>
-
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-background/10 text-xl transition-transform duration-200 group-hover:translate-x-0.5">
-            +
-          </div>
-        </Link>
-
-        {/* EXPLORATION DU MODE */}
-        <section className="mt-9">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-              Explorer
-            </p>
-
-            <h2 className="mt-1 text-2xl font-bold tracking-tight">
-              {sportLabel}
+        <section className="mt-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">
+              Activité récente
             </h2>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <Link
-              href={
-                mode === "super_tiebreak"
-                  ? "/supertiebreak/ranking"
-                  : "/ranking"
-              }
-              className="group rounded-2xl border border-border bg-surface p-5 transition-all duration-200 hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-5 w-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 20V10M12 20V4M19 20v-7"
-                  />
-                </svg>
-              </div>
-
-              <p className="mt-5 font-bold">
-                Classement
-              </p>
-
-              <p className="mt-1 text-sm text-muted">
-                Ton classement {sportLabel}
-              </p>
-            </Link>
 
             <Link
-              href="/players"
-              className="group rounded-2xl border border-border bg-surface p-5 transition-all duration-200 hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  className="h-5 w-5"
-                >
-                  <circle cx="9" cy="8" r="3" />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3.5 19c.7-3.2 2.5-5 5.5-5s4.8 1.8 5.5 5"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    d="M16 11c2.5.2 4.2 1.7 4.7 4"
-                  />
-                </svg>
-              </div>
-
-              <p className="mt-5 font-bold">
-                Joueurs
-              </p>
-
-              <p className="mt-1 text-sm text-muted">
-                Découvre la communauté
-              </p>
-            </Link>
-          </div>
-        </section>
-
-        {/* ACTIVITÉ */}
-        <section className="mt-9">
-          <div className="flex items-end justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-                Activité
-              </p>
-
-              <h2 className="mt-1 text-2xl font-bold tracking-tight">
-                Derniers matchs {sportLabel}
-              </h2>
-            </div>
-
-            <Link
-              href={
-                mode === "super_tiebreak"
-                  ? "/supertiebreak"
-                  : "/matches"
-              }
-              className="text-sm font-semibold text-muted transition-colors hover:text-white"
+              href="/matches"
+              className="text-sm font-medium text-blue-600 hover:underline"
             >
               Voir tout
             </Link>
           </div>
 
           {filteredMatches.length === 0 ? (
-            <div className="mt-4 rounded-2xl border border-border bg-surface p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <SportIcon
-                  sport={mode}
-                  className="h-5 w-5"
-                />
-              </div>
-
-              <p className="mt-4 font-semibold">
-                Aucun match {sportLabel} pour le moment
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-center">
+              <p className="text-gray-500">
+                Aucun match récent dans ce sport.
               </p>
-
-              <p className="mt-1 text-sm text-muted">
-                Enregistre ton premier résultat pour commencer ton suivi.
-              </p>
-
-              <Link
-                href={
-                  mode === "super_tiebreak"
-                    ? "/supertiebreak/new"
-                    : "/matches/new"
-                }
-                className="mt-5 inline-flex font-semibold text-accent"
-              >
-                Créer mon premier{" "}
-                {mode === "super_tiebreak"
-                  ? "Super Tie-Break"
-                  : "match"}
-                <span className="ml-1">→</span>
-              </Link>
             </div>
           ) : (
-            <div className="mt-4 space-y-2">
+            <div className="space-y-3">
               {filteredMatches.map((match) => (
-                <Link
+                <div
                   key={match.id}
-                  href={
-                    match.sport === "super_tiebreak"
-                      ? `/supertiebreak/${match.id}`
-                      : `/matches/${match.id}`
-                  }
-                  className="group flex items-center justify-between rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/10 hover:bg-surface-2 active:scale-[0.99]"
+                  className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4"
                 >
-                  <div className="flex min-w-0 items-center gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                      <SportIcon
-                        sport={match.sport}
-                        className="h-5 w-5"
-                      />
-                    </div>
+                  <div className="flex items-center gap-3">
+                    <SportIcon sport={match.sport} />
 
-                    <div className="min-w-0">
-                      <p className="font-bold">
-                        {getSportLabel(match.sport)}
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {match.sport === "super_tiebreak"
+                          ? "Super Tie-Break"
+                          : match.sport === "tennis"
+                            ? "Tennis"
+                            : "Padel"}
                       </p>
 
-                      <p className="mt-1 text-sm text-muted">
-                        {getFormatLabel(match.format)}
+                      <p className="text-sm text-gray-500">
+                        {match.format === "singles"
+                          ? "Simple"
+                          : "Double"}
                       </p>
                     </div>
                   </div>
 
-                  <span className="ml-4 text-lg text-muted-2 transition-transform duration-200 group-hover:translate-x-1">
-                    →
-                  </span>
-                </Link>
+                  <p className="text-sm text-gray-500">
+                    {new Date(match.created_at).toLocaleDateString("fr-FR")}
+                  </p>
+                </div>
               ))}
             </div>
           )}

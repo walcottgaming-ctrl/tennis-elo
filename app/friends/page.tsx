@@ -9,6 +9,7 @@ type Profile = {
   username: string | null;
   first_name: string | null;
   last_name: string | null;
+  avatar_url: string | null;
 };
 
 type Friendship = {
@@ -200,11 +201,12 @@ export default function FriendsPage() {
     const { data: profilesData } = await supabase
       .from("profiles")
       .select(`
-        id,
-        username,
-        first_name,
-        last_name
-      `)
+  id,
+  username,
+  first_name,
+  last_name,
+  avatar_url
+`)
       .neq("id", user.id)
       .order("username", {
         ascending: true,
