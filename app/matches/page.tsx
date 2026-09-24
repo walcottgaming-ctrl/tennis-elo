@@ -347,8 +347,7 @@ const { data: matchesData, error: matchesError } =
     (a, b) =>
       new Date(b.created_at).getTime() -
       new Date(a.created_at).getTime()
-  )
-  .slice(0, 5);
+  );
 
   const totalMatches = filteredMatches.length;
 

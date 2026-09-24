@@ -345,7 +345,7 @@ export default async function PlayersPage() {
                 return (
                   <Link
                     key={player.id}
-                    href={`/players/${player.id}`}
+                    href={`/ranking/player/${player.id}`}
                     className="group block rounded-3xl border border-border bg-surface p-5 transition active:scale-[0.99]"
                   >
                     <div className="flex items-center gap-4">

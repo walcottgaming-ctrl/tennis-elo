@@ -31,27 +31,13 @@ type MatchPlayer = {
   team: number;
 };
 
-type SetScore = {
-  match_id: string;
-  set_number: number;
-  team_1_score: number;
-  team_2_score: number;
-};
-
 type ChampionHistory = {
   id: string;
   player_id: string;
-  sport: "tennis" | "padel";
+  sport: Sport;
   started_at: string;
   ended_at: string | null;
   matches_as_champion: number;
-};
-
-type MatchHistory = {
-  match: Match;
-  opponentName: string;
-  result: "Victoire" | "Défaite";
-  scores: string[];
 };
 
 type Division = {
@@ -81,6 +67,20 @@ function TrophyIcon() {
   );
 }
 
+function ChevronRightIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-5 w-5"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
 function ChevronDownIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -93,20 +93,6 @@ function ChevronDownIcon({ open }: { open: boolean }) {
       strokeWidth="1.8"
     >
       <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function ChevronRightIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-5 w-5"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="m9 18 6-6-6-6" />
     </svg>
   );
 }
@@ -161,15 +147,15 @@ export default function RankingPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>([]);
-  const [sets, setSets] = useState<SetScore[]>([]);
   const [championHistory, setChampionHistory] = useState<
     ChampionHistory[]
   >([]);
 
-  const [openPlayer, setOpenPlayer] = useState<string | null>(null);
-
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+
+  const [expandedPlayerId, setExpandedPlayerId] =
+    useState<string | null>(null);
 
   useEffect(() => {
     async function loadRanking() {
@@ -230,24 +216,6 @@ export default function RankingPage() {
       }
 
       const {
-        data: setsData,
-        error: setsError,
-      } = await supabase
-        .from("sets")
-        .select(
-          "match_id, set_number, team_1_score, team_2_score"
-        )
-        .order("set_number", {
-          ascending: true,
-        });
-
-      if (setsError) {
-        setMessage(setsError.message);
-        setLoading(false);
-        return;
-      }
-
-      const {
         data: championData,
         error: championError,
       } = await supabase
@@ -268,7 +236,6 @@ export default function RankingPage() {
       setPlayers(playersData ?? []);
       setMatches(matchesData ?? []);
       setMatchPlayers(matchPlayersData ?? []);
-      setSets(setsData ?? []);
       setChampionHistory(championData ?? []);
 
       setLoading(false);
@@ -371,7 +338,7 @@ export default function RankingPage() {
     };
   }
 
-  function getChampion(sportValue: "tennis" | "padel") {
+  function getChampion(sportValue: Sport) {
     return championHistory.find(
       (item) =>
         item.sport === sportValue &&
@@ -380,20 +347,12 @@ export default function RankingPage() {
   }
 
   function isChampion(playerId: string) {
-    if (mode === "super_tiebreak") {
-      return false;
-    }
-
     const champion = getChampion(mode);
 
     return champion?.player_id === playerId;
   }
 
   function getChampionStreak(playerId: string) {
-    if (mode === "super_tiebreak") {
-      return 0;
-    }
-
     const champion = championHistory.find(
       (item) =>
         item.sport === mode &&
@@ -405,10 +364,6 @@ export default function RankingPage() {
   }
 
   function getChampionStartedAt(playerId: string) {
-    if (mode === "super_tiebreak") {
-      return null;
-    }
-
     const champion = championHistory.find(
       (item) =>
         item.sport === mode &&
@@ -419,118 +374,78 @@ export default function RankingPage() {
     return champion?.started_at ?? null;
   }
 
-  function getPlayerHistory(
-    playerId: string
-  ): MatchHistory[] {
-    const playerMatchPlayers = matchPlayers
-      .filter(
-        (item) => item.player_id === playerId
-      )
-      .sort((a, b) => {
-        const matchA = matches.find(
-          (match) => match.id === a.match_id
-        );
+  function getPlayerMatches(playerId: string) {
+    const modeMatchIds = new Set(
+      matches
+        .filter((match) => match.sport === mode)
+        .map((match) => match.id)
+    );
 
-        const matchB = matches.find(
-          (match) => match.id === b.match_id
-        );
+    const playerMatchIds = new Set(
+      matchPlayers
+        .filter(
+          (matchPlayer) =>
+            matchPlayer.player_id === playerId &&
+            modeMatchIds.has(matchPlayer.match_id)
+        )
+        .map((matchPlayer) => matchPlayer.match_id)
+    );
 
-        return (
-          new Date(
-            matchB?.created_at ?? 0
-          ).getTime() -
-          new Date(
-            matchA?.created_at ?? 0
-          ).getTime()
-        );
-      });
-
-    const history: MatchHistory[] = [];
-
-    for (const playerMatchPlayer of playerMatchPlayers) {
-      const match = matches.find(
-        (item) =>
-          item.id === playerMatchPlayer.match_id
+    return matches
+      .filter((match) => playerMatchIds.has(match.id))
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() -
+          new Date(a.created_at).getTime()
       );
+  }
 
-      if (!match || match.sport !== mode) {
-        continue;
-      }
+  function getOpponentNames(
+    playerId: string,
+    matchId: string
+  ) {
+    const currentPlayer = matchPlayers.find(
+      (matchPlayer) =>
+        matchPlayer.match_id === matchId &&
+        matchPlayer.player_id === playerId
+    );
 
-      const opponents = matchPlayers.filter(
-        (item) =>
-          item.match_id === match.id &&
-          item.team !== playerMatchPlayer.team &&
-          item.player_id !== null
-      );
-
-      const opponentNames = opponents.map(
-        (opponent) => {
-          const profile = players.find(
-            (player) =>
-              player.id === opponent.player_id
-          );
-
-          return profile
-            ? getPlayerName(profile)
-            : "Joueur";
-        }
-      );
-
-      const matchSets = sets.filter(
-        (set) =>
-          set.match_id === match.id
-      );
-
-      let playerSetWins = 0;
-      let opponentSetWins = 0;
-
-      const scores = matchSets.map(
-        (set) => {
-          const playerScore =
-            playerMatchPlayer.team === 1
-              ? set.team_1_score
-              : set.team_2_score;
-
-          const opponentScore =
-            playerMatchPlayer.team === 1
-              ? set.team_2_score
-              : set.team_1_score;
-
-          if (playerScore > opponentScore) {
-            playerSetWins++;
-          } else if (
-            opponentScore > playerScore
-          ) {
-            opponentSetWins++;
-          }
-
-          return `${set.team_1_score}-${set.team_2_score}`;
-        }
-      );
-
-      if (scores.length === 0) {
-        continue;
-      }
-
-      history.push({
-        match,
-        opponentName:
-          opponentNames.join(" / ") ||
-          "Joueur",
-        result:
-          playerSetWins > opponentSetWins
-            ? "Victoire"
-            : "Défaite",
-        scores,
-      });
-
-      if (history.length >= 10) {
-        break;
-      }
+    if (!currentPlayer) {
+      return "Adversaire";
     }
 
-    return history;
+    const opponentIds = matchPlayers
+      .filter(
+        (matchPlayer) =>
+          matchPlayer.match_id === matchId &&
+          matchPlayer.player_id !== null &&
+          matchPlayer.player_id !== playerId &&
+          matchPlayer.team !== currentPlayer.team
+      )
+      .map((matchPlayer) => matchPlayer.player_id);
+
+    const opponentNames = opponentIds
+      .map((opponentId) =>
+        players.find(
+          (player) => player.id === opponentId
+        )
+      )
+      .filter(Boolean)
+      .map((player) => getPlayerName(player!));
+
+    if (opponentNames.length === 0) {
+      return "Adversaire";
+    }
+
+    return opponentNames.join(" & ");
+  }
+
+  function getFormatLabel(format: Match["format"]) {
+    return format === "doubles" ? "Double" : "Simple";
+  }
+
+  function getRecentConfrontations(playerId: string) {
+    return getPlayerMatches(playerId).slice(0, 3);
   }
 
   if (loading) {
@@ -551,20 +466,39 @@ export default function RankingPage() {
 
   const sportLabel = getSportLabel();
 
-  const rankedPlayers = [...players].sort(
-    (a, b) =>
-      getPlayerPoints(b) -
-      getPlayerPoints(a)
+  const modeMatchIds = new Set(
+    matches
+      .filter((match) => match.sport === mode)
+      .map((match) => match.id)
   );
+
+  const activePlayerIds = new Set(
+    matchPlayers
+      .filter(
+        (matchPlayer) =>
+          matchPlayer.player_id !== null &&
+          modeMatchIds.has(matchPlayer.match_id)
+      )
+      .map((matchPlayer) => matchPlayer.player_id)
+  );
+
+  const rankedPlayers = players
+    .filter((player) => activePlayerIds.has(player.id))
+    .sort(
+      (a, b) =>
+        getPlayerPoints(b) -
+        getPlayerPoints(a)
+    );
 
   const podium = rankedPlayers.slice(0, 3);
 
   const topPlayer = rankedPlayers[0] ?? null;
 
-  const currentChampion =
-    mode === "super_tiebreak"
-      ? null
-      : getChampion(mode);
+  /*
+   * Le champion est maintenant actif dans les 3 modes :
+   * Tennis, Padel et Super Tie-Break.
+   */
+  const currentChampion = getChampion(mode);
 
   const currentChampionPlayer = currentChampion
     ? players.find(
@@ -646,9 +580,7 @@ export default function RankingPage() {
 
                 <div className="shrink-0 rounded-2xl bg-accent/10 px-4 py-3 text-right">
                   <p className="text-2xl font-bold text-accent">
-                    {getPlayerPoints(
-                      currentChampionPlayer
-                    )}
+                    {getPlayerPoints(currentChampionPlayer)}
                   </p>
 
                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
@@ -828,15 +760,8 @@ export default function RankingPage() {
               {/* 2ND */}
 
               {podium[1] && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenPlayer(
-                      openPlayer === podium[1].id
-                        ? null
-                        : podium[1].id
-                    )
-                  }
+                <Link
+                  href={`/ranking/player/${podium[1].id}`}
                   className="rounded-3xl border border-border bg-surface p-3 text-center transition hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
                 >
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-xl">
@@ -863,21 +788,14 @@ export default function RankingPage() {
                       ).name
                     }
                   </p>
-                </button>
+                </Link>
               )}
 
               {/* 1ST */}
 
               {podium[0] && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenPlayer(
-                      openPlayer === podium[0].id
-                        ? null
-                        : podium[0].id
-                    )
-                  }
+                <Link
+                  href={`/ranking/player/${podium[0].id}`}
                   className="relative rounded-3xl border border-accent/30 bg-surface p-4 text-center shadow-2xl transition hover:bg-surface-2 active:scale-[0.98]"
                 >
                   {isChampion(podium[0].id) && (
@@ -911,21 +829,14 @@ export default function RankingPage() {
                       ).name
                     }
                   </p>
-                </button>
+                </Link>
               )}
 
               {/* 3RD */}
 
               {podium[2] && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setOpenPlayer(
-                      openPlayer === podium[2].id
-                        ? null
-                        : podium[2].id
-                    )
-                  }
+                <Link
+                  href={`/ranking/player/${podium[2].id}`}
                   className="rounded-3xl border border-border bg-surface p-3 text-center transition hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
                 >
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-xl">
@@ -952,7 +863,7 @@ export default function RankingPage() {
                       ).name
                     }
                   </p>
-                </button>
+                </Link>
               )}
             </div>
           </section>
@@ -987,12 +898,6 @@ export default function RankingPage() {
               </div>
             ) : (
               rankedPlayers.map((player, index) => {
-                const isOpen =
-                  openPlayer === player.id;
-
-                const playerHistory =
-                  getPlayerHistory(player.id);
-
                 const playerPoints =
                   getPlayerPoints(player);
 
@@ -1002,257 +907,164 @@ export default function RankingPage() {
                 const playerIsChampion =
                   isChampion(player.id);
 
+                const isExpanded =
+                  expandedPlayerId === player.id;
+
+                const recentMatches =
+                  isExpanded
+                    ? getRecentConfrontations(player.id)
+                    : [];
+
                 return (
                   <div
                     key={player.id}
                     className="border-b border-border last:border-b-0"
                   >
+                    {/* MAIN ROW */}
+
                     <button
                       type="button"
                       onClick={() =>
-                        setOpenPlayer(
-                          isOpen
+                        setExpandedPlayerId(
+                          isExpanded
                             ? null
                             : player.id
                         )
                       }
-                      className="w-full px-4 py-4 text-left transition hover:bg-surface-2"
+                      className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-surface-2"
                     >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
-                            index === 0
-                              ? "bg-accent/10 text-accent"
-                              : "bg-surface-2 text-muted"
-                          }`}
-                        >
-                          {index + 1}
-                        </div>
+                      {/* POSITION */}
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-bold">
-                              {getPlayerName(player)}
-                            </p>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-muted">
+                        {index + 1}
+                      </div>
 
-                            {playerIsChampion && (
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
-                                <CrownIcon />
-                              </span>
-                            )}
-                          </div>
+                      {/* PLAYER */}
 
-                          <p className="mt-1 truncate text-xs text-muted">
-                            {division.icon}{" "}
-                            {division.name}
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="text-xl font-bold">
-                            {playerPoints}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-bold">
+                            {getPlayerName(player)}
                           </p>
 
-                          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
-                            points
-                          </p>
+                          {playerIsChampion && (
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
+                              <CrownIcon />
+                            </span>
+                          )}
                         </div>
 
-                        <div className="text-muted">
-                          <ChevronDownIcon
-                            open={isOpen}
-                          />
-                        </div>
+                        <p className="mt-1 truncate text-xs text-muted">
+                          {division.icon}{" "}
+                          {division.name}
+                        </p>
+                      </div>
+
+                      {/* POINTS */}
+
+                      <div className="text-right">
+                        <p className="text-xl font-bold">
+                          {playerPoints}
+                        </p>
+
+                        <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
+                          points
+                        </p>
+                      </div>
+
+                      {/* ARROW */}
+
+                      <div className="shrink-0 text-muted">
+                        <ChevronDownIcon
+                          open={isExpanded}
+                        />
                       </div>
                     </button>
 
-                    {isOpen && (
-                      <div className="border-t border-border bg-surface-2/60 px-4 py-5">
-                        {/* PLAYER SUMMARY */}
+                    {/* EXPANDED CONTENT */}
 
-                        <div className="rounded-2xl border border-border bg-surface p-4">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <p className="text-base font-bold">
-                                {getPlayerName(player)}
-                              </p>
+                    {isExpanded && (
+                      <div className="border-t border-border bg-surface-2 px-4 pb-4 pt-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                              Dernières confrontations
+                            </p>
 
-                              <p className="mt-1 text-xs text-muted">
-                                {sportLabel} · Division{" "}
-                                {division.name}
-                              </p>
-                            </div>
-
-                            <div className="text-right">
-                              <p className="text-2xl font-bold text-accent">
-                                {playerPoints}
-                              </p>
-
-                              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
-                                points
-                              </p>
-                            </div>
+                            <p className="mt-1 text-xs text-muted">
+                              {sportLabel}
+                            </p>
                           </div>
 
-                          {playerIsChampion && (
-                            <div className="mt-4 rounded-2xl border border-accent/20 bg-accent/10 p-4">
-                              <div className="flex items-center gap-2 text-accent">
-                                <CrownIcon />
-
-                                <p className="text-xs font-bold uppercase tracking-[0.14em]">
-                                  Champion actuel
-                                </p>
-                              </div>
-
-                              <div className="mt-3 flex items-center gap-2">
-                                <FlameIcon />
-
-                                <p className="text-lg font-bold">
-                                  {getChampionStreak(
-                                    player.id
-                                  )}{" "}
-                                  match
-                                  {getChampionStreak(
-                                    player.id
-                                  ) > 1
-                                    ? "s"
-                                    : ""}
-                                </p>
-                              </div>
-
-                              {getChampionStartedAt(
-                                player.id
-                              ) && (
-                                <p className="mt-1 text-xs text-muted">
-                                  Depuis le{" "}
-                                  {new Date(
-                                    getChampionStartedAt(
-                                      player.id
-                                    )!
-                                  ).toLocaleDateString(
-                                    "fr-FR"
-                                  )}
-                                </p>
-                              )}
-                            </div>
-                          )}
+                          <Link
+                            href={`/ranking/player/${player.id}`}
+                            onClick={(event) =>
+                              event.stopPropagation()
+                            }
+                            className="shrink-0 rounded-xl bg-accent/10 px-3 py-2 text-[11px] font-bold text-accent transition hover:bg-accent/20"
+                          >
+                            Profil complet
+                          </Link>
                         </div>
 
-                        {/* MATCH HISTORY */}
-
-                        <div className="mt-6">
-                          <div className="flex items-end justify-between gap-4">
-                            <div>
-                              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                                Historique
-                              </p>
-
-                              <h3 className="mt-1 text-base font-bold">
-                                10 dernières confrontations
-                              </h3>
-                            </div>
+                        {recentMatches.length === 0 ? (
+                          <div className="mt-3 rounded-2xl bg-surface p-4">
+                            <p className="text-sm text-muted">
+                              Aucune confrontation récente.
+                            </p>
                           </div>
+                        ) : (
+                          <div className="mt-3 space-y-2">
+                            {recentMatches.map((match) => (
+                              <Link
+                                key={match.id}
+                                href={`/matches/${match.id}`}
+                                className="flex items-center gap-3 rounded-2xl bg-surface p-3 transition hover:bg-background"
+                              >
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-xs font-bold text-muted">
+                                  {match.format ===
+                                  "doubles"
+                                    ? "D"
+                                    : "S"}
+                                </div>
 
-                          {playerHistory.length === 0 ? (
-                            <div className="mt-3 rounded-2xl border border-border bg-surface p-4">
-                              <p className="text-sm text-muted">
-                                Aucune confrontation
-                                enregistrée.
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="mt-3 space-y-2">
-                              {playerHistory.map(
-                                (item) => (
-                                  <Link
-                                    key={item.match.id}
-                                    href={
-                                      item.match.sport ===
-                                      "super_tiebreak"
-                                        ? `/supertiebreak/${item.match.id}`
-                                        : `/matches/${item.match.id}`
-                                    }
-                                    className="block rounded-2xl border border-border bg-surface p-4 transition hover:border-white/10 hover:bg-surface-2"
-                                  >
-                                    <div className="flex items-start gap-3">
-                                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-muted">
-                                        <SportIcon
-                                          sport={
-                                            item.match.sport
-                                          }
-                                          className="h-5 w-5"
-                                        />
-                                      </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-semibold">
+                                    vs{" "}
+                                    {getOpponentNames(
+                                      player.id,
+                                      match.id
+                                    )}
+                                  </p>
 
-                                      <div className="min-w-0 flex-1">
-                                        <div className="flex items-start justify-between gap-3">
-                                          <div className="min-w-0">
-                                            <p className="truncate text-sm font-bold">
-                                              vs{" "}
-                                              {
-                                                item.opponentName
-                                              }
-                                            </p>
+                                  <p className="mt-0.5 text-[10px] text-muted">
+                                    {getFormatLabel(
+                                      match.format
+                                    )}{" "}
+                                    ·{" "}
+                                    {new Date(
+                                      match.created_at
+                                    ).toLocaleDateString(
+                                      "fr-FR"
+                                    )}
+                                  </p>
+                                </div>
 
-                                            <p className="mt-1 text-xs text-muted">
-                                              {item.match.sport ===
-                                              "super_tiebreak"
-                                                ? "Super Tie-Break"
-                                                : item.match.format ===
-                                                    "singles"
-                                                  ? "Simple"
-                                                  : "Double"}{" "}
-                                              ·{" "}
-                                              {new Date(
-                                                item.match.created_at
-                                              ).toLocaleDateString(
-                                                "fr-FR"
-                                              )}
-                                            </p>
-                                          </div>
+                                <ChevronRightIcon />
+                              </Link>
+                            ))}
+                          </div>
+                        )}
 
-                                          <span
-                                            className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                                              item.result ===
-                                              "Victoire"
-                                                ? "bg-accent/10 text-accent"
-                                                : "bg-danger/10 text-danger"
-                                            }`}
-                                          >
-                                            {item.result}
-                                          </span>
-                                        </div>
-
-                                        <div className="mt-3 flex flex-wrap gap-1.5">
-                                          {item.scores.map(
-                                            (
-                                              score,
-                                              scoreIndex
-                                            ) => (
-                                              <span
-                                                key={`${item.match.id}-${scoreIndex}`}
-                                                className="rounded-lg bg-surface-2 px-2.5 py-1.5 text-[10px] font-semibold text-muted"
-                                              >
-                                                S
-                                                {scoreIndex +
-                                                  1}{" "}
-                                                {score}
-                                              </span>
-                                            )
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div className="shrink-0 pt-1 text-muted">
-                                        <ChevronRightIcon />
-                                      </div>
-                                    </div>
-                                  </Link>
-                                )
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <Link
+                          href={`/ranking/player/${player.id}`}
+                          onClick={(event) =>
+                            event.stopPropagation()
+                          }
+                          className="mt-3 flex min-h-11 items-center justify-center rounded-2xl border border-border bg-surface text-sm font-bold transition hover:bg-background"
+                        >
+                          Voir le profil complet →
+                        </Link>
                       </div>
                     )}
                   </div>
@@ -1261,6 +1073,8 @@ export default function RankingPage() {
             )}
           </div>
         </section>
+
+        {/* POINTS HISTORY */}
 
         <Link
           href="/ranking/history"
@@ -1303,8 +1117,9 @@ export default function RankingPage() {
                   </p>
 
                   <p className="mt-3 text-sm leading-6 text-muted">
-                    Les résultats Super Tie-Break n&apos;affectent
-                    donc pas tes points Tennis ou Padel.
+                    Les résultats Super Tie-Break
+                    n&apos;affectent donc pas tes points
+                    Tennis ou Padel.
                   </p>
                 </>
               ) : (
@@ -1338,25 +1153,23 @@ export default function RankingPage() {
               )}
 
               <p className="mt-3 text-sm leading-6 text-muted">
-                Plus tes points augmentent, plus tu
-                montes dans les divisions : Bronze,
-                Argent, Or, Platine puis Diamant.
+                Plus tes points augmentent, plus tu montes
+                dans les divisions : Bronze, Argent, Or,
+                Platine puis Diamant.
               </p>
 
-              {mode !== "super_tiebreak" && (
-                <div className="mt-4 flex items-start gap-2 rounded-2xl bg-accent/5 p-3">
-                  <div className="mt-0.5 shrink-0 text-accent">
-                    <CrownIcon />
-                  </div>
-
-                  <p className="text-xs font-medium leading-5 text-muted">
-                    Le joueur actuellement premier est le
-                    Champion. Son compteur indique combien
-                    de matchs il a conservé la première
-                    place.
-                  </p>
+              <div className="mt-4 flex items-start gap-2 rounded-2xl bg-accent/5 p-3">
+                <div className="mt-0.5 shrink-0 text-accent">
+                  <CrownIcon />
                 </div>
-              )}
+
+                <p className="text-xs font-medium leading-5 text-muted">
+                  Le joueur actuellement premier est le
+                  Champion. Son compteur indique combien
+                  de matchs il a conservé la première
+                  place.
+                </p>
+              </div>
             </div>
           </div>
         </section>

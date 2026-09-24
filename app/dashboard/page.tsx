@@ -16,25 +16,17 @@ type Match = {
   created_at: string;
 };
 
-type DashboardPageProps = {
-  displayName: string;
-  tennisPoints: number;
-  padelPoints: number;
-  superTiebreakPoints: number;
-  matches?: Match[];
-};
-
-export default function DashboardPage({
-  tennisPoints,
-  padelPoints,
-  superTiebreakPoints,
-}: DashboardPageProps) {
+export default function DashboardPage() {
   const { mode } = useSportMode();
 
   const [matches, setMatches] = useState<Match[]>([]);
 
+  const [tennisPoints, setTennisPoints] = useState(1000);
+  const [padelPoints, setPadelPoints] = useState(1000);
+  const [superTiebreakPoints, setSuperTiebreakPoints] = useState(1000);
+
   useEffect(() => {
-    async function loadMatches() {
+    async function loadDashboard() {
       const supabase = createClient();
 
       const {
@@ -45,42 +37,58 @@ export default function DashboardPage({
         return;
       }
 
+      // Récupération des points du joueur
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select(
+          "points_tennis, points_padel, points_super_tiebreak"
+        )
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error(
+          "Erreur récupération des points :",
+          profileError
+        );
+      } else {
+        setTennisPoints(profile.points_tennis ?? 1000);
+        setPadelPoints(profile.points_padel ?? 1000);
+        setSuperTiebreakPoints(
+          profile.points_super_tiebreak ?? 1000
+        );
+      }
+
+      // Récupération des matchs du joueur
       const { data: playerMatches, error: playerMatchesError } =
-  await supabase
-    .from("match_players")
-    .select("match_id")
-    .eq("player_id", user.id);
+        await supabase
+          .from("match_players")
+          .select("match_id")
+          .eq("player_id", user.id);
 
-if (playerMatchesError) {
-  console.error(
-    "Erreur récupération des matchs du joueur :",
-    playerMatchesError
-  );
-  return;
-}
+      if (playerMatchesError) {
+        console.error(
+          "Erreur récupération des matchs du joueur :",
+          playerMatchesError
+        );
+        return;
+      }
 
-const playerMatchIds = (playerMatches ?? []).map(
-  (row) => row.match_id
-);
+      const playerMatchIds = (playerMatches ?? []).map(
+        (row) => row.match_id
+      );
 
-if (playerMatchIds.length === 0) {
-  setMatches([]);
-  return;
-}
+      if (playerMatchIds.length === 0) {
+        setMatches([]);
+        return;
+      }
 
-const { data, error } = await supabase
-  .from("matches")
-  .select("id, sport, format, created_at")
-  .in("id", playerMatchIds)
-  .order("created_at", { ascending: false })
-  .limit(20);
-
-if (error) {
-  console.error("Erreur Dashboard matches :", error);
-  return;
-}
-
-setMatches((data ?? []) as Match[]);
+      const { data, error } = await supabase
+        .from("matches")
+        .select("id, sport, format, created_at")
+        .in("id", playerMatchIds)
+        .order("created_at", { ascending: false })
+        .limit(20);
 
       if (error) {
         console.error("Erreur Dashboard matches :", error);
@@ -90,13 +98,8 @@ setMatches((data ?? []) as Match[]);
       setMatches((data ?? []) as Match[]);
     }
 
-    void loadMatches();
+    void loadDashboard();
   }, []);
-
-  const safeTennisPoints = tennisPoints ?? 1000;
-  const safePadelPoints = padelPoints ?? 1000;
-  const safeSuperTiebreakPoints =
-    superTiebreakPoints ?? 1000;
 
   const filteredMatches = matches
     .filter((match) => match.sport === mode)
@@ -145,18 +148,19 @@ setMatches((data ?? []) as Match[]);
 
         {/* POINTS */}
         <DashboardPoints
-          tennisPoints={safeTennisPoints}
-          padelPoints={safePadelPoints}
-          superTiebreakPoints={safeSuperTiebreakPoints}
+          tennisPoints={tennisPoints}
+          padelPoints={padelPoints}
+          superTiebreakPoints={superTiebreakPoints}
         />
 
         {/* NOUVEAU MATCH */}
         <Link
           href={
-            mode === "super_tiebreak"
-              ? "/supertiebreak/new"
-              : "/matches/new"
-          }
+  mode === "super_tiebreak"
+    ? "/supertiebreak/new"
+    : "/matches/new"
+}
+          
           className="group mt-4 flex min-h-16 items-center justify-between rounded-2xl bg-accent px-5 text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98]"
         >
           <div>
@@ -192,11 +196,7 @@ setMatches((data ?? []) as Match[]);
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <Link
-              href={
-                mode === "super_tiebreak"
-                  ? "/supertiebreak/ranking"
-                  : "/ranking"
-              }
+              href="/ranking"
               className="group rounded-2xl border border-border bg-surface p-5 transition-all duration-200 hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">

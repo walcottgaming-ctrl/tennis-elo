@@ -163,8 +163,14 @@ function getPlayerName(profile: Profile | null) {
 function getInitials(profile: Profile | null) {
   const name = getPlayerName(profile);
 
-  if (profile?.username && !profile.first_name && !profile.last_name) {
-    return profile.username.substring(0, 2).toUpperCase();
+  if (
+    profile?.username &&
+    !profile.first_name &&
+    !profile.last_name
+  ) {
+    return profile.username
+      .substring(0, 2)
+      .toUpperCase();
   }
 
   const parts = name.split(" ");
@@ -201,12 +207,12 @@ export default function FriendsPage() {
     const { data: profilesData } = await supabase
       .from("profiles")
       .select(`
-  id,
-  username,
-  first_name,
-  last_name,
-  avatar_url
-`)
+        id,
+        username,
+        first_name,
+        last_name,
+        avatar_url
+      `)
       .neq("id", user.id)
       .order("username", {
         ascending: true,
@@ -481,7 +487,10 @@ export default function FriendsPage() {
                     key={request.id}
                     className="rounded-3xl border border-border bg-surface p-5"
                   >
-                    <div className="flex items-center gap-3">
+                    <Link
+                      href={`/ranking/player/${request.requester_id}`}
+                      className="flex items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                    >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
                         {getInitials(profile)}
                       </div>
@@ -497,7 +506,7 @@ export default function FriendsPage() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <button
@@ -568,16 +577,21 @@ export default function FriendsPage() {
           ) : (
             <div className="mt-4 space-y-3">
               {acceptedFriends.map((friendship) => {
-                const profile = getProfileById(
-                  getOtherUserId(friendship)
-                );
+                const otherUserId =
+                  getOtherUserId(friendship);
+
+                const profile =
+                  getProfileById(otherUserId);
 
                 return (
                   <div
                     key={friendship.id}
                     className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
+                    <Link
+                      href={`/ranking/player/${otherUserId}`}
+                      className="flex min-w-0 items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                    >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
                         {getInitials(profile)}
                       </div>
@@ -593,13 +607,11 @@ export default function FriendsPage() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </Link>
 
                     <div className="flex shrink-0 items-center gap-2">
                       <Link
-                        href={`/matches/new?opponent=${getOtherUserId(
-                          friendship
-                        )}`}
+                        href={`/matches/new?opponent=${otherUserId}`}
                         className="flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-background transition active:scale-[0.99]"
                       >
                         <GameIcon />
@@ -646,19 +658,24 @@ export default function FriendsPage() {
                     key={request.id}
                     className="flex items-center gap-3 rounded-3xl border border-border bg-surface p-4"
                   >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
-                      {getInitials(profile)}
-                    </div>
+                    <Link
+                      href={`/ranking/player/${request.addressee_id}`}
+                      className="flex min-w-0 items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
+                        {getInitials(profile)}
+                      </div>
 
-                    <div className="min-w-0">
-                      <p className="truncate font-bold">
-                        {getPlayerName(profile)}
-                      </p>
+                      <div className="min-w-0">
+                        <p className="truncate font-bold">
+                          {getPlayerName(profile)}
+                        </p>
 
-                      <p className="mt-1 text-sm text-muted">
-                        En attente de réponse
-                      </p>
-                    </div>
+                        <p className="mt-1 text-sm text-muted">
+                          En attente de réponse
+                        </p>
+                      </div>
+                    </Link>
 
                     <span className="ml-auto shrink-0 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
                       En attente
@@ -718,7 +735,10 @@ export default function FriendsPage() {
                   key={profile.id}
                   className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <Link
+                    href={`/ranking/player/${profile.id}`}
+                    className="flex min-w-0 items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                  >
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
                       {getInitials(profile)}
                     </div>
@@ -734,7 +754,7 @@ export default function FriendsPage() {
                         </p>
                       )}
                     </div>
-                  </div>
+                  </Link>
 
                   {isFriend ? (
                     <span className="flex shrink-0 items-center gap-1.5 rounded-xl border border-accent/20 bg-accent/10 px-3 py-2 text-xs font-bold text-accent">
