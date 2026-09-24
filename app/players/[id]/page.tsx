@@ -63,14 +63,18 @@ type PageProps = {
   }>;
 };
 
-function ArrowLeftIcon() {
+function ArrowLeftIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className="h-4 w-4"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -82,14 +86,18 @@ function ArrowLeftIcon() {
   );
 }
 
-function TrophyIcon() {
+function TrophyIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -106,14 +114,18 @@ function TrophyIcon() {
   );
 }
 
-function ChartIcon() {
+function ChartIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -130,14 +142,18 @@ function ChartIcon() {
   );
 }
 
-function MatchIcon() {
+function MatchIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -162,32 +178,48 @@ export default async function PlayerPage({
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg pb-8">
-          <div className="flex items-center gap-2 text-muted">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2">
-              <TrophyIcon />
+      <main
+        className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div className="mx-auto max-w-lg">
+          <div className="glass-strong overflow-hidden rounded-[30px] p-6 sm:p-7">
+            <div className="flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-2xl bg-accent/10 blur-xl" />
+
+                <div className="relative grid h-12 w-12 place-items-center rounded-2xl border border-accent/15 bg-accent/8 text-accent">
+                  <TrophyIcon className="h-5 w-5" />
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <p className="eyebrow">Profil joueur</p>
+
+                <h1 className="mt-1 font-display text-2xl font-bold tracking-tight">
+                  Joueur
+                </h1>
+              </div>
             </div>
 
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
-              Profil joueur
-            </p>
+            <div className="mt-8 border-t border-white/8 pt-6">
+              <p className="text-sm leading-6 text-muted">
+                Connecte-toi pour accéder à ce profil et
+                consulter ses statistiques.
+              </p>
+
+              <Link
+                href="/login"
+                className="mt-6 flex min-h-13 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
+              >
+                Se connecter
+              </Link>
+            </div>
           </div>
-
-          <h1 className="mt-4 text-3xl font-bold tracking-tight">
-            Joueur
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-muted">
-            Tu dois être connecté pour accéder à ce profil.
-          </p>
-
-          <Link
-            href="/login"
-            className="mt-6 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background transition active:scale-[0.99]"
-          >
-            Se connecter
-          </Link>
         </div>
       </main>
     );
@@ -204,32 +236,40 @@ export default async function PlayerPage({
 
   if (playerError || !player) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg pb-8">
+      <main
+        className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div className="mx-auto max-w-lg">
           <Link
             href="/players"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-muted"
+            aria-label="Retour aux joueurs"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
           >
             <ArrowLeftIcon />
-            Retour aux joueurs
           </Link>
 
-          <div className="mt-6 rounded-3xl border border-border bg-surface p-7">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted">
+          <div className="glass-strong mt-5 rounded-[28px] p-7">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl border border-white/8 bg-white/5 text-muted">
               <TrophyIcon />
             </div>
 
-            <h1 className="mt-5 text-2xl font-bold tracking-tight">
+            <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">
               Joueur introuvable
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-muted">
-              Ce joueur n&apos;existe pas ou n&apos;est plus disponible.
+              Ce joueur n&apos;existe pas ou n&apos;est plus
+              disponible.
             </p>
 
             <Link
               href="/players"
-              className="mt-6 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background"
+              className="mt-6 flex min-h-13 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
             >
               Retour aux joueurs
             </Link>
@@ -784,189 +824,280 @@ export default async function PlayerPage({
   const initials = getInitials(player);
 
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-      <div className="mx-auto max-w-lg pb-8">
+    <main
+      className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="mx-auto max-w-lg">
         <Link
           href="/players"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-muted"
+          aria-label="Retour aux joueurs"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
         >
           <ArrowLeftIcon />
-          Retour aux joueurs
         </Link>
 
-        <section className="mt-6 rounded-3xl border border-border bg-surface p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-lg font-bold">
-              {initials}
+        <section className="glass-strong relative mt-5 overflow-hidden rounded-[30px] p-5 sm:p-6">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-52 w-52 rounded-full bg-accent/8 blur-3xl" />
+
+          <div className="relative">
+            <div className="flex items-start gap-4">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-[22px] bg-accent/15 blur-xl" />
+
+                <div className="relative grid h-17 w-17 place-items-center rounded-[22px] border border-accent/25 bg-accent/10 font-display text-xl font-bold text-accent">
+                  {initials}
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="eyebrow">Profil joueur</p>
+
+                  <span className="shrink-0 rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted">
+                    Joueur
+                  </span>
+                </div>
+
+                <h1 className="mt-2 truncate font-display text-[27px] font-bold leading-tight tracking-tight">
+                  {name}
+                </h1>
+
+                {player.username && (
+                  <p className="mt-1 text-sm text-muted">
+                    @{player.username}
+                  </p>
+                )}
+              </div>
             </div>
 
-            <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold tracking-tight">
-                {name}
-              </h1>
-
-              {player.username && (
-                <p className="mt-1 text-sm text-muted">
-                  @{player.username}
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              <div className="rounded-2xl border border-white/6 bg-black/10 px-3 py-3">
+                <p className="eyebrow">Matchs</p>
+                <p className="mt-1.5 font-display text-xl font-bold">
+                  {totalMatches}
                 </p>
-              )}
+              </div>
 
-              <p className="mt-2 text-sm text-muted">
-                {totalMatches}{" "}
-                {totalMatches > 1
-                  ? "matchs joués"
-                  : "match joué"}
-              </p>
+              <div className="rounded-2xl border border-accent/10 bg-accent/5 px-3 py-3">
+                <p className="eyebrow text-accent">
+                  Victoires
+                </p>
+                <p className="mt-1.5 font-display text-xl font-bold">
+                  {wins}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/6 bg-black/10 px-3 py-3">
+                <p className="eyebrow">Win rate</p>
+                <p className="mt-1.5 font-display text-xl font-bold">
+                  {winRate}%
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex items-center gap-2 text-muted">
-              <SportIcon
-                sport="tennis"
-                className="h-4 w-4"
-              />
+        <section className="mt-3 grid grid-cols-2 gap-3">
+          <div className="glass rounded-3xl p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted">
+                <SportIcon
+                  sport="tennis"
+                  className="h-4 w-4"
+                />
 
-              <p className="text-xs font-bold uppercase tracking-[0.14em]">
-                Tennis
-              </p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em]">
+                  Tennis
+                </p>
+              </div>
+
+              <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
             </div>
 
-            <p className="mt-3 text-3xl font-bold tracking-tight">
+            <p className="mt-4 font-display text-[28px] font-bold leading-none tracking-tight">
               {player.points_tennis ?? 1000}
             </p>
 
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1.5 text-[11px] text-muted">
               points
             </p>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex items-center gap-2 text-muted">
-              <SportIcon
-                sport="padel"
-                className="h-4 w-4"
-              />
+          <div className="glass rounded-3xl p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-muted">
+                <SportIcon
+                  sport="padel"
+                  className="h-4 w-4"
+                />
 
-              <p className="text-xs font-bold uppercase tracking-[0.14em]">
-                Padel
-              </p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em]">
+                  Padel
+                </p>
+              </div>
+
+              <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
             </div>
 
-            <p className="mt-3 text-3xl font-bold tracking-tight">
+            <p className="mt-4 font-display text-[28px] font-bold leading-none tracking-tight">
               {player.points_padel ?? 1000}
             </p>
 
-            <p className="mt-1 text-xs text-muted">
+            <p className="mt-1.5 text-[11px] text-muted">
               points
             </p>
           </div>
         </section>
 
-        <section className="mt-6">
-          <div className="flex items-center gap-2 text-muted">
-            <ChartIcon />
+        <section className="mt-9">
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/5 text-muted">
+              <ChartIcon className="h-4 w-4" />
+            </div>
 
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
-              Performances
-            </p>
+            <div>
+              <p className="eyebrow">Performances</p>
+
+              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                Statistiques
+              </h2>
+            </div>
           </div>
 
-          <h2 className="mt-1 text-xl font-bold tracking-tight">
-            Statistiques
-          </h2>
+          <div className="glass-strong mt-4 overflow-hidden rounded-[26px]">
+            <div className="grid grid-cols-2 divide-x divide-white/6 border-b border-white/6">
+              <div className="p-5">
+                <p className="eyebrow">Total</p>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                Matchs
-              </p>
+                <p className="mt-2 font-display text-3xl font-bold tracking-tight">
+                  {totalMatches}
+                </p>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight">
-                {totalMatches}
-              </p>
+                <p className="mt-1 text-xs text-muted">
+                  matchs joués
+                </p>
+              </div>
+
+              <div className="p-5">
+                <p className="eyebrow">Réussite</p>
+
+                <p className="mt-2 font-display text-3xl font-bold tracking-tight">
+                  {winRate}%
+                </p>
+
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/8">
+                  <div
+                    className="h-full rounded-full bg-accent"
+                    style={{
+                      width: `${winRate}%`,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                Victoire
-              </p>
+            <div className="grid grid-cols-2 divide-x divide-white/6">
+              <div className="p-5">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
 
-              <p className="mt-2 text-3xl font-bold tracking-tight">
-                {winRate}%
-              </p>
-            </div>
+                  <p className="text-xs font-semibold text-muted">
+                    Victoires
+                  </p>
+                </div>
 
-            <div className="rounded-2xl border border-accent/20 bg-accent/5 p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-accent">
-                Victoires
-              </p>
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {wins}
+                </p>
+              </div>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight">
-                {wins}
-              </p>
-            </div>
+              <div className="p-5">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-danger" />
 
-            <div className="rounded-2xl border border-danger/20 bg-danger/5 p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-danger">
-                Défaites
-              </p>
+                  <p className="text-xs font-semibold text-muted">
+                    Défaites
+                  </p>
+                </div>
 
-              <p className="mt-2 text-3xl font-bold tracking-tight">
-                {losses}
-              </p>
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {losses}
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
         {topHeadToHeadStats.length > 0 && (
-          <section className="mt-7">
-            <div className="flex items-center gap-2 text-muted">
-              <TrophyIcon />
+          <section className="mt-9">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/5 text-muted">
+                  <TrophyIcon className="h-4 w-4" />
+                </div>
 
-              <p className="text-xs font-bold uppercase tracking-[0.16em]">
-                Confrontations
-              </p>
+                <div>
+                  <p className="eyebrow">
+                    Confrontations
+                  </p>
+
+                  <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                    Head-to-head
+                  </h2>
+                </div>
+              </div>
+
+              <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted">
+                {topHeadToHeadStats.length}
+              </span>
             </div>
 
-            <h2 className="mt-1 text-xl font-bold tracking-tight">
-              Head-to-head
-            </h2>
-
-            <p className="mt-1 text-sm leading-5 text-muted">
+            <p className="mt-2 text-sm leading-5 text-muted">
               Tes adversaires les plus affrontés en simple.
             </p>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               {topHeadToHeadStats.map((item) => (
                 <Link
                   key={item.opponentId}
                   href={`/players/${item.opponentId}`}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/15 hover:bg-surface-2 active:scale-[0.99]"
+                  className="glass group block rounded-3xl p-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.995]"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">
-                      {item.opponentName}
-                    </p>
+                  <div className="flex items-center gap-3.5">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/8 bg-white/5 font-display text-xs font-bold text-muted">
+                      {item.opponentName
+                        .replace("@", "")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
 
-                    <p className="mt-1 text-xs text-muted">
-                      {item.matches}{" "}
-                      {item.matches > 1
-                        ? "confrontations"
-                        : "confrontation"}
-                    </p>
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-display font-bold">
+                        {item.opponentName}
+                      </p>
 
-                  <div className="ml-4 shrink-0 text-right">
-                    <p className="text-sm font-semibold">
-                      {item.wins} V · {item.losses} D
-                    </p>
+                      <p className="mt-1 text-xs text-muted">
+                        {item.matches}{" "}
+                        {item.matches > 1
+                          ? "confrontations"
+                          : "confrontation"}
+                      </p>
+                    </div>
 
-                    <p className="mt-1 text-xs text-muted">
-                      {item.winRate}% de victoire
-                    </p>
+                    <div className="shrink-0 text-right">
+                      <p className="font-display text-lg font-bold">
+                        {item.winRate}%
+                      </p>
+
+                      <p className="mt-0.5 text-[10px] text-muted">
+                        {item.wins} V · {item.losses} D
+                      </p>
+                    </div>
                   </div>
                 </Link>
               ))}
@@ -975,33 +1106,42 @@ export default async function PlayerPage({
         )}
 
         {topDoublePartnerStats.length > 0 && (
-          <section className="mt-7">
-            <div className="flex items-center gap-2 text-muted">
-              <TrophyIcon />
+          <section className="mt-9">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/5 text-muted">
+                <TrophyIcon className="h-4 w-4" />
+              </div>
 
-              <p className="text-xs font-bold uppercase tracking-[0.16em]">
-                Double
-              </p>
+              <div>
+                <p className="eyebrow">Double</p>
+
+                <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                  Partenaires
+                </h2>
+              </div>
             </div>
 
-            <h2 className="mt-1 text-xl font-bold tracking-tight">
-              Partenaires
-            </h2>
-
-            <p className="mt-1 text-sm leading-5 text-muted">
+            <p className="mt-2 text-sm leading-5 text-muted">
               Tes partenaires de double les plus utilisés.
             </p>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               {topDoublePartnerStats.map((item) => (
                 <Link
                   key={item.partnerId}
                   href={`/players/${item.partnerId}`}
-                  className="block rounded-2xl border border-border bg-surface p-4 transition-all duration-200 hover:border-white/15 hover:bg-surface-2 active:scale-[0.99]"
+                  className="glass group block rounded-3xl p-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.995]"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
+                  <div className="flex items-center gap-3.5">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/8 bg-white/5 font-display text-xs font-bold text-muted">
+                      {item.partnerName
+                        .replace("@", "")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-display font-bold">
                         {item.partnerName}
                       </p>
 
@@ -1014,22 +1154,22 @@ export default async function PlayerPage({
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <p className="text-sm font-semibold">
-                        {item.wins} V · {item.losses} D
+                      <p className="font-display text-lg font-bold">
+                        {item.winRate}%
                       </p>
 
-                      <p className="mt-1 text-xs text-muted">
-                        {item.winRate}% de victoire
+                      <p className="mt-0.5 text-[10px] text-muted">
+                        {item.wins} V · {item.losses} D
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2.5">
+                  <div className="mt-3 flex items-center justify-between rounded-xl border border-white/5 bg-white/2.5 px-3 py-2.5">
                     <span className="text-xs font-semibold text-muted">
                       Meilleure série
                     </span>
 
-                    <span className="text-xs font-bold">
+                    <span className="font-display text-xs font-bold">
                       {item.maxWinStreak}{" "}
                       {item.maxWinStreak > 1
                         ? "victoires"
@@ -1042,118 +1182,126 @@ export default async function PlayerPage({
           </section>
         )}
 
-        <section className="mt-6 rounded-3xl border border-border bg-surface p-5">
+        <section className="mt-9">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted">
-              <MatchIcon />
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/5 text-muted">
+              <MatchIcon className="h-4 w-4" />
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                Répartition
-              </p>
+              <p className="eyebrow">Répartition</p>
 
-              <h2 className="mt-1 text-lg font-bold tracking-tight">
+              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
                 Les matchs joués
               </h2>
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
-            <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
-              <div className="flex items-center gap-3">
-                <SportIcon
-                  sport="tennis"
-                  className="h-5 w-5"
-                />
+          <div className="glass-strong mt-4 overflow-hidden rounded-[26px]">
+            <div className="grid grid-cols-2 divide-x divide-white/6 border-b border-white/6">
+              <div className="p-4">
+                <div className="flex items-center gap-2 text-muted">
+                  <SportIcon
+                    sport="tennis"
+                    className="h-4 w-4"
+                  />
 
-                <span className="text-sm font-semibold">
-                  Tennis
-                </span>
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.16em]">
+                    Tennis
+                  </span>
+                </div>
+
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {tennisMatches}
+                </p>
               </div>
 
-              <span className="font-bold">
-                {tennisMatches}
-              </span>
+              <div className="p-4">
+                <div className="flex items-center gap-2 text-muted">
+                  <SportIcon
+                    sport="padel"
+                    className="h-4 w-4"
+                  />
+
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.16em]">
+                    Padel
+                  </span>
+                </div>
+
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {padelMatches}
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
-              <div className="flex items-center gap-3">
-                <SportIcon
-                  sport="padel"
-                  className="h-5 w-5"
-                />
+            <div className="grid grid-cols-2 divide-x divide-white/6">
+              <div className="p-4">
+                <p className="eyebrow">Simple</p>
 
-                <span className="text-sm font-semibold">
-                  Padel
-                </span>
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {singlesMatches}
+                </p>
               </div>
 
-              <span className="font-bold">
-                {padelMatches}
-              </span>
-            </div>
+              <div className="p-4">
+                <p className="eyebrow">Double</p>
 
-            <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
-              <span className="text-sm font-semibold">
-                Simple
-              </span>
-
-              <span className="font-bold">
-                {singlesMatches}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between rounded-2xl bg-surface-2 p-4">
-              <span className="text-sm font-semibold">
-                Double
-              </span>
-
-              <span className="font-bold">
-                {doublesMatches}
-              </span>
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {doublesMatches}
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="mt-7">
-          <div className="flex items-center gap-2 text-muted">
-            <TrophyIcon />
+        <section className="mt-9">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/5 text-muted">
+                <TrophyIcon className="h-4 w-4" />
+              </div>
 
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
-              Historique
-            </p>
+              <div>
+                <p className="eyebrow">Historique</p>
+
+                <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                  Dernières confrontations
+                </h2>
+              </div>
+            </div>
+
+            {recentHistory.length > 0 && (
+              <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-widest text-muted">
+                {recentHistory.length}
+              </span>
+            )}
           </div>
 
-          <h2 className="mt-1 text-xl font-bold tracking-tight">
-            Dernières confrontations
-          </h2>
-
           {recentHistory.length === 0 ? (
-            <div className="mt-4 rounded-3xl border border-border bg-surface p-7 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-2 text-muted">
+            <div className="glass-strong mt-4 rounded-[26px] p-7 text-center">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/8 bg-white/5 text-muted">
                 <SportIcon
                   sport="tennis"
                   className="h-5 w-5"
                 />
               </div>
 
-              <p className="mt-4 font-bold">
+              <p className="mt-4 font-display font-bold">
                 Aucun match enregistré
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-muted">
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted">
                 Les résultats apparaîtront ici après les
                 premiers matchs.
               </p>
             </div>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               {recentHistory.map((item) => (
                 <Link
                   key={item.match.id}
                   href={`/matches/${item.match.id}`}
-                  className="block rounded-3xl border border-border bg-surface p-5 transition active:scale-[0.99]"
+                  className="glass group block rounded-[26px] p-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.995]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -1172,7 +1320,7 @@ export default async function PlayerPage({
                           </span>
                         </div>
 
-                        <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
+                        <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
                           {item.match.format ===
                           "singles"
                             ? "Simple"
@@ -1186,11 +1334,11 @@ export default async function PlayerPage({
                     </div>
 
                     <span
-                      className={`shrink-0 text-xs font-bold uppercase tracking-wider ${
+                      className={`shrink-0 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] ${
                         item.result ===
                         "Victoire"
-                          ? "text-accent"
-                          : "text-danger"
+                          ? "border-accent/20 bg-accent/10 text-accent"
+                          : "border-danger/20 bg-danger/10 text-danger"
                       }`}
                     >
                       {item.result}
@@ -1202,7 +1350,7 @@ export default async function PlayerPage({
                       (score, index) => (
                         <span
                           key={`${item.match.id}-${index}`}
-                          className="rounded-xl bg-surface-2 px-3 py-2 text-xs font-semibold text-muted"
+                          className="rounded-xl border border-white/5 bg-white/2.5 px-3 py-2 text-xs font-semibold text-muted"
                         >
                           Set {index + 1} : {score}
                         </span>
@@ -1210,13 +1358,19 @@ export default async function PlayerPage({
                     )}
                   </div>
 
-                  <p className="mt-3 text-xs text-muted">
-                    {new Date(
-                      item.match.created_at
-                    ).toLocaleDateString(
-                      "fr-FR"
-                    )}
-                  </p>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <p className="text-[11px] text-muted">
+                      {new Date(
+                        item.match.created_at
+                      ).toLocaleDateString(
+                        "fr-FR"
+                      )}
+                    </p>
+
+                    <span className="text-[10px] font-semibold text-muted transition-colors group-hover:text-foreground">
+                      Voir le match
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -1225,7 +1379,7 @@ export default async function PlayerPage({
 
         <Link
           href="/ranking/history"
-          className="mt-6 flex min-h-14 items-center justify-center rounded-2xl border border-border bg-surface px-5 text-sm font-bold text-foreground transition active:scale-[0.99]"
+          className="glass mt-6 flex min-h-13 items-center justify-center rounded-2xl border-white/8 px-5 text-sm font-bold text-foreground transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.995]"
         >
           Voir l&apos;historique des points
         </Link>

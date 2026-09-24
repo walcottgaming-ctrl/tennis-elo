@@ -1,37 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0e0f11;
-  --foreground: #f5f5f5;
+  --background: #0b0d13;
+  --foreground: #f7f7f8;
 
-  --surface: #17191c;
-  --surface-2: #202328;
-  --surface-3: #292c31;
+  --surface: #171922;
+  --surface-2: #1c1f2a;
+  --surface-3: #242834;
 
-  --muted: #92969d;
-  --muted-2: #666b73;
+  --muted: #9ca3af;
+  --muted-2: #6b7280;
 
-  --accent: #c7f000;
-  --accent-dark: #9dbd00;
-  --accent-glow: rgba(199, 240, 0, 0.035);
+  --accent: #ccff00;
+  --accent-dark: #9fc700;
+  --accent-glow: rgba(204, 255, 0, 0.16);
 
   --success: #7ee787;
   --danger: #ff6b6b;
   --warning: #f5c451;
 
-  --border: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.075);
+  --border-strong: rgba(255, 255, 255, 0.11);
+
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-strong: rgba(255, 255, 255, 0.065);
+
+  --font-body-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  --font-display-family:
+    "Space Grotesk",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
 }
 
 html[data-sport-mode="padel"] {
   --accent: #38a8ff;
   --accent-dark: #1684d8;
-  --accent-glow: rgba(56, 168, 255, 0.035);
+  --accent-glow: rgba(56, 168, 255, 0.16);
 }
 
 html[data-sport-mode="super_tiebreak"] {
   --accent: #ff9f43;
   --accent-dark: #e57f1f;
-  --accent-glow: rgba(255, 159, 67, 0.035);
+  --accent-glow: rgba(255, 159, 67, 0.16);
 }
 
 @theme inline {
@@ -54,7 +73,8 @@ html[data-sport-mode="super_tiebreak"] {
 
   --color-border: var(--border);
 
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: var(--font-body-family);
+  --font-display: var(--font-display-family);
 }
 
 * {
@@ -63,20 +83,41 @@ html[data-sport-mode="super_tiebreak"] {
 
 html {
   background: var(--background);
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
+
+  background-color: #0c0f17;
+  background-image:
     radial-gradient(
-      circle at top,
-      var(--accent-glow),
-      transparent 30%
+      circle at 10% 8%,
+      color-mix(in srgb, var(--accent) 12%, transparent) 0%,
+      transparent 40%
     ),
-    var(--background);
+    radial-gradient(
+      circle at 70% 85%,
+      rgba(79, 45, 127, 0.18) 0%,
+      transparent 45%
+    );
+
+  background-attachment: fixed;
+
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body-family);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display-family);
 }
 
 button,
@@ -90,7 +131,42 @@ button {
 
 ::selection {
   background: var(--accent);
-  color: #0e0f11;
+  color: #0b0d13;
+}
+
+@utility glass {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 24px 60px -30px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+@utility glass-strong {
+  background: var(--glass-strong);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(26px);
+  -webkit-backdrop-filter: blur(26px);
+  box-shadow:
+    0 28px 70px -32px rgba(0, 0, 0, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+@utility accent-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent),
+    0 10px 30px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+@utility eyebrow {
+  font-size: 10px;
+  line-height: 1.2;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
 }
 
 ::-webkit-scrollbar {

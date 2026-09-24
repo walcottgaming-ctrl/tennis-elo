@@ -6,14 +6,21 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
 
-function UserIcon() {
+function UserIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <circle cx="12" cy="8" r="3.5" />
       <path d="M5 20c.8-3.4 3.2-5.2 7-5.2s6.2 1.8 7 5.2" />
@@ -21,14 +28,21 @@ function UserIcon() {
   );
 }
 
-function MailIcon() {
+function MailIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m4 7 8 6 8-6" />
@@ -36,14 +50,21 @@ function MailIcon() {
   );
 }
 
-function FriendsIcon() {
+function FriendsIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <circle cx="9" cy="8" r="3" />
       <path d="M3.5 19c.6-3.1 2.4-4.8 5.5-4.8s4.9 1.7 5.5 4.8" />
@@ -53,14 +74,21 @@ function FriendsIcon() {
   );
 }
 
-function StatsIcon() {
+function StatsIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M4 19V9" />
       <path d="M10 19V5" />
@@ -70,14 +98,21 @@ function StatsIcon() {
   );
 }
 
-function LogoutIcon() {
+function LogoutIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M10 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h5" />
       <path d="m14 8 4 4-4 4" />
@@ -86,16 +121,45 @@ function LogoutIcon() {
   );
 }
 
-function ChevronIcon() {
+function ChevronIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-4 w-4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
     </svg>
   );
 }
@@ -129,10 +193,13 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const AVATAR_SIGNED_URL_EXPIRY = 60 * 60;
 
 const selectClassName =
-  "min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent";
+  "min-h-14 w-full rounded-2xl border border-white/8 bg-white/4.5 px-4 text-sm font-medium text-foreground outline-none transition-all duration-200 focus:border-accent focus:bg-white/6";
 
 const labelClassName =
-  "mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted";
+  "mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-muted";
+
+const inputClassName =
+  "min-h-14 w-full rounded-2xl border border-white/8 bg-white/4.5 px-4 text-sm font-medium text-foreground outline-none transition-all duration-200 placeholder:text-muted focus:border-accent focus:bg-white/6";
 
 const displayValues: Record<string, string> = {
   right: "Droitier",
@@ -200,18 +267,54 @@ function CharacteristicCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface-2 p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+    <div className="group rounded-2xl border border-white/8 bg-white/3.5 p-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted">
         {label}
       </p>
 
       <p
-        className={`mt-1.5 text-sm font-bold ${
+        className={`mt-2 text-sm font-bold ${
           value && accent ? "text-accent" : "text-foreground"
         }`}
       >
         {value || "Non renseigné"}
       </p>
+    </div>
+  );
+}
+
+function SectionHeader({
+  index,
+  eyebrow,
+  title,
+  description,
+}: {
+  index?: string;
+  eyebrow: string;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="mb-6">
+      <div className="flex items-center gap-2">
+        {index && (
+          <span className="font-display text-[10px] font-bold tracking-[0.16em] text-accent">
+            {index}
+          </span>
+        )}
+
+        <p className="eyebrow">{eyebrow}</p>
+      </div>
+
+      <h2 className="mt-1.5 font-display text-xl font-semibold tracking-tight">
+        {title}
+      </h2>
+
+      {description && (
+        <p className="mt-2 max-w-md text-sm leading-5 text-muted">
+          {description}
+        </p>
+      )}
     </div>
   );
 }
@@ -615,137 +718,206 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-5 text-foreground">
-        <p className="text-sm font-medium text-muted">
-          Chargement...
-        </p>
+      <main
+        className="min-h-screen px-5 py-6 text-foreground"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div className="mx-auto max-w-lg">
+          <div className="space-y-4">
+            <div className="h-7 w-28 animate-pulse rounded-full bg-white/5" />
+            <div className="h-12 w-56 animate-pulse rounded-2xl bg-white/5" />
+            <div className="h-52 animate-pulse rounded-[26px] bg-white/5" />
+            <div className="h-80 animate-pulse rounded-[26px] bg-white/5" />
+            <div className="h-130 animate-pulse rounded-[26px] bg-white/5" />
+          </div>
+        </div>
       </main>
     );
   }
 
   if (!currentUserId) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background px-5 text-foreground">
-        <div className="text-center">
-          <p className="text-sm font-medium text-muted">
-            Tu dois être connecté pour accéder à ton profil.
-          </p>
+      <main
+        className="flex min-h-screen items-center justify-center px-5 text-foreground"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div className="w-full max-w-sm">
+          <div className="glass-strong relative overflow-hidden rounded-[28px] p-6 text-center">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-accent/10 blur-3xl" />
 
-          <Link
-            href="/login"
-            className="mt-4 inline-flex min-h-12 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background"
-          >
-            Se connecter
-          </Link>
+            <div className="relative">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
+                <UserIcon />
+              </div>
+
+              <p className="mt-5 text-sm font-medium leading-6 text-muted">
+                Tu dois être connecté pour accéder à ton profil.
+              </p>
+
+              <Link
+                href="/login"
+                className="mt-5 flex min-h-12 w-full items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
+              >
+                Se connecter
+              </Link>
+            </div>
+          </div>
         </div>
       </main>
     );
   }
 
+  const fullName =
+    [firstName, lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() ||
+    username ||
+    "Joueur";
+
+  const initials =
+    [firstName, lastName]
+      .filter(Boolean)
+      .map((value) => value.charAt(0).toUpperCase())
+      .join("")
+      .slice(0, 2) || "J";
+
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+    <main
+      className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+        backgroundAttachment: "fixed",
+      }}
+    >
       <div className="mx-auto max-w-lg">
-        <header className="mb-7">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted">
-            Mon compte
-          </p>
+        <header className="mb-6">
+          <p className="eyebrow">Mon compte</p>
 
-          <h1 className="text-3xl font-bold tracking-tight">
-            Mon profil
-          </h1>
+          <div className="mt-2 flex items-end justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="font-display text-3xl font-semibold tracking-tight">
+                Mon profil
+              </h1>
 
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Ton identité et ton profil de joueur.
-          </p>
+              <p className="mt-2 max-w-md text-sm leading-6 text-muted">
+                Ton identité et ton profil de joueur.
+              </p>
+            </div>
+
+            <div className="hidden shrink-0 items-center gap-2 rounded-full border border-accent/15 bg-accent/5 px-3 py-1.5 sm:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_10px_var(--accent)]" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-accent">
+                Joueur
+              </span>
+            </div>
+          </div>
         </header>
 
         <form
           onSubmit={handleSave}
-          className="space-y-5"
+          className="space-y-4"
         >
-          {/* PHOTO */}
-          <section className="rounded-3xl border border-border bg-surface p-5">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-                <UserIcon />
-              </div>
+          <section className="glass-strong relative overflow-hidden rounded-[28px] p-5">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 left-1/3 h-40 w-40 rounded-full bg-white/3 blur-3xl" />
 
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  Identité
-                </p>
+            <div className="relative">
+              <div className="flex items-center gap-4">
+                <div className="relative grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border border-white/10 bg-white/5 shadow-[0_20px_50px_-22px_rgba(0,0,0,0.95)]">
+                  {avatarUrl ? (
+                    <Image
+                      src={avatarUrl}
+                      alt="Photo de profil"
+                      width={96}
+                      height={96}
+                      loading="eager"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-display text-2xl font-bold text-muted">
+                      {initials}
+                    </span>
+                  )}
 
-                <h2 className="mt-1 text-lg font-bold">
-                  Photo de profil
-                </h2>
-              </div>
-            </div>
+                  <div className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
+                </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-surface-2 text-muted">
-                {avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt="Photo de profil"
-                    width={96}
-                    height={96}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <UserIcon />
-                )}
-              </div>
+                <div className="min-w-0 flex-1">
+                  <p className="eyebrow">Identité</p>
 
-              <div className="min-w-0 flex-1">
-                <label
-                  htmlFor="avatar"
-                  className="flex min-h-12 cursor-pointer items-center justify-center rounded-2xl bg-accent px-4 text-sm font-bold text-background transition-opacity hover:opacity-90"
-                >
-                  {uploadingAvatar
-                    ? "Traitement..."
-                    : avatarUrl
-                      ? "Modifier la photo"
-                      : "Ajouter une photo"}
-                </label>
+                  <h2 className="mt-1 truncate font-display text-xl font-bold tracking-tight">
+                    {fullName}
+                  </h2>
 
-                <input
-                  id="avatar"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleAvatarUpload}
-                  disabled={uploadingAvatar}
-                  className="hidden"
-                />
+                  <p className="mt-1 truncate text-xs text-muted">
+                    {username ? `@${username}` : email}
+                  </p>
 
-                {avatarUrl && (
-                  <button
-                    type="button"
-                    onClick={handleAvatarDelete}
-                    disabled={uploadingAvatar}
-                    className="mt-2 min-h-10 w-full rounded-2xl border border-danger/20 bg-danger/5 px-4 text-xs font-bold text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  <label
+                    htmlFor="avatar"
+                    className="mt-3 inline-flex min-h-10 cursor-pointer items-center justify-center rounded-xl bg-accent px-4 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_24px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
                   >
-                    Supprimer la photo
-                  </button>
-                )}
+                    {uploadingAvatar
+                      ? "Traitement..."
+                      : avatarUrl
+                        ? "Modifier la photo"
+                        : "Ajouter une photo"}
+                  </label>
 
-                <p className="mt-2 text-xs leading-5 text-muted">
-                  JPG, PNG ou WebP · 5 Mo maximum
-                </p>
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarUpload}
+                    disabled={uploadingAvatar}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 border-t border-white/6 pt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-muted">
+                      {email}
+                    </p>
+
+                    <p className="mt-1 text-[10px] text-muted-2">
+                      JPG, PNG ou WebP · 5 Mo maximum
+                    </p>
+                  </div>
+
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleAvatarDelete}
+                      disabled={uploadingAvatar}
+                      className="shrink-0 rounded-xl border border-danger/15 bg-danger/5 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Supprimer
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </section>
 
-          {/* INFORMATIONS */}
-          <section className="rounded-3xl border border-border bg-surface p-5">
-            <div className="mb-5">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                01 · Informations
-              </p>
-
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
-                Profil personnel
-              </h2>
-            </div>
+          <section className="glass rounded-[26px] p-5">
+            <SectionHeader
+              index="01"
+              eyebrow="Informations"
+              title="Profil personnel"
+            />
 
             <div className="space-y-4">
               <div>
@@ -758,7 +930,7 @@ export default function ProfilePage() {
 
                 <div className="relative">
                   <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">
-                    <MailIcon />
+                    <MailIcon className="h-4.5 w-4.5" />
                   </div>
 
                   <input
@@ -766,49 +938,51 @@ export default function ProfilePage() {
                     type="email"
                     value={email}
                     disabled
-                    className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 pl-12 pr-4 text-sm font-medium text-muted outline-none"
+                    className="min-h-14 w-full rounded-2xl border border-white/8 bg-white/3.5 pl-12 pr-4 text-sm font-medium text-muted outline-none"
                   />
                 </div>
               </div>
 
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className={labelClassName}
-                >
-                  Prénom
-                </label>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="firstName"
+                    className={labelClassName}
+                  >
+                    Prénom
+                  </label>
 
-                <input
-                  id="firstName"
-                  type="text"
-                  value={firstName}
-                  onChange={(event) =>
-                    setFirstName(event.target.value)
-                  }
-                  placeholder="Ton prénom"
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-                />
-              </div>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(event) =>
+                      setFirstName(event.target.value)
+                    }
+                    placeholder="Ton prénom"
+                    className={inputClassName}
+                  />
+                </div>
 
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className={labelClassName}
-                >
-                  Nom
-                </label>
+                <div>
+                  <label
+                    htmlFor="lastName"
+                    className={labelClassName}
+                  >
+                    Nom
+                  </label>
 
-                <input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(event) =>
-                    setLastName(event.target.value)
-                  }
-                  placeholder="Ton nom"
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-                />
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(event) =>
+                      setLastName(event.target.value)
+                    }
+                    placeholder="Ton nom"
+                    className={inputClassName}
+                  />
+                </div>
               </div>
 
               <div>
@@ -819,51 +993,46 @@ export default function ProfilePage() {
                   Nom d&apos;utilisateur
                 </label>
 
-                <input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(event) =>
-                    setUsername(event.target.value)
-                  }
-                  placeholder="Ton pseudo"
-                  className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
-                />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-display text-sm font-bold text-muted">
+                    @
+                  </span>
+
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(event) =>
+                      setUsername(event.target.value)
+                    }
+                    placeholder="Ton pseudo"
+                    className={`${inputClassName} pl-9`}
+                  />
+                </div>
               </div>
             </div>
           </section>
 
-          {/* PROFIL SPORTIF */}
-          <section className="rounded-3xl border border-border bg-surface p-5">
-            <div className="mb-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                02 · Joueur
-              </p>
+          <section className="glass-strong rounded-[26px] p-5">
+            <SectionHeader
+              index="02"
+              eyebrow="Joueur"
+              title="Profil sportif"
+              description="Les caractéristiques qui définissent ton jeu."
+            />
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
-                Profil sportif
-              </h2>
-
-              <p className="mt-2 text-sm leading-5 text-muted">
-                Les caractéristiques qui définissent ton jeu.
-              </p>
-            </div>
-
-            {/* FICHE JOUEUR */}
             <div className="mb-7">
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                    ADN du joueur
-                  </p>
+              <div className="mb-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                  ADN du joueur
+                </p>
 
-                  <p className="mt-1 text-sm text-muted">
-                    Ton identité sur le court.
-                  </p>
-                </div>
+                <p className="mt-1 text-sm text-muted">
+                  Ton identité sur le court.
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <CharacteristicCard
                   label="Main dominante"
                   value={formatValue(dominantHand)}
@@ -901,7 +1070,7 @@ export default function ProfilePage() {
               </div>
 
               {(playerWeakness || heightCm || weightKg) && (
-                <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="mt-2.5 grid grid-cols-2 gap-2.5">
                   <CharacteristicCard
                     label="Point à améliorer"
                     value={formatValue(playerWeakness)}
@@ -923,11 +1092,16 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* MORPHOLOGIE */}
-            <div className="border-t border-border pt-6">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                Morphologie
-              </p>
+            <div className="border-t border-white/8 pt-6">
+              <div className="mb-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                  Morphologie
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  Tes caractéristiques physiques et préférences de base.
+                </p>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -946,18 +1120,10 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseignée
-                    </option>
-                    <option value="right">
-                      Droitier
-                    </option>
-                    <option value="left">
-                      Gaucher
-                    </option>
-                    <option value="ambidextrous">
-                      Ambidextre
-                    </option>
+                    <option value="">Non renseignée</option>
+                    <option value="right">Droitier</option>
+                    <option value="left">Gaucher</option>
+                    <option value="ambidextrous">Ambidextre</option>
                   </select>
                 </div>
 
@@ -977,15 +1143,9 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="one_hand">
-                      Une main
-                    </option>
-                    <option value="two_hands">
-                      Deux mains
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="one_hand">Une main</option>
+                    <option value="two_hands">Deux mains</option>
                   </select>
                 </div>
 
@@ -1001,27 +1161,15 @@ export default function ProfilePage() {
                     id="preferredSurface"
                     value={preferredSurface}
                     onChange={(event) =>
-                      setPreferredSurface(
-                        event.target.value
-                      )
+                      setPreferredSurface(event.target.value)
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseignée
-                    </option>
-                    <option value="clay">
-                      Terre battue
-                    </option>
-                    <option value="hard">
-                      Dur
-                    </option>
-                    <option value="indoor">
-                      Indoor
-                    </option>
-                    <option value="grass">
-                      Gazon
-                    </option>
+                    <option value="">Non renseignée</option>
+                    <option value="clay">Terre battue</option>
+                    <option value="hard">Dur</option>
+                    <option value="indoor">Indoor</option>
+                    <option value="grass">Gazon</option>
                   </select>
                 </div>
 
@@ -1045,7 +1193,7 @@ export default function ProfilePage() {
                           setHeightCm(event.target.value)
                         }
                         placeholder="180"
-                        className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                        className={`${inputClassName} pr-12`}
                       />
 
                       <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
@@ -1073,7 +1221,7 @@ export default function ProfilePage() {
                           setWeightKg(event.target.value)
                         }
                         placeholder="75"
-                        className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+                        className={`${inputClassName} pr-12`}
                       />
 
                       <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">
@@ -1085,11 +1233,16 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* ADN */}
-            <div className="mt-7 border-t border-border pt-6">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                ADN du joueur
-              </p>
+            <div className="mt-7 border-t border-white/8 pt-6">
+              <div className="mb-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                  ADN du joueur
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  La manière dont tu construis et joues tes points.
+                </p>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -1108,18 +1261,10 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="attacker">
-                      Attaquant
-                    </option>
-                    <option value="defender">
-                      Défenseur
-                    </option>
-                    <option value="all_rounder">
-                      Polyvalent
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="attacker">Attaquant</option>
+                    <option value="defender">Défenseur</option>
+                    <option value="all_rounder">Polyvalent</option>
                     <option value="serve_volley">
                       Serveur-volée
                     </option>
@@ -1142,18 +1287,10 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseignée
-                    </option>
-                    <option value="baseline">
-                      Fond de court
-                    </option>
-                    <option value="all_court">
-                      Tout le court
-                    </option>
-                    <option value="net">
-                      Filet
-                    </option>
+                    <option value="">Non renseignée</option>
+                    <option value="baseline">Fond de court</option>
+                    <option value="all_court">Tout le court</option>
+                    <option value="net">Filet</option>
                   </select>
                 </div>
 
@@ -1172,32 +1309,16 @@ export default function ProfilePage() {
                       onChange={(event) =>
                         setPlayerStrength(event.target.value)
                       }
-                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-3 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                      className={selectClassName}
                     >
-                      <option value="">
-                        Non renseigné
-                      </option>
-                      <option value="serve">
-                        Service
-                      </option>
-                      <option value="forehand">
-                        Coup droit
-                      </option>
-                      <option value="backhand">
-                        Revers
-                      </option>
-                      <option value="return">
-                        Retour
-                      </option>
-                      <option value="volley">
-                        Volée
-                      </option>
-                      <option value="movement">
-                        Déplacement
-                      </option>
-                      <option value="mental">
-                        Mental
-                      </option>
+                      <option value="">Non renseigné</option>
+                      <option value="serve">Service</option>
+                      <option value="forehand">Coup droit</option>
+                      <option value="backhand">Revers</option>
+                      <option value="return">Retour</option>
+                      <option value="volley">Volée</option>
+                      <option value="movement">Déplacement</option>
+                      <option value="mental">Mental</option>
                     </select>
                   </div>
 
@@ -1215,43 +1336,32 @@ export default function ProfilePage() {
                       onChange={(event) =>
                         setPlayerWeakness(event.target.value)
                       }
-                      className="min-h-14 w-full rounded-2xl border border-border bg-surface-2 px-3 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+                      className={selectClassName}
                     >
-                      <option value="">
-                        Non renseigné
-                      </option>
-                      <option value="serve">
-                        Service
-                      </option>
-                      <option value="forehand">
-                        Coup droit
-                      </option>
-                      <option value="backhand">
-                        Revers
-                      </option>
-                      <option value="return">
-                        Retour
-                      </option>
-                      <option value="volley">
-                        Volée
-                      </option>
-                      <option value="movement">
-                        Déplacement
-                      </option>
-                      <option value="mental">
-                        Mental
-                      </option>
+                      <option value="">Non renseigné</option>
+                      <option value="serve">Service</option>
+                      <option value="forehand">Coup droit</option>
+                      <option value="backhand">Revers</option>
+                      <option value="return">Retour</option>
+                      <option value="volley">Volée</option>
+                      <option value="movement">Déplacement</option>
+                      <option value="mental">Mental</option>
                     </select>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* TECHNIQUE */}
-            <div className="mt-7 border-t border-border pt-6">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                Technique
-              </p>
+            <div className="mt-7 border-t border-white/8 pt-6">
+              <div className="mb-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">
+                  Technique
+                </p>
+
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  Tes préférences et habitudes techniques.
+                </p>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -1270,21 +1380,11 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="flat">
-                      À plat
-                    </option>
-                    <option value="topspin">
-                      Lifté
-                    </option>
-                    <option value="heavy_topspin">
-                      Très lifté
-                    </option>
-                    <option value="varied">
-                      Varié
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="flat">À plat</option>
+                    <option value="topspin">Lifté</option>
+                    <option value="heavy_topspin">Très lifté</option>
+                    <option value="varied">Varié</option>
                   </select>
                 </div>
 
@@ -1300,24 +1400,14 @@ export default function ProfilePage() {
                     id="backhandPreference"
                     value={backhandPreference}
                     onChange={(event) =>
-                      setBackhandPreference(
-                        event.target.value
-                      )
+                      setBackhandPreference(event.target.value)
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="flat">
-                      À plat
-                    </option>
-                    <option value="topspin">
-                      Lifté
-                    </option>
-                    <option value="varied">
-                      Varié
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="flat">À plat</option>
+                    <option value="topspin">Lifté</option>
+                    <option value="varied">Varié</option>
                   </select>
                 </div>
 
@@ -1333,24 +1423,14 @@ export default function ProfilePage() {
                     id="downTheLineStyle"
                     value={downTheLineStyle}
                     onChange={(event) =>
-                      setDownTheLineStyle(
-                        event.target.value
-                      )
+                      setDownTheLineStyle(event.target.value)
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="occasional">
-                      Occasionnel
-                    </option>
-                    <option value="regular">
-                      Régulier
-                    </option>
-                    <option value="weapon">
-                      Arme principale
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="occasional">Occasionnel</option>
+                    <option value="regular">Régulier</option>
+                    <option value="weapon">Arme principale</option>
                   </select>
                 </div>
 
@@ -1366,24 +1446,14 @@ export default function ProfilePage() {
                     id="crossCourtStyle"
                     value={crossCourtStyle}
                     onChange={(event) =>
-                      setCrossCourtStyle(
-                        event.target.value
-                      )
+                      setCrossCourtStyle(event.target.value)
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="defensive">
-                      Défensif
-                    </option>
-                    <option value="regular">
-                      Régulier
-                    </option>
-                    <option value="offensive">
-                      Offensif
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="defensive">Défensif</option>
+                    <option value="regular">Régulier</option>
+                    <option value="offensive">Offensif</option>
                   </select>
                 </div>
 
@@ -1403,21 +1473,11 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="weak">
-                      Faible
-                    </option>
-                    <option value="average">
-                      Correct
-                    </option>
-                    <option value="good">
-                      Bon
-                    </option>
-                    <option value="weapon">
-                      Arme principale
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="weak">Faible</option>
+                    <option value="average">Correct</option>
+                    <option value="good">Bon</option>
+                    <option value="weapon">Arme principale</option>
                   </select>
                 </div>
 
@@ -1437,41 +1497,35 @@ export default function ProfilePage() {
                     }
                     className={selectClassName}
                   >
-                    <option value="">
-                      Non renseigné
-                    </option>
-                    <option value="placement">
-                      Placement
-                    </option>
-                    <option value="power">
-                      Puissance
-                    </option>
-                    <option value="variation">
-                      Variation
-                    </option>
-                    <option value="kick">
-                      Kick / lift
-                    </option>
+                    <option value="">Non renseigné</option>
+                    <option value="placement">Placement</option>
+                    <option value="power">Puissance</option>
+                    <option value="variation">Variation</option>
+                    <option value="kick">Kick / lift</option>
                   </select>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* MESSAGE */}
           {message && (
-            <div className="rounded-2xl border border-accent/20 bg-accent/5 p-4">
-              <p className="text-sm font-medium text-accent">
-                {message}
-              </p>
+            <div className="glass-strong relative overflow-hidden rounded-[22px] border-accent/15 bg-accent/5 p-4">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-accent/10 blur-2xl" />
+
+              <div className="relative flex items-start gap-3">
+                <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-accent shadow-[0_0_12px_var(--accent)]" />
+
+                <p className="text-sm font-medium leading-5 text-accent">
+                  {message}
+                </p>
+              </div>
             </div>
           )}
 
-          {/* SAVE */}
           <button
             type="submit"
             disabled={saving}
-            className="min-h-16 w-full rounded-2xl bg-accent px-5 text-left text-background transition-opacity hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+            className="group min-h-16 w-full rounded-[22px] bg-accent px-5 text-left text-[#0b0d13] shadow-[0_14px_36px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="flex items-center justify-between gap-4">
               <span>
@@ -1481,85 +1535,83 @@ export default function ProfilePage() {
                     : "Enregistrer mon profil"}
                 </span>
 
-                <span className="mt-1 block text-xs font-medium opacity-70">
+                <span className="mt-1 block text-xs font-medium opacity-65">
                   Informations personnelles et profil joueur
                 </span>
               </span>
 
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background/10 text-lg">
-                →
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0b0d13]/10 transition-transform duration-200 group-hover:translate-x-0.5">
+                <ArrowRightIcon />
               </span>
             </span>
           </button>
         </form>
 
-        {/* MON ESPACE */}
-        <section className="mt-7">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">
-            Mon espace
-          </p>
+        <section className="mt-8">
+          <div className="mb-3">
+            <p className="eyebrow">Mon espace</p>
+          </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <Link
               href="/friends"
-              className="group flex min-h-16 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
+              className="glass group flex min-h-16 items-center justify-between rounded-[22px] px-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
             >
-              <span className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted group-hover:bg-accent/10 group-hover:text-accent">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/6 bg-white/5 text-muted transition-colors duration-200 group-hover:border-accent/10 group-hover:bg-accent/10 group-hover:text-accent">
                   <FriendsIcon />
                 </span>
 
-                <span>
+                <span className="min-w-0">
                   <span className="block text-sm font-bold">
                     Mes amis
                   </span>
 
-                  <span className="mt-0.5 block text-xs text-muted">
+                  <span className="mt-0.5 block truncate text-xs text-muted">
                     Gérer mes amis et mes contacts
                   </span>
                 </span>
               </span>
 
-              <span className="text-muted transition-transform group-hover:translate-x-0.5">
+              <span className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-foreground">
                 <ChevronIcon />
               </span>
             </Link>
 
             <Link
               href="/stats"
-              className="group flex min-h-16 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
+              className="glass group flex min-h-16 items-center justify-between rounded-[22px] px-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
             >
-              <span className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-2 text-muted group-hover:bg-accent/10 group-hover:text-accent">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/6 bg-white/5 text-muted transition-colors duration-200 group-hover:border-accent/10 group-hover:bg-accent/10 group-hover:text-accent">
                   <StatsIcon />
                 </span>
 
-                <span>
+                <span className="min-w-0">
                   <span className="block text-sm font-bold">
                     Mes statistiques
                   </span>
 
-                  <span className="mt-0.5 block text-xs text-muted">
+                  <span className="mt-0.5 block truncate text-xs text-muted">
                     Voir mes performances et mes résultats
                   </span>
                 </span>
               </span>
 
-              <span className="text-muted transition-transform group-hover:translate-x-0.5">
+              <span className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-foreground">
                 <ChevronIcon />
               </span>
             </Link>
           </div>
         </section>
 
-        {/* LOGOUT */}
         <section className="mt-5">
           <button
             type="button"
             onClick={handleLogout}
-            className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl border border-danger/20 bg-danger/5 px-5 text-sm font-bold text-danger transition-colors hover:bg-danger/10"
+            className="group flex min-h-14 w-full items-center justify-center gap-2 rounded-[22px] border border-danger/15 bg-danger/5 px-5 text-sm font-bold text-danger transition-all duration-200 hover:border-danger/25 hover:bg-danger/10 active:scale-[0.99]"
           >
-            <LogoutIcon />
+            <LogoutIcon className="h-4.5 w-4.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
             Se déconnecter
           </button>
         </section>

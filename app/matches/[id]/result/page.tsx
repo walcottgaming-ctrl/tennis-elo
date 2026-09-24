@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
 import SportIcon from "@/app/components/SportIcon";
+import DeleteMatchButton from "@/app/components/DeleteMatchButton";
 
 type Sport = "tennis" | "padel";
 type MatchFormat = "singles" | "doubles";
@@ -339,6 +340,120 @@ function formatLabel(format: MatchFormat) {
   return format === "singles" ? "Simple" : "Double";
 }
 
+function ArrowLeftIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M15 5 8 12l7 7" />
+    </svg>
+  );
+}
+
+function CheckIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
+}
+
+function LockIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect
+        x="5"
+        y="10"
+        width="14"
+        height="10"
+        rx="2"
+      />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
+function InfoIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 10.5v5" />
+      <path d="M12 7.5h.01" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m7 10 5 5 5-5" />
+    </svg>
+  );
+}
+
 export default function ResultPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -457,42 +572,68 @@ export default function ResultPage() {
             typeof id === "string"
         );
 
-      const { data: profiles } =
+      /*
+       * Les points actuels ne viennent plus de profiles.points_*.
+       *
+       * Source de vérité :
+       * dernier ranking_history.new_points pour
+       * chaque joueur et le sport du match.
+       */
+      const { data: rankingHistoryData, error: historyError } =
         playerIds.length > 0
           ? await supabase
-              .from("profiles")
+              .from("ranking_history")
               .select(
-                "id, points_tennis, points_padel"
+                "player_id, sport, new_points, created_at"
               )
-              .in("id", playerIds)
-          : { data: [] };
+              .in("player_id", playerIds)
+              .eq("sport", typedMatch.sport)
+              .order("created_at", {
+                ascending: false,
+              })
+          : { data: [], error: null };
+
+      if (historyError) {
+        console.error(
+          "Erreur chargement historique classement :",
+          historyError
+        );
+      }
+
+      /*
+       * Comme les données sont triées du plus récent
+       * au plus ancien, la première ligne rencontrée
+       * pour chaque joueur est son classement actuel.
+       */
+      const latestPoints = new Map<string, number>();
+
+      for (const history of rankingHistoryData ?? []) {
+        if (!latestPoints.has(history.player_id)) {
+          latestPoints.set(
+            history.player_id,
+            Number(history.new_points)
+          );
+        }
+      }
 
       const mappedPlayers: PlayerInfo[] =
-        playerIds.map((playerId) => {
-          const row = playerRows.find(
-            (player) =>
-              player.player_id === playerId
-          );
-
-          const profile = (profiles ?? []).find(
-            (item) => item.id === playerId
-          );
-
-          const points =
-            typedMatch.sport === "tennis"
-              ? Number(
-                  profile?.points_tennis ?? 1000
-                )
-              : Number(
-                  profile?.points_padel ?? 1000
-                );
-
-          return {
-            id: playerId,
-            team: row?.team === 2 ? 2 : 1,
-            points,
-          };
-        });
+        playerRows
+          .filter(
+            (
+              player
+            ): player is MatchPlayer & {
+              player_id: string;
+            } =>
+              typeof player.player_id === "string"
+          )
+          .map((player) => ({
+            id: player.player_id,
+            team: player.team === 2 ? 2 : 1,
+            points:
+              latestPoints.get(
+                player.player_id
+              ) ?? 1000,
+          }));
 
       setPlayers(mappedPlayers);
 
@@ -524,25 +665,38 @@ export default function ResultPage() {
             tieBreakTeam1:
               set.tie_break_team_1_score === null
                 ? null
-                : Number(set.tie_break_team_1_score),
+                : Number(
+                    set.tie_break_team_1_score
+                  ),
             tieBreakTeam2:
               set.tie_break_team_2_score === null
                 ? null
-                : Number(set.tie_break_team_2_score),
+                : Number(
+                    set.tie_break_team_2_score
+                  ),
             isMatchTiebreak: Boolean(
               set.is_match_tiebreak
             ),
           }));
 
-        const { data: rankingData } =
-          await supabase
-            .from("ranking_history")
-            .select(
-              "old_points, new_points, points_change, base_points, bonus_bulle, bonus_double_bulle, bonus_victoire_propre, bonus_serie, bonus_performer, malus_fanny, malus_double_bulle, malus_contre_performance, amortisseur_tiebreak"
-            )
-            .eq("match_id", matchId)
-            .eq("player_id", user.id)
-            .maybeSingle();
+        const {
+          data: rankingData,
+          error: rankingError,
+        } = await supabase
+          .from("ranking_history")
+          .select(
+            "old_points, new_points, points_change, base_points, bonus_bulle, bonus_double_bulle, bonus_victoire_propre, bonus_serie, bonus_performer, malus_fanny, malus_double_bulle, malus_contre_performance, amortisseur_tiebreak"
+          )
+          .eq("match_id", matchId)
+          .eq("player_id", user.id)
+          .maybeSingle();
+
+        if (rankingError) {
+          console.error(
+            "Erreur chargement détail classement :",
+            rankingError
+          );
+        }
 
         if (rankingData) {
           setRankingDetail(rankingData);
@@ -583,14 +737,38 @@ export default function ResultPage() {
     [players, currentUserId]
   );
 
-  const opponentPlayer = useMemo(
+  /*
+   * En simple : un joueur adverse.
+   * En double : les deux joueurs adverses.
+   */
+  const opponentPlayers = useMemo(
     () =>
-      players.find(
+      players.filter(
         (player) =>
           player.team === opponentTeam
       ),
     [players, opponentTeam]
   );
+
+  /*
+   * Pour le preview, on compare le joueur
+   * à la moyenne de l'équipe adverse.
+   *
+   * Le calcul réel reste effectué par finish_match.
+   */
+  const opponentPoints = useMemo(() => {
+    if (opponentPlayers.length === 0) {
+      return 1000;
+    }
+
+    const total = opponentPlayers.reduce(
+      (sum, player) =>
+        sum + player.points,
+      0
+    );
+
+    return total / opponentPlayers.length;
+  }, [opponentPlayers]);
 
   const setWinsTeam1 = getSetWins(sets, 1);
   const setWinsTeam2 = getSetWins(sets, 2);
@@ -623,7 +801,7 @@ export default function ResultPage() {
       sets,
       userTeam,
       userPlayer.points,
-      opponentPlayer?.points ?? 1000,
+      opponentPoints,
       0
     );
   }, [
@@ -631,7 +809,7 @@ export default function ResultPage() {
     sets,
     userTeam,
     userPlayer,
-    opponentPlayer,
+    opponentPoints,
   ]);
 
   function updateSet(
@@ -678,6 +856,14 @@ export default function ResultPage() {
       value === ""
         ? null
         : Number(value);
+
+    if (
+      numericValue !== null &&
+      (!Number.isFinite(numericValue) ||
+        numericValue < 0)
+    ) {
+      return;
+    }
 
     setSets((current) =>
       current.map((set, i) =>
@@ -834,6 +1020,12 @@ export default function ResultPage() {
         );
       }
 
+      /*
+       * finish_match reste la source de calcul réelle.
+       *
+       * Cette page ne calcule pas et n'écrit pas
+       * elle-même les points du classement.
+       */
       const { error: finishError } =
         await supabase.rpc(
           "finish_match",
@@ -863,6 +1055,10 @@ export default function ResultPage() {
         );
       }
 
+      /*
+       * On recharge le résultat réellement enregistré
+       * par finish_match.
+       */
       const {
         data: rankingData,
         error: rankingDetailError,
@@ -875,7 +1071,10 @@ export default function ResultPage() {
         .eq("player_id", currentUserId)
         .maybeSingle();
 
-      if (!rankingDetailError && rankingData) {
+      if (
+        !rankingDetailError &&
+        rankingData
+      ) {
         setRankingDetail(rankingData);
       }
 
@@ -897,14 +1096,28 @@ export default function ResultPage() {
     }
   }
 
+  const pageBackground = {
+    backgroundImage:
+      "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+    backgroundAttachment: "fixed" as const,
+  };
+
   if (loading) {
     return (
-      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
+      <main
+        className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+        style={pageBackground}
+      >
         <div className="mx-auto max-w-lg">
-          <div className="flex min-h-[60vh] items-center justify-center">
-            <p className="text-sm text-muted">
-              Chargement du match...
-            </p>
+          <div className="h-10 w-10 animate-pulse rounded-full bg-surface-2" />
+
+          <div className="mt-7 h-3 w-32 animate-pulse rounded-full bg-surface-2" />
+          <div className="mt-3 h-9 w-64 animate-pulse rounded-xl bg-surface-2" />
+          <div className="mt-3 h-4 w-80 max-w-full animate-pulse rounded-full bg-surface-2" />
+
+          <div className="mt-8 space-y-3">
+            <div className="h-80 animate-pulse rounded-[28px] bg-surface" />
+            <div className="h-52 animate-pulse rounded-[28px] bg-surface" />
           </div>
         </div>
       </main>
@@ -913,22 +1126,30 @@ export default function ResultPage() {
 
   if (!match) {
     return (
-      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
+      <main
+        className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+        style={pageBackground}
+      >
         <div className="mx-auto max-w-lg">
           <button
             type="button"
             onClick={() => router.push("/matches")}
-            className="mb-6 text-sm font-semibold text-muted transition-colors hover:text-foreground"
+            aria-label="Retour aux matchs"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
           >
-            ← Retour aux matchs
+            <ArrowLeftIcon />
           </button>
 
-          <section className="rounded-3xl border border-border bg-surface p-6">
-            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-danger/10 text-danger">
+          <section className="glass-strong mt-8 rounded-[28px] p-5 sm:p-6">
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-danger/10 font-display text-lg font-bold text-danger">
               !
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight">
+            <p className="eyebrow mt-6">
+              Erreur
+            </p>
+
+            <h1 className="mt-2 font-display text-2xl font-bold tracking-tight">
               Match introuvable
             </h1>
 
@@ -941,7 +1162,7 @@ export default function ResultPage() {
             <button
               type="button"
               onClick={() => router.push("/matches")}
-              className="mt-6 flex min-h-14 w-full items-center justify-center rounded-2xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
+              className="mt-6 flex min-h-14 w-full items-center justify-center rounded-[20px] bg-accent px-5 text-sm font-bold text-[#0b0d13] transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
             >
               Retour aux matchs
             </button>
@@ -952,122 +1173,165 @@ export default function ResultPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+    <main
+      className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+      style={pageBackground}
+    >
       <div className="mx-auto max-w-lg pb-8">
-        <button
-          type="button"
-          onClick={() => router.push("/matches")}
-          className="mb-7 flex items-center gap-2 text-sm font-semibold text-muted transition-colors hover:text-foreground"
-        >
-          <span className="text-base">←</span>
-          Retour aux matchs
-        </button>
-
-        {/* Header */}
         <header className="mb-7">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <SportIcon
-                sport={match.sport}
-                className="h-4 w-4 text-accent"
-              />
+          <button
+            type="button"
+            onClick={() => router.push("/matches")}
+            aria-label="Retour aux matchs"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+          >
+            <ArrowLeftIcon />
+          </button>
 
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-                {sportLabel(match.sport)}
-              </p>
-            </div>
+          <div className="mt-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+                    <SportIcon
+                      sport={match.sport}
+                      className="h-4 w-4"
+                    />
+                  </div>
 
-            <span className="rounded-full border border-border bg-surface-2 px-3 py-1.5 text-xs font-bold text-muted">
-              {match.result_type === "competitive"
-                ? "Compétitif"
-                : "Amical"}
-            </span>
-          </div>
+                  <p className="eyebrow">
+                    Résultat · {sportLabel(match.sport)}
+                  </p>
+                </div>
 
-          <p className="mt-3 text-sm leading-6 text-muted">
-            {formatLabel(match.format)}
-            {match.surface
-              ? ` · ${match.surface}`
-              : ""}
-            {match.duration_minutes
-              ? ` · ${match.duration_minutes} min`
-              : ""}
-          </p>
-        </header>
+                <h1 className="mt-4 font-display text-[30px] font-bold tracking-tight">
+                  {locked
+                    ? "Match terminé"
+                    : "Entre le résultat"}
+                </h1>
 
-        {/* Locked */}
-        {locked && (
-          <section className="mb-5 rounded-3xl border border-warning/20 bg-warning/10 p-5">
-            <div className="flex gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning">
-                🔒
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-muted">
+                    {formatLabel(match.format)}
+                  </span>
+
+                  {match.surface && (
+                    <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-muted">
+                      {match.surface}
+                    </span>
+                  )}
+
+                  {match.duration_minutes && (
+                    <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-muted">
+                      {match.duration_minutes} min
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <h2 className="font-bold text-foreground">
-                  Résultat verrouillé
-                </h2>
+              <span
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.13em] ${
+                  match.result_type === "competitive"
+                    ? "border-accent/20 bg-accent/10 text-accent"
+                    : "border-white/8 bg-white/5 text-muted"
+                }`}
+              >
+                {match.result_type === "competitive"
+                  ? "Compétitif"
+                  : "Amical"}
+              </span>
+            </div>
+          </div>
+        </header>
 
-                <p className="mt-1 text-sm leading-6 text-muted">
-                  Ce résultat a déjà été enregistré.
-                  Pour le corriger, supprime le match puis recrée-le.
+        {locked && (
+          <section className="glass mb-4 rounded-[22px] border-warning/15 bg-warning/5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-warning/10 text-warning">
+                <LockIcon />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-bold">
+                  Résultat verrouillé
+                </p>
+
+                <p className="mt-0.5 text-xs leading-5 text-muted">
+                  Le résultat a déjà été enregistré.
                 </p>
               </div>
             </div>
           </section>
         )}
 
-        {/* Error */}
         {error && (
-          <section className="mb-5 rounded-3xl border border-danger/20 bg-danger/10 p-5">
-            <div className="flex gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-danger/15 font-bold text-danger">
+          <section className="glass mb-4 rounded-[22px] border-danger/15 bg-danger/5 p-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-danger/10 font-display text-sm font-bold text-danger">
                 !
               </div>
 
-              <p className="self-center text-sm leading-6 text-foreground">
+              <p className="pt-1 text-sm leading-6 text-foreground">
                 {error}
               </p>
             </div>
           </section>
         )}
 
-        {/* Success */}
         {message && (
-          <section className="mb-5 rounded-3xl border border-accent/20 bg-accent/10 p-5">
-            <div className="flex gap-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 font-bold text-accent">
-                ✓
+          <section className="glass mb-4 rounded-[22px] border-accent/15 bg-accent/5 p-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+                <CheckIcon />
               </div>
 
-              <p className="self-center text-sm leading-6 text-foreground">
+              <p className="pt-1 text-sm leading-6 text-foreground">
                 {message}
               </p>
             </div>
           </section>
         )}
 
-        {/* Score hero */}
-        <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
-          <div className="mb-5 flex items-end justify-between">
+        <section className="glass-strong mb-4 overflow-hidden rounded-[28px] p-4 sm:p-5">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+              <p className="eyebrow">
                 Score du match
               </p>
 
-              <p className="mt-1 text-4xl font-bold tracking-tight">
-                {setWinsTeam1}
-                <span className="mx-2 text-muted-2">—</span>
-                {setWinsTeam2}
-              </p>
+              <div className="mt-2 flex items-center gap-3 font-display">
+                <span
+                  className={
+                    userTeam === 1
+                      ? "text-5xl font-bold tracking-tight text-accent"
+                      : "text-5xl font-bold tracking-tight text-foreground"
+                  }
+                >
+                  {setWinsTeam1}
+                </span>
+
+                <span className="text-2xl font-medium text-muted-2">
+                  —
+                </span>
+
+                <span
+                  className={
+                    userTeam === 2
+                      ? "text-5xl font-bold tracking-tight text-accent"
+                      : "text-5xl font-bold tracking-tight text-foreground"
+                  }
+                >
+                  {setWinsTeam2}
+                </span>
+              </div>
             </div>
 
             {winner && (
               <div
-                className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                className={`rounded-full border px-3 py-1.5 text-xs font-bold ${
                   userWon
-                    ? "bg-accent/10 text-accent"
-                    : "bg-danger/10 text-danger"
+                    ? "border-accent/20 bg-accent/10 text-accent"
+                    : "border-danger/20 bg-danger/10 text-danger"
                 }`}
               >
                 {userWon ? "Victoire" : "Défaite"}
@@ -1075,42 +1339,54 @@ export default function ResultPage() {
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="mt-6 space-y-3">
             {sets.map((set, index) => {
               const setWinner = getSetWinner(set);
 
               return (
                 <div
                   key={index}
-                  className="rounded-2xl border border-border bg-surface-2 p-4"
+                  className={`rounded-3xl border p-4 transition-all ${
+                    setWinner === userTeam
+                      ? "border-accent/15 bg-accent/[0.035]"
+                      : "border-white/6 bg-white/2.5"
+                  }`}
                 >
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold">
-                        {set.isMatchTiebreak
-                          ? "Super tie-break"
-                          : `Set ${index + 1}`}
-                      </p>
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-display text-sm font-bold">
+                          {set.isMatchTiebreak
+                            ? "Super tie-break"
+                            : `Set ${index + 1}`}
+                        </p>
 
-                      <p className="mt-0.5 text-xs text-muted">
+                        {set.isMatchTiebreak && (
+                          <span className="rounded-full border border-accent/15 bg-accent/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-accent">
+                            Décisif
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-1 text-xs text-muted">
                         {setWinner
                           ? setWinner === userTeam
                             ? "Vous remportez ce set"
-                            : "L'adversaire remporte ce set"
-                          : "En cours"}
+                            : "L’adversaire remporte ce set"
+                          : "Score en cours"}
                       </p>
                     </div>
 
                     {setWinner && (
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">
-                        ✓
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
+                        <CheckIcon className="h-3.5 w-3.5" />
                       </span>
                     )}
                   </div>
 
                   <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3">
                     <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                      <label className="mb-2 block text-[9px] font-bold uppercase tracking-[0.15em] text-muted">
                         Vous
                       </label>
 
@@ -1131,7 +1407,11 @@ export default function ResultPage() {
                             event.target.value
                           )
                         }
-                        className="h-16 w-full rounded-2xl border border-border bg-background px-3 text-center text-2xl font-bold text-foreground outline-none transition-all focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`h-16 w-full rounded-[20px] border bg-[#0c0f17]/80 px-3 text-center font-display text-3xl font-bold text-foreground outline-none transition-all focus:border-accent/60 focus:ring-1 focus:ring-accent/15 disabled:cursor-not-allowed disabled:opacity-50 ${
+                          userTeam === 1
+                            ? "border-accent/20"
+                            : "border-white/6"
+                        }`}
                       />
                     </div>
 
@@ -1140,7 +1420,7 @@ export default function ResultPage() {
                     </span>
 
                     <div>
-                      <label className="mb-2 block text-right text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                      <label className="mb-2 block text-right text-[9px] font-bold uppercase tracking-[0.15em] text-muted">
                         Adversaire
                       </label>
 
@@ -1161,7 +1441,11 @@ export default function ResultPage() {
                             event.target.value
                           )
                         }
-                        className="h-16 w-full rounded-2xl border border-border bg-background px-3 text-center text-2xl font-bold text-foreground outline-none transition-all focus:border-accent disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`h-16 w-full rounded-[20px] border bg-[#0c0f17]/80 px-3 text-center font-display text-3xl font-bold text-foreground outline-none transition-all focus:border-accent/60 focus:ring-1 focus:ring-accent/15 disabled:cursor-not-allowed disabled:opacity-50 ${
+                          userTeam === 2
+                            ? "border-accent/20"
+                            : "border-white/6"
+                        }`}
                       />
                     </div>
                   </div>
@@ -1177,10 +1461,16 @@ export default function ResultPage() {
                         set.team1 === 6
                       )
                     ) && (
-                      <div className="mt-4 border-t border-border pt-4">
-                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                          Score du tie-break
-                        </p>
+                      <div className="mt-4 border-t border-white/6 pt-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-muted">
+                            Score du tie-break
+                          </p>
+
+                          <span className="text-[9px] font-semibold text-muted-2">
+                            Optionnel
+                          </span>
+                        </div>
 
                         <div className="grid grid-cols-2 gap-3">
                           <input
@@ -1198,7 +1488,7 @@ export default function ResultPage() {
                                 event.target.value
                               )
                             }
-                            className="h-12 w-full rounded-2xl border border-border bg-background px-3 text-center font-bold text-foreground outline-none transition-all focus:border-accent disabled:opacity-50"
+                            className="h-12 w-full rounded-[18px] border border-white/6 bg-[#0c0f17]/80 px-3 text-center font-display font-bold text-foreground outline-none transition-all placeholder:text-muted-2 focus:border-accent/60 focus:ring-1 focus:ring-accent/15 disabled:opacity-50"
                           />
 
                           <input
@@ -1216,7 +1506,7 @@ export default function ResultPage() {
                                 event.target.value
                               )
                             }
-                            className="h-12 w-full rounded-2xl border border-border bg-background px-3 text-center font-bold text-foreground outline-none transition-all focus:border-accent disabled:opacity-50"
+                            className="h-12 w-full rounded-[18px] border border-white/6 bg-[#0c0f17]/80 px-3 text-center font-display font-bold text-foreground outline-none transition-all placeholder:text-muted-2 focus:border-accent/60 focus:ring-1 focus:ring-accent/15 disabled:opacity-50"
                           />
                         </div>
                       </div>
@@ -1230,15 +1520,33 @@ export default function ResultPage() {
                         onClick={() =>
                           toggleMatchTiebreak(index)
                         }
-                        className={`mt-4 min-h-12 w-full rounded-2xl border px-4 text-sm font-bold transition-all duration-200 active:scale-[0.98] ${
+                        className={`mt-4 flex min-h-12 w-full items-center justify-between gap-3 rounded-[18px] border px-4 text-left transition-all duration-200 active:scale-[0.98] ${
                           set.isMatchTiebreak
-                            ? "border-accent bg-accent text-background"
-                            : "border-border bg-background text-foreground hover:border-accent/40"
+                            ? "border-accent/25 bg-accent text-[#0b0d13]"
+                            : "border-white/6 bg-white/2.5 text-foreground hover:border-accent/20 hover:bg-accent/5"
                         } disabled:cursor-not-allowed disabled:opacity-50`}
                       >
-                        {set.isMatchTiebreak
-                          ? "Super tie-break activé"
-                          : "Utiliser un super tie-break"}
+                        <div>
+                          <p className="text-sm font-bold">
+                            {set.isMatchTiebreak
+                              ? "Super tie-break activé"
+                              : "Utiliser un super tie-break"}
+                          </p>
+
+                          {!set.isMatchTiebreak && (
+                            <p className="mt-0.5 text-[10px] text-muted">
+                              Pour le troisième set
+                            </p>
+                          )}
+                        </div>
+
+                        <ChevronDownIcon
+                          className={`h-4 w-4 transition-transform ${
+                            set.isMatchTiebreak
+                              ? "rotate-180"
+                              : ""
+                          }`}
+                        />
                       </button>
                     )}
                 </div>
@@ -1253,9 +1561,9 @@ export default function ResultPage() {
               <button
                 type="button"
                 onClick={addThirdSet}
-                className="mt-4 flex min-h-14 w-full items-center justify-center rounded-2xl border border-border bg-surface-2 px-5 font-bold text-foreground transition-all duration-200 hover:border-accent/40 hover:bg-surface active:scale-[0.98]"
+                className="mt-4 flex min-h-13 w-full items-center justify-center rounded-[20px] border border-white/6 bg-white/2.5 px-5 text-sm font-bold text-foreground transition-all duration-200 hover:border-accent/20 hover:bg-accent/5 active:scale-[0.98]"
               >
-                + Ajouter le 3e set
+                Ajouter le 3e set
               </button>
             )}
 
@@ -1266,7 +1574,7 @@ export default function ResultPage() {
               disabled={
                 saving || !matchFinished
               }
-              className="mt-5 flex min-h-16 w-full items-center justify-center rounded-2xl bg-accent px-5 font-bold text-background transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-30"
+              className="accent-glow mt-4 flex min-h-15 w-full items-center justify-center rounded-[21px] bg-accent px-5 text-sm font-bold text-[#0b0d13] transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-25"
             >
               {saving
                 ? "Enregistrement..."
@@ -1275,17 +1583,16 @@ export default function ResultPage() {
           )}
         </section>
 
-        {/* Point preview */}
         {match.result_type === "competitive" &&
           preview &&
           matchFinished && (
-            <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
+            <section className="glass-strong mb-4 rounded-[28px] p-5">
               <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                <p className="eyebrow">
                   Classement
                 </p>
 
-                <h2 className="mt-1 text-xl font-bold tracking-tight">
+                <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
                   Aperçu des points
                 </h2>
 
@@ -1294,13 +1601,13 @@ export default function ResultPage() {
                 </p>
               </div>
 
-              <div className="mb-5 rounded-2xl bg-surface-2 p-5 text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+              <div className="accent-glow rounded-3xl border border-accent/10 bg-accent/5 p-5 text-center">
+                <p className="eyebrow">
                   Évolution estimée
                 </p>
 
                 <p
-                  className={`mt-2 text-4xl font-bold tracking-tight ${
+                  className={`mt-2 font-display text-5xl font-bold tracking-tight ${
                     preview.total >= 0
                       ? "text-accent"
                       : "text-danger"
@@ -1308,9 +1615,13 @@ export default function ResultPage() {
                 >
                   {formatChange(preview.total)}
                 </p>
+
+                <p className="mt-1 text-xs text-muted">
+                  points
+                </p>
               </div>
 
-              <div className="space-y-1">
+              <div className="mt-4 space-y-1.5">
                 {[
                   [
                     "Points de base du match",
@@ -1357,20 +1668,22 @@ export default function ResultPage() {
                   .map(([label, value]) => (
                     <div
                       key={String(label)}
-                      className="flex items-center justify-between gap-4 rounded-xl px-2 py-2.5"
+                      className="flex items-center justify-between gap-4 rounded-[17px] border border-white/5 bg-white/2.5 px-3.5 py-3"
                     >
-                      <span className="text-sm text-muted">
+                      <span className="min-w-0 text-sm text-muted">
                         {label}
                       </span>
 
                       <span
-                        className={`text-sm font-bold ${
+                        className={`shrink-0 text-sm font-bold ${
                           Number(value) >= 0
                             ? "text-accent"
                             : "text-danger"
                         }`}
                       >
-                        {formatChange(Number(value))}
+                        {formatChange(
+                          Number(value)
+                        )}
                       </span>
                     </div>
                   ))}
@@ -1378,16 +1691,15 @@ export default function ResultPage() {
             </section>
           )}
 
-        {/* Ranking detail */}
         {match.result_type === "competitive" &&
           rankingDetail && (
-            <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
+            <section className="glass-strong mb-4 rounded-[28px] p-5">
               <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+                <p className="eyebrow">
                   Résultat enregistré
                 </p>
 
-                <h2 className="mt-1 text-xl font-bold tracking-tight">
+                <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
                   Détail des points
                 </h2>
 
@@ -1396,13 +1708,13 @@ export default function ResultPage() {
                 </p>
               </div>
 
-              <div className="mb-5 rounded-2xl bg-surface-2 p-5 text-center">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+              <div className="rounded-3xl border border-accent/10 bg-accent/5 p-5 text-center">
+                <p className="eyebrow">
                   Évolution
                 </p>
 
                 <p
-                  className={`mt-2 text-4xl font-bold tracking-tight ${
+                  className={`mt-2 font-display text-5xl font-bold tracking-tight ${
                     rankingDetail.points_change >= 0
                       ? "text-accent"
                       : "text-danger"
@@ -1413,13 +1725,13 @@ export default function ResultPage() {
                   )}
                 </p>
 
-                <p className="mt-1 text-sm text-muted">
+                <p className="mt-2 text-sm text-muted">
                   {rankingDetail.old_points} →{" "}
                   {rankingDetail.new_points} points
                 </p>
               </div>
 
-              <div className="space-y-1">
+              <div className="mt-4 space-y-1.5">
                 {[
                   [
                     "Points de base",
@@ -1466,20 +1778,22 @@ export default function ResultPage() {
                   .map(([label, value]) => (
                     <div
                       key={String(label)}
-                      className="flex items-center justify-between gap-4 rounded-xl px-2 py-2.5"
+                      className="flex items-center justify-between gap-4 rounded-[17px] border border-white/5 bg-white/2.5 px-3.5 py-3"
                     >
-                      <span className="text-sm text-muted">
+                      <span className="min-w-0 text-sm text-muted">
                         {label}
                       </span>
 
                       <span
-                        className={`text-sm font-bold ${
+                        className={`shrink-0 text-sm font-bold ${
                           Number(value) >= 0
                             ? "text-accent"
                             : "text-danger"
                         }`}
                       >
-                        {formatChange(Number(value))}
+                        {formatChange(
+                          Number(value)
+                        )}
                       </span>
                     </div>
                   ))}
@@ -1487,36 +1801,38 @@ export default function ResultPage() {
             </section>
           )}
 
-        {/* Friendly */}
         {match.result_type === "friendly" && (
-          <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
-            <div className="flex gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent/10 text-lg">
-                🤝
+          <section className="glass mb-4 rounded-[28px] p-5">
+            <div className="flex items-start gap-4">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-accent/10 bg-accent/5 text-accent">
+                <InfoIcon />
               </div>
 
               <div>
-                <h2 className="font-bold">
+                <p className="eyebrow">
                   Match amical
+                </p>
+
+                <h2 className="mt-1 font-display text-lg font-bold tracking-tight">
+                  Aucun impact sur le classement
                 </h2>
 
-                <p className="mt-1 text-sm leading-6 text-muted">
-                  Ce match est enregistré dans tes statistiques,
-                  mais il ne modifie pas les points du classement.
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Ce match reste enregistré dans tes statistiques,
+                  mais il ne modifie pas tes points.
                 </p>
               </div>
             </div>
           </section>
         )}
 
-        {/* Scoring rules */}
-        <section className="rounded-3xl border border-border bg-surface p-5">
-          <div className="mb-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+        <section className="glass rounded-[28px] p-5">
+          <div className="mb-6">
+            <p className="eyebrow">
               Classement
             </p>
 
-            <h2 className="mt-1 text-xl font-bold tracking-tight">
+            <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
               Barème des points
             </h2>
 
@@ -1527,12 +1843,18 @@ export default function ResultPage() {
 
           <div className="space-y-6 text-sm">
             <div>
-              <p className="mb-3 font-bold">
-                Points de base du match
-              </p>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="font-bold">
+                  Points de base
+                </p>
 
-              <div className="space-y-2">
-                <div className="flex justify-between gap-4">
+                <span className="rounded-full border border-accent/10 bg-accent/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-accent">
+                  Base
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-4 rounded-[17px] border border-white/5 bg-white/2.5 px-3.5 py-3">
                   <span className="text-muted">
                     Victoire
                   </span>
@@ -1542,7 +1864,7 @@ export default function ResultPage() {
                   </span>
                 </div>
 
-                <div className="flex justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 rounded-[17px] border border-white/5 bg-white/2.5 px-3.5 py-3">
                   <span className="text-muted">
                     Défaite
                   </span>
@@ -1554,12 +1876,18 @@ export default function ResultPage() {
               </div>
             </div>
 
-            <div className="border-t border-border pt-5">
-              <p className="mb-3 font-bold">
-                Bonus de performance
-              </p>
+            <div className="border-t border-white/6 pt-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="font-bold">
+                  Bonus de performance
+                </p>
 
-              <div className="space-y-3">
+                <span className="rounded-full border border-accent/10 bg-accent/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-accent">
+                  Bonus
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
                 {[
                   [
                     "Set remporté sans concéder de jeu (6-0)",
@@ -1588,7 +1916,7 @@ export default function ResultPage() {
                 ].map(([label, value]) => (
                   <div
                     key={label}
-                    className="flex justify-between gap-4"
+                    className="flex items-center justify-between gap-4 rounded-[17px] border border-white/5 bg-white/2.5 px-3.5 py-3"
                   >
                     <span className="leading-5 text-muted">
                       {label}
@@ -1602,12 +1930,18 @@ export default function ResultPage() {
               </div>
             </div>
 
-            <div className="border-t border-border pt-5">
-              <p className="mb-3 font-bold">
-                Pénalités et atténuations
-              </p>
+            <div className="border-t border-white/6 pt-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="font-bold">
+                  Pénalités et atténuations
+                </p>
 
-              <div className="space-y-3">
+                <span className="rounded-full border border-danger/10 bg-danger/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-danger">
+                  Malus
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
                 {[
                   [
                     "Set blanc concédé (0-6)",
@@ -1628,7 +1962,7 @@ export default function ResultPage() {
                 ].map(([label, value]) => (
                   <div
                     key={label}
-                    className="flex justify-between gap-4"
+                    className="flex items-center justify-between gap-4 rounded-[17px] border border-white/5 bg-white/2.5 px-3.5 py-3"
                   >
                     <span className="leading-5 text-muted">
                       {label}
@@ -1643,6 +1977,10 @@ export default function ResultPage() {
             </div>
           </div>
         </section>
+
+        {locked && (
+          <DeleteMatchButton matchId={match.id} />
+        )}
       </div>
     </main>
   );

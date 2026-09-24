@@ -20,14 +20,18 @@ type Friendship = {
   created_at: string;
 };
 
-function UsersIcon() {
+function UsersIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -45,14 +49,18 @@ function UsersIcon() {
   );
 }
 
-function SearchIcon() {
+function SearchIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      className={className}
       aria-hidden="true"
     >
       <circle cx="11" cy="11" r="7" />
@@ -64,14 +72,18 @@ function SearchIcon() {
   );
 }
 
-function CheckIcon() {
+function CheckIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className="h-4 w-4"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -83,14 +95,18 @@ function CheckIcon() {
   );
 }
 
-function XIcon() {
+function XIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className="h-4 w-4"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -101,14 +117,18 @@ function XIcon() {
   );
 }
 
-function UserPlusIcon() {
+function UserPlusIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-4 w-4"
+      className={className}
       aria-hidden="true"
     >
       <path
@@ -125,14 +145,18 @@ function UserPlusIcon() {
   );
 }
 
-function GameIcon() {
+function GameIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-4 w-4"
+      className={className}
       aria-hidden="true"
     >
       <circle cx="12" cy="12" r="9" />
@@ -371,23 +395,29 @@ export default function FriendsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg pb-8">
-          <div className="flex items-center gap-2 text-muted">
-            <UsersIcon />
-
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
+      <main
+        className="min-h-screen px-4 pb-32 pt-6 text-foreground sm:px-5"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div className="mx-auto max-w-lg">
+          <header>
+            <div className="eyebrow flex items-center gap-2">
+              <UsersIcon className="h-4 w-4" />
               Communauté
-            </p>
-          </div>
+            </div>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Amis
-          </h1>
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+              Amis
+            </h1>
+          </header>
 
-          <div className="mt-7 rounded-3xl border border-border bg-surface p-6">
+          <div className="glass-strong mt-7 rounded-[28px] p-6">
             <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-pulse rounded-full bg-surface-2" />
+              <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-accent shadow-[0_0_14px_var(--accent-glow)]" />
 
               <p className="text-sm font-medium text-muted">
                 Chargement...
@@ -401,28 +431,34 @@ export default function FriendsPage() {
 
   if (!userId) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg pb-8">
-          <div className="flex items-center gap-2 text-muted">
-            <UsersIcon />
-
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
+      <main
+        className="min-h-screen px-4 pb-32 pt-6 text-foreground sm:px-5"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+          backgroundAttachment: "fixed",
+        }}
+      >
+        <div className="mx-auto max-w-lg">
+          <header>
+            <div className="eyebrow flex items-center gap-2">
+              <UsersIcon className="h-4 w-4" />
               Communauté
+            </div>
+
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight">
+              Amis
+            </h1>
+
+            <p className="mt-3 max-w-md text-sm leading-6 text-muted">
+              Connecte-toi pour gérer tes amis et ajouter tes
+              partenaires.
             </p>
-          </div>
-
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Amis
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-muted">
-            Connecte-toi pour gérer tes amis et ajouter tes
-            partenaires.
-          </p>
+          </header>
 
           <Link
             href="/login"
-            className="mt-6 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background transition active:scale-[0.99]"
+            className="mt-7 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
           >
             Se connecter
           </Link>
@@ -432,46 +468,80 @@ export default function FriendsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-      <div className="mx-auto max-w-lg pb-8">
+    <main
+      className="min-h-screen px-4 pb-32 pt-6 text-foreground sm:px-5"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%)",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      <div className="mx-auto max-w-lg">
         <header>
-          <div className="flex items-center gap-2 text-muted">
-            <UsersIcon />
-
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
-              Communauté
-            </p>
+          <div className="eyebrow flex items-center gap-2">
+            <UsersIcon className="h-4 w-4" />
+            Communauté
           </div>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Amis
-          </h1>
+          <div className="mt-3 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="font-display text-[32px] font-semibold tracking-[-0.035em]">
+                Amis
+              </h1>
 
-          <p className="mt-3 text-sm leading-6 text-muted">
-            Ajoute tes partenaires et retrouve tes amis.
-          </p>
+              <p className="mt-2 max-w-md text-sm leading-6 text-muted">
+                Ton réseau de joueurs, partenaires et adversaires.
+              </p>
+            </div>
+
+            <div className="relative mt-1 shrink-0">
+              <div className="absolute -inset-3 rounded-full bg-accent/10 blur-xl" />
+
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
+                <UsersIcon className="h-5 w-5" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-2">
+            <div className="glass-strong rounded-2xl px-4 py-3">
+              <p className="eyebrow">Amis</p>
+              <p className="mt-1 font-display text-xl font-semibold">
+                {acceptedFriends.length}
+              </p>
+            </div>
+
+            <div className="glass rounded-2xl px-4 py-3">
+              <p className="eyebrow">En attente</p>
+              <p className="mt-1 font-display text-xl font-semibold">
+                {receivedRequests.length + sentRequests.length}
+              </p>
+            </div>
+          </div>
         </header>
 
         {message && (
-          <div className="mt-6 rounded-2xl border border-accent/20 bg-accent/5 p-4 text-sm font-semibold text-accent">
-            {message}
+          <div className="glass mt-5 flex items-center gap-3 rounded-2xl border-accent/20 bg-accent/5 px-4 py-3.5 text-sm font-semibold text-accent">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+              <CheckIcon className="h-3.5 w-3.5" />
+            </div>
+
+            <span>{message}</span>
           </div>
         )}
 
         {receivedRequests.length > 0 && (
           <section className="mt-8">
-            <div className="flex items-end justify-between">
+            <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  Invitations
-                </p>
+                <p className="eyebrow">Invitations</p>
 
-                <h2 className="mt-1 text-xl font-bold tracking-tight">
+                <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                   Demandes reçues
                 </h2>
               </div>
 
-              <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs font-bold text-muted">
+              <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-accent px-2 text-xs font-bold text-[#0b0d13]">
                 {receivedRequests.length}
               </span>
             </div>
@@ -485,23 +555,27 @@ export default function FriendsPage() {
                 return (
                   <div
                     key={request.id}
-                    className="rounded-3xl border border-border bg-surface p-5"
+                    className="glass-strong rounded-[26px] p-4"
                   >
                     <Link
                       href={`/ranking/player/${request.requester_id}`}
-                      className="flex items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                      className="group flex items-center gap-3 rounded-2xl text-left"
                     >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
-                        {getInitials(profile)}
+                      <div className="relative shrink-0">
+                        <div className="absolute -inset-1 rounded-2xl bg-accent/8 blur-md" />
+
+                        <div className="relative grid h-12 w-12 place-items-center rounded-2xl border border-white/8 bg-white/5 text-sm font-bold transition-colors group-hover:border-accent/20 group-hover:bg-accent/10">
+                          {getInitials(profile)}
+                        </div>
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate font-bold">
+                        <p className="truncate font-semibold">
                           {getPlayerName(profile)}
                         </p>
 
                         {profile?.username && (
-                          <p className="mt-1 text-sm text-muted">
+                          <p className="mt-1 truncate text-sm text-muted">
                             @{profile.username}
                           </p>
                         )}
@@ -510,26 +584,28 @@ export default function FriendsPage() {
 
                     <div className="mt-4 grid grid-cols-2 gap-2">
                       <button
+                        type="button"
                         onClick={() =>
                           updateFriendship(
                             request.id,
                             "accepted"
                           )
                         }
-                        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-sm font-bold text-background transition active:scale-[0.99]"
+                        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-accent px-4 text-sm font-bold text-[#0b0d13] shadow-[0_8px_24px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
                       >
                         <CheckIcon />
                         Accepter
                       </button>
 
                       <button
+                        type="button"
                         onClick={() =>
                           updateFriendship(
                             request.id,
                             "rejected"
                           )
                         }
-                        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-border bg-surface-2 px-4 text-sm font-bold text-muted transition active:scale-[0.99]"
+                        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/8 bg-white/5 px-4 text-sm font-semibold text-muted transition-all duration-200 hover:bg-white/10 hover:text-foreground active:scale-[0.99]"
                       >
                         <XIcon />
                         Refuser
@@ -543,13 +619,11 @@ export default function FriendsPage() {
         )}
 
         <section className="mt-8">
-          <div className="flex items-end justify-between">
+          <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Réseau
-              </p>
+              <p className="eyebrow">Réseau</p>
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
+              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                 Mes amis
               </h2>
             </div>
@@ -560,22 +634,22 @@ export default function FriendsPage() {
           </div>
 
           {acceptedFriends.length === 0 ? (
-            <div className="mt-4 rounded-3xl border border-border bg-surface p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-2 text-muted">
+            <div className="glass mt-4 rounded-[26px] p-6">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/8 bg-white/5 text-muted">
                 <UsersIcon />
               </div>
 
-              <p className="mt-4 font-bold">
+              <p className="mt-4 font-semibold">
                 Aucun ami pour le moment
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-muted">
+              <p className="mt-2 max-w-sm text-sm leading-6 text-muted">
                 Ajoute tes partenaires pour les retrouver
                 rapidement ici.
               </p>
             </div>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               {acceptedFriends.map((friendship) => {
                 const otherUserId =
                   getOtherUserId(friendship);
@@ -586,18 +660,18 @@ export default function FriendsPage() {
                 return (
                   <div
                     key={friendship.id}
-                    className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4"
+                    className="glass group flex items-center justify-between gap-3 rounded-3xl p-3.5 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
                   >
                     <Link
                       href={`/ranking/player/${otherUserId}`}
-                      className="flex min-w-0 items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                      className="flex min-w-0 items-center gap-3 rounded-2xl text-left"
                     >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/8 bg-white/5 text-sm font-bold transition-colors group-hover:border-accent/20 group-hover:bg-accent/10">
                         {getInitials(profile)}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate font-bold">
+                        <p className="truncate font-semibold">
                           {getPlayerName(profile)}
                         </p>
 
@@ -612,13 +686,16 @@ export default function FriendsPage() {
                     <div className="flex shrink-0 items-center gap-2">
                       <Link
                         href={`/matches/new?opponent=${otherUserId}`}
-                        className="flex min-h-10 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-background transition active:scale-[0.99]"
+                        aria-label={`Jouer contre ${getPlayerName(profile)}`}
+                        className="flex h-10 items-center gap-2 rounded-xl bg-accent px-3 text-xs font-bold text-[#0b0d13] shadow-[0_6px_20px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.98]"
                       >
                         <GameIcon />
-                        Jouer
+                        <span className="hidden xs:inline">
+                          Jouer
+                        </span>
                       </Link>
 
-                      <span className="hidden rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-accent sm:inline-flex">
+                      <span className="hidden rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-accent sm:inline-flex">
                         Ami
                       </span>
                     </div>
@@ -631,13 +708,11 @@ export default function FriendsPage() {
 
         {sentRequests.length > 0 && (
           <section className="mt-8">
-            <div className="flex items-end justify-between">
+            <div className="flex items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  En attente
-                </p>
+                <p className="eyebrow">En attente</p>
 
-                <h2 className="mt-1 text-xl font-bold tracking-tight">
+                <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                   Demandes envoyées
                 </h2>
               </div>
@@ -647,7 +722,7 @@ export default function FriendsPage() {
               </span>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               {sentRequests.map((request) => {
                 const profile = getProfileById(
                   request.addressee_id
@@ -656,28 +731,28 @@ export default function FriendsPage() {
                 return (
                   <div
                     key={request.id}
-                    className="flex items-center gap-3 rounded-3xl border border-border bg-surface p-4"
+                    className="glass flex items-center gap-3 rounded-3xl p-3.5"
                   >
                     <Link
                       href={`/ranking/player/${request.addressee_id}`}
-                      className="flex min-w-0 items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                      className="flex min-w-0 items-center gap-3 rounded-2xl text-left"
                     >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
+                      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/8 bg-white/5 text-sm font-bold">
                         {getInitials(profile)}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="truncate font-bold">
+                        <p className="truncate font-semibold">
                           {getPlayerName(profile)}
                         </p>
 
-                        <p className="mt-1 text-sm text-muted">
+                        <p className="mt-1 truncate text-sm text-muted">
                           En attente de réponse
                         </p>
                       </div>
                     </Link>
 
-                    <span className="ml-auto shrink-0 rounded-full border border-border bg-surface-2 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-muted">
+                    <span className="ml-auto shrink-0 rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
                       En attente
                     </span>
                   </div>
@@ -687,36 +762,36 @@ export default function FriendsPage() {
           </section>
         )}
 
-        <section className="mt-8">
+        <section className="mt-8 pb-4">
           <div className="flex items-center gap-2 text-muted">
-            <UserPlusIcon />
+            <UserPlusIcon className="h-4 w-4" />
 
-            <p className="text-xs font-bold uppercase tracking-[0.16em]">
-              Réseau
-            </p>
+            <p className="eyebrow">Réseau</p>
           </div>
 
-          <h2 className="mt-1 text-xl font-bold tracking-tight">
+          <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
             Ajouter un ami
           </h2>
 
-          <div className="relative mt-4">
-            <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted">
-              <SearchIcon />
-            </div>
+          <div className="glass mt-4 rounded-3xl p-2">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted">
+                <SearchIcon />
+              </div>
 
-            <input
-              type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(event.target.value)
-              }
-              placeholder="Rechercher un joueur..."
-              className="min-h-14 w-full rounded-2xl border border-border bg-surface px-4 pl-12 text-sm font-medium text-foreground outline-none placeholder:text-muted focus:border-accent"
-            />
+              <input
+                type="text"
+                value={search}
+                onChange={(event) =>
+                  setSearch(event.target.value)
+                }
+                placeholder="Rechercher un joueur..."
+                className="min-h-14 w-full rounded-2xl border border-transparent bg-white/5 px-4 pl-12 text-sm font-medium text-foreground outline-none transition-all duration-200 placeholder:text-muted focus:border-accent/50 focus:bg-white/8"
+              />
+            </div>
           </div>
 
-          <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-2.5">
             {filteredProfiles.map((profile) => {
               const friendship =
                 getFriendshipForProfile(profile.id);
@@ -733,18 +808,18 @@ export default function FriendsPage() {
               return (
                 <div
                   key={profile.id}
-                  className="flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface p-4"
+                  className="glass group flex items-center justify-between gap-3 rounded-3xl p-3.5 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
                 >
                   <Link
                     href={`/ranking/player/${profile.id}`}
-                    className="flex min-w-0 items-center gap-3 rounded-2xl text-left transition active:opacity-70"
+                    className="flex min-w-0 items-center gap-3 rounded-2xl text-left"
                   >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-2 text-sm font-bold">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/8 bg-white/5 text-sm font-bold transition-colors group-hover:border-accent/20 group-hover:bg-accent/10">
                       {getInitials(profile)}
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate font-bold">
+                      <p className="truncate font-semibold">
                         {getPlayerName(profile)}
                       </p>
 
@@ -762,25 +837,27 @@ export default function FriendsPage() {
                       Ami
                     </span>
                   ) : isPending ? (
-                    <span className="shrink-0 rounded-xl border border-border bg-surface-2 px-3 py-2 text-xs font-bold text-muted">
+                    <span className="shrink-0 rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-xs font-semibold text-muted">
                       En attente
                     </span>
                   ) : isRejected ? (
                     <button
+                      type="button"
                       onClick={() =>
                         sendRequest(profile.id)
                       }
-                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-background transition active:scale-[0.99]"
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-[#0b0d13] shadow-[0_6px_20px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
                     >
                       <UserPlusIcon />
                       Ajouter
                     </button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() =>
                         sendRequest(profile.id)
                       }
-                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-background transition active:scale-[0.99]"
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl bg-accent px-3 py-2 text-xs font-bold text-[#0b0d13] shadow-[0_6px_20px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
                     >
                       <UserPlusIcon />
                       Ajouter
@@ -792,16 +869,16 @@ export default function FriendsPage() {
 
             {search.length > 0 &&
               filteredProfiles.length === 0 && (
-                <div className="rounded-3xl border border-border bg-surface p-6 text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted">
+                <div className="glass-strong rounded-[26px] p-7 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/8 bg-white/5 text-muted">
                     <SearchIcon />
                   </div>
 
-                  <p className="mt-4 font-bold">
+                  <p className="mt-4 font-semibold">
                     Aucun joueur trouvé
                   </p>
 
-                  <p className="mt-2 text-sm text-muted">
+                  <p className="mt-2 text-sm leading-6 text-muted">
                     Essaie avec un autre nom ou pseudo.
                   </p>
                 </div>

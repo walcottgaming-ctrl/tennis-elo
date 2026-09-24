@@ -13,9 +13,6 @@ type Player = {
   first_name: string | null;
   last_name: string | null;
   username: string | null;
-  points_tennis: number | null;
-  points_padel: number | null;
-  points_super_tiebreak: number | null;
 };
 
 type Match = {
@@ -31,6 +28,17 @@ type MatchPlayer = {
   team: number;
 };
 
+type RankingHistory = {
+  id: string;
+  match_id: string;
+  player_id: string;
+  sport: Sport;
+  old_points: number;
+  new_points: number;
+  points_change: number;
+  created_at: string;
+};
+
 type ChampionHistory = {
   id: string;
   player_id: string;
@@ -42,102 +50,336 @@ type ChampionHistory = {
 
 type Division = {
   name: string;
-  icon: string;
   min: number;
   max: number | null;
   description: string;
 };
 
-function TrophyIcon() {
+type ScoringRule = {
+  label: string;
+  points: string;
+};
+
+function getPlayerPoints(
+  pointsByPlayerAndSport: Map<
+    string,
+    Map<Sport, RankingHistory>
+  >,
+  playerId: string,
+  sport: Sport
+): number | null {
+  return (
+    pointsByPlayerAndSport
+      .get(playerId)
+      ?.get(sport)
+      ?.new_points ?? null
+  );
+}
+
+function TrophyIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-5 w-5"
       stroke="currentColor"
       strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
-      <path d="M8 4h8v4a4 4 0 0 1-8 0V4Z" />
-      <path d="M8 6H5a3 3 0 0 0 3 3" />
-      <path d="M16 6h3a3 3 0 0 1-3 3" />
-      <path d="M12 12v4" />
-      <path d="M8 20h8" />
-      <path d="M9 16h6" />
+      <path d="M8 21h8" />
+      <path d="M12 17v4" />
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v2a4 4 0 0 0 4 4" />
+      <path d="M17 6h3v2a4 4 0 0 1-4 4" />
     </svg>
   );
 }
 
-function ChevronRightIcon() {
+function ChevronRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-5 w-5"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="m9 18 6-6-6-6" />
     </svg>
   );
 }
 
-function ChevronDownIcon({ open }: { open: boolean }) {
+function ChevronDownIcon({
+  open,
+  className = "h-4 w-4",
+}: {
+  open: boolean;
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className={`h-5 w-5 transition-transform ${
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`${className} transition-transform duration-200 ${
         open ? "rotate-180" : ""
       }`}
-      stroke="currentColor"
-      strokeWidth="1.8"
+      aria-hidden="true"
     >
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
 
-function CrownIcon() {
+function CrownIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-4 w-4"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
-      <path d="m4 7 4 4 4-6 4 6 4-4-2 11H6L4 7Z" />
-      <path d="M6 21h12" />
+      <path d="m3 7 4 4 5-7 5 7 4-4-2 12H5L3 7Z" />
+      <path d="M5 19h14" />
     </svg>
   );
 }
 
-function FlameIcon() {
+function ArrowUpIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className="h-5 w-5"
       stroke="currentColor"
       strokeWidth="1.8"
-    >
-      <path d="M12 21a7 7 0 0 0 7-7c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-3 2-4 5-4 8a6 6 0 0 0 6 7Z" />
-    </svg>
-  );
-}
-
-function ArrowUpIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="h-4 w-4"
-      stroke="currentColor"
-      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M12 19V5" />
       <path d="m6 11 6-6 6 6" />
     </svg>
+  );
+}
+
+function AlertIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+      <path d="M10.3 4.5 2.8 17.5a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7 0l-7.5-13a2 2 0 0 0-3.4 0Z" />
+    </svg>
+  );
+}
+
+function DivisionMark({
+  name,
+  className = "h-7 w-7",
+}: {
+  name: string;
+  className?: string;
+}) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  if (name === "Bronze") {
+    return (
+      <svg
+        viewBox="0 0 40 40"
+        className={className}
+        aria-hidden="true"
+      >
+        <circle {...common} cx="20" cy="20" r="10" />
+        <circle
+          {...common}
+          cx="20"
+          cy="20"
+          r="5"
+          opacity="0.5"
+        />
+      </svg>
+    );
+  }
+
+  if (name === "Argent") {
+    return (
+      <svg
+        viewBox="0 0 40 40"
+        className={className}
+        aria-hidden="true"
+      >
+        <circle {...common} cx="20" cy="20" r="11" />
+        <circle
+          {...common}
+          cx="20"
+          cy="20"
+          r="6"
+          opacity="0.5"
+        />
+        <path
+          {...common}
+          d="M20 5v4M20 31v4M5 20h4M31 20h4"
+          opacity="0.45"
+        />
+      </svg>
+    );
+  }
+
+  if (name === "Or") {
+    return (
+      <svg
+        viewBox="0 0 40 40"
+        className={className}
+        aria-hidden="true"
+      >
+        <path
+          {...common}
+          d="m20 6 11 7v14l-11 7-11-7V13l11-7Z"
+        />
+        <path
+          {...common}
+          d="m20 12 5 3v10l-5 3-5-3V15l5-3Z"
+          opacity="0.5"
+        />
+      </svg>
+    );
+  }
+
+  if (name === "Platine") {
+    return (
+      <svg
+        viewBox="0 0 40 40"
+        className={className}
+        aria-hidden="true"
+      >
+        <path
+          {...common}
+          d="m20 5 13 13-13 17L7 18 20 5Z"
+        />
+        <path
+          {...common}
+          d="m20 11 7 7-7 10-7-10 7-7Z"
+          opacity="0.5"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      viewBox="0 0 40 40"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        {...common}
+        d="m20 4 14 14-14 18L6 18 20 4Z"
+        opacity="0.9"
+      />
+      <path
+        {...common}
+        d="m20 10 8 8-8 11-8-11 8-8Z"
+        opacity="0.6"
+      />
+      <path
+        {...common}
+        d="M20 4v6M6 18h8M34 18h-8M20 32v4"
+        opacity="0.35"
+      />
+    </svg>
+  );
+}
+
+function getDivisionAccent(name: string) {
+  switch (name) {
+    case "Bronze":
+      return "text-[#cd8b55]";
+    case "Argent":
+      return "text-[#cbd5e1]";
+    case "Or":
+      return "text-[#f5c451]";
+    case "Platine":
+      return "text-[#b7c8e8]";
+    case "Diamant":
+      return "text-accent";
+    default:
+      return "text-muted";
+  }
+}
+
+function DivisionBadge({
+  division,
+  compact = false,
+}: {
+  division: Division;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center ${
+        compact ? "gap-1.5" : "gap-2.5"
+      } ${getDivisionAccent(division.name)}`}
+    >
+      <DivisionMark
+        name={division.name}
+        className={compact ? "h-5 w-5" : "h-7 w-7"}
+      />
+
+      <span
+        className={`font-semibold uppercase tracking-[0.12em] ${
+          compact ? "text-[9px]" : "text-[10px]"
+        }`}
+      >
+        {division.name}
+      </span>
+    </div>
   );
 }
 
@@ -147,15 +389,17 @@ export default function RankingPage() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>([]);
+  const [rankingHistory, setRankingHistory] = useState<
+    RankingHistory[]
+  >([]);
   const [championHistory, setChampionHistory] = useState<
     ChampionHistory[]
   >([]);
-
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-
-  const [expandedPlayerId, setExpandedPlayerId] =
-    useState<string | null>(null);
+  const [expandedPlayerId, setExpandedPlayerId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     async function loadRanking() {
@@ -171,14 +415,10 @@ export default function RankingPage() {
         return;
       }
 
-      const {
-        data: playersData,
-        error: playersError,
-      } = await supabase
-        .from("profiles")
-        .select(
-          "id, first_name, last_name, username, points_tennis, points_padel, points_super_tiebreak"
-        );
+      const { data: playersData, error: playersError } =
+        await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, username");
 
       if (playersError) {
         setMessage(playersError.message);
@@ -186,15 +426,11 @@ export default function RankingPage() {
         return;
       }
 
-      const {
-        data: matchesData,
-        error: matchesError,
-      } = await supabase
-        .from("matches")
-        .select("id, sport, format, created_at")
-        .order("created_at", {
-          ascending: false,
-        });
+      const { data: matchesData, error: matchesError } =
+        await supabase
+          .from("matches")
+          .select("id, sport, format, created_at")
+          .order("created_at", { ascending: false });
 
       if (matchesError) {
         setMessage(matchesError.message);
@@ -216,16 +452,28 @@ export default function RankingPage() {
       }
 
       const {
-        data: championData,
-        error: championError,
+        data: rankingHistoryData,
+        error: rankingHistoryError,
       } = await supabase
-        .from("champion_history")
+        .from("ranking_history")
         .select(
-          "id, player_id, sport, started_at, ended_at, matches_as_champion"
+          "id, match_id, player_id, sport, old_points, new_points, points_change, created_at"
         )
-        .order("started_at", {
-          ascending: false,
-        });
+        .order("created_at", { ascending: true });
+
+      if (rankingHistoryError) {
+        setMessage(rankingHistoryError.message);
+        setLoading(false);
+        return;
+      }
+
+      const { data: championData, error: championError } =
+        await supabase
+          .from("champion_history")
+          .select(
+            "id, player_id, sport, started_at, ended_at, matches_as_champion"
+          )
+          .order("started_at", { ascending: false });
 
       if (championError) {
         setMessage(championError.message);
@@ -233,58 +481,108 @@ export default function RankingPage() {
         return;
       }
 
-      setPlayers(playersData ?? []);
-      setMatches(matchesData ?? []);
-      setMatchPlayers(matchPlayersData ?? []);
-      setChampionHistory(championData ?? []);
-
+      setPlayers((playersData ?? []) as Player[]);
+      setMatches((matchesData ?? []) as Match[]);
+      setMatchPlayers(
+        (matchPlayersData ?? []) as MatchPlayer[]
+      );
+      setRankingHistory(
+        (rankingHistoryData ?? []) as RankingHistory[]
+      );
+      setChampionHistory(
+        (championData ?? []) as ChampionHistory[]
+      );
       setLoading(false);
     }
 
     loadRanking();
   }, []);
 
+  /*
+   * Source de vérité :
+   * ranking_history.new_points
+   *
+   * La date du match vient de matches.created_at.
+   * ranking_history.created_at ne sert pas à déterminer
+   * le dernier classement après un recalcul historique.
+   */
+  const matchById = new Map(
+    matches.map((match) => [match.id, match])
+  );
+
+  const pointsByPlayerAndSport = new Map<
+    string,
+    Map<Sport, RankingHistory>
+  >();
+
+  for (const history of rankingHistory) {
+    if (history.new_points === null) {
+      continue;
+    }
+
+    let playerMap = pointsByPlayerAndSport.get(
+      history.player_id
+    );
+
+    if (!playerMap) {
+      playerMap = new Map<Sport, RankingHistory>();
+
+      pointsByPlayerAndSport.set(
+        history.player_id,
+        playerMap
+      );
+    }
+
+    const previous = playerMap.get(history.sport);
+
+    const currentMatch = matchById.get(history.match_id);
+    const previousMatch = previous
+      ? matchById.get(previous.match_id)
+      : null;
+
+    if (!currentMatch) {
+      continue;
+    }
+
+    if (!previous || !previousMatch) {
+      playerMap.set(history.sport, history);
+      continue;
+    }
+
+    const currentMatchTime = new Date(
+      currentMatch.created_at
+    ).getTime();
+
+    const previousMatchTime = new Date(
+      previousMatch.created_at
+    ).getTime();
+
+    if (
+      currentMatchTime > previousMatchTime ||
+      (
+        currentMatchTime === previousMatchTime &&
+        currentMatch.id > previousMatch.id
+      )
+    ) {
+      playerMap.set(history.sport, history);
+    }
+  }
+
   function getPlayerName(player: Player) {
-    const fullName = [
-      player.first_name,
-      player.last_name,
-    ]
+    const fullName = [player.first_name, player.last_name]
       .filter(Boolean)
       .join(" ")
       .trim();
 
-    if (fullName) {
-      return fullName;
-    }
-
-    if (player.username) {
-      return `@${player.username}`;
-    }
+    if (fullName) return fullName;
+    if (player.username) return `@${player.username}`;
 
     return "Joueur";
   }
 
-  function getPlayerPoints(player: Player) {
-    if (mode === "tennis") {
-      return player.points_tennis ?? 1000;
-    }
-
-    if (mode === "padel") {
-      return player.points_padel ?? 1000;
-    }
-
-    return player.points_super_tiebreak ?? 1000;
-  }
-
   function getSportLabel() {
-    if (mode === "tennis") {
-      return "Tennis";
-    }
-
-    if (mode === "padel") {
-      return "Padel";
-    }
-
+    if (mode === "tennis") return "Tennis";
+    if (mode === "padel") return "Padel";
     return "Super Tie-Break";
   }
 
@@ -292,7 +590,6 @@ export default function RankingPage() {
     if (points < 1000) {
       return {
         name: "Bronze",
-        icon: "🥉",
         min: 0,
         max: 999,
         description: "Tu construis ton niveau.",
@@ -302,7 +599,6 @@ export default function RankingPage() {
     if (points < 1100) {
       return {
         name: "Argent",
-        icon: "🥈",
         min: 1000,
         max: 1099,
         description: "Tu progresses et prends de la place.",
@@ -312,7 +608,6 @@ export default function RankingPage() {
     if (points < 1200) {
       return {
         name: "Or",
-        icon: "🥇",
         min: 1100,
         max: 1199,
         description: "Tu fais partie des joueurs solides.",
@@ -322,7 +617,6 @@ export default function RankingPage() {
     if (points < 1300) {
       return {
         name: "Platine",
-        icon: "💠",
         min: 1200,
         max: 1299,
         description: "Tu fais partie des meilleurs.",
@@ -331,7 +625,6 @@ export default function RankingPage() {
 
     return {
       name: "Diamant",
-      icon: "💎",
       min: 1300,
       max: null,
       description: "Le niveau élite.",
@@ -341,63 +634,41 @@ export default function RankingPage() {
   function getChampion(sportValue: Sport) {
     return championHistory.find(
       (item) =>
-        item.sport === sportValue &&
-        item.ended_at === null
+        item.sport === sportValue && item.ended_at === null
     );
   }
 
   function isChampion(playerId: string) {
-    const champion = getChampion(mode);
-
-    return champion?.player_id === playerId;
+    return championHistory.some(
+      (item) =>
+        item.sport === mode &&
+        item.ended_at === null &&
+        item.player_id === playerId
+    );
   }
 
   function getChampionStreak(playerId: string) {
-    const champion = championHistory.find(
-      (item) =>
-        item.sport === mode &&
-        item.player_id === playerId &&
-        item.ended_at === null
+    return (
+      championHistory.find(
+        (item) =>
+          item.sport === mode &&
+          item.ended_at === null &&
+          item.player_id === playerId
+      )?.matches_as_champion ?? 0
     );
-
-    return champion?.matches_as_champion ?? 0;
-  }
-
-  function getChampionStartedAt(playerId: string) {
-    const champion = championHistory.find(
-      (item) =>
-        item.sport === mode &&
-        item.player_id === playerId &&
-        item.ended_at === null
-    );
-
-    return champion?.started_at ?? null;
   }
 
   function getPlayerMatches(playerId: string) {
-    const modeMatchIds = new Set(
-      matches
-        .filter((match) => match.sport === mode)
-        .map((match) => match.id)
-    );
-
     const playerMatchIds = new Set(
       matchPlayers
-        .filter(
-          (matchPlayer) =>
-            matchPlayer.player_id === playerId &&
-            modeMatchIds.has(matchPlayer.match_id)
-        )
-        .map((matchPlayer) => matchPlayer.match_id)
+        .filter((item) => item.player_id === playerId)
+        .map((item) => item.match_id)
     );
 
-    return matches
-      .filter((match) => playerMatchIds.has(match.id))
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() -
-          new Date(a.created_at).getTime()
-      );
+    return matches.filter(
+      (match) =>
+        match.sport === mode && playerMatchIds.has(match.id)
+    );
   }
 
   function getOpponentNames(
@@ -405,39 +676,34 @@ export default function RankingPage() {
     matchId: string
   ) {
     const currentPlayer = matchPlayers.find(
-      (matchPlayer) =>
-        matchPlayer.match_id === matchId &&
-        matchPlayer.player_id === playerId
+      (item) =>
+        item.match_id === matchId &&
+        item.player_id === playerId
     );
 
-    if (!currentPlayer) {
-      return "Adversaire";
-    }
+    if (!currentPlayer) return "Adversaire";
+
+    const opponentTeam =
+      currentPlayer.team === 1 ? 2 : 1;
 
     const opponentIds = matchPlayers
       .filter(
-        (matchPlayer) =>
-          matchPlayer.match_id === matchId &&
-          matchPlayer.player_id !== null &&
-          matchPlayer.player_id !== playerId &&
-          matchPlayer.team !== currentPlayer.team
+        (item) =>
+          item.match_id === matchId &&
+          item.team === opponentTeam &&
+          item.player_id
       )
-      .map((matchPlayer) => matchPlayer.player_id);
+      .map((item) => item.player_id as string);
 
-    const opponentNames = opponentIds
-      .map((opponentId) =>
-        players.find(
-          (player) => player.id === opponentId
-        )
-      )
-      .filter(Boolean)
-      .map((player) => getPlayerName(player!));
+    const opponentPlayers = players.filter((player) =>
+      opponentIds.includes(player.id)
+    );
 
-    if (opponentNames.length === 0) {
+    if (!opponentPlayers.length) {
       return "Adversaire";
     }
 
-    return opponentNames.join(" & ");
+    return opponentPlayers.map(getPlayerName).join(" & ");
   }
 
   function getFormatLabel(format: Match["format"]) {
@@ -448,16 +714,133 @@ export default function RankingPage() {
     return getPlayerMatches(playerId).slice(0, 3);
   }
 
+  /*
+   * BARÈME
+   *
+   * Le contenu change automatiquement selon le mode sélectionné.
+   */
+  const scoringRules: ScoringRule[] =
+    mode === "super_tiebreak"
+      ? [
+          {
+            label: "Victoire",
+            points: "+25",
+          },
+          {
+            label: "Défaite",
+            points: "−20",
+          },
+          {
+            label: "Performance contre un joueur mieux classé",
+            points: "+15",
+          },
+          {
+            label: "Contre-performance contre un joueur moins bien classé",
+            points: "−10",
+          },
+          {
+            label: "3 victoires consécutives",
+            points: "+10",
+          },
+          {
+            label: "5 victoires consécutives",
+            points: "+20",
+          },
+          {
+            label: "Victoire avec 8 points d'écart ou plus",
+            points: "+10",
+          },
+          {
+            label: "Défaite avec 2 points d'écart ou moins",
+            points: "−10 au total",
+          },
+          {
+            label: "Victoire parfaite (10-0)",
+            points: "+50 supplémentaires",
+          },
+          {
+            label: "Défaite catastrophique (0-10)",
+            points: "−50 supplémentaires",
+          },
+        ]
+      : [
+          {
+            label: "Victoire",
+            points: "+25",
+          },
+          {
+            label: "Défaite",
+            points: "−20",
+          },
+          {
+            label: "Set remporté 6-0",
+            points: "+10",
+          },
+          {
+            label: "Match parfait (6-0, 6-0)",
+            points: "+40 supplémentaires",
+          },
+          {
+            label: "Victoire nette (2-0 avec maximum 4 jeux concédés)",
+            points: "+10",
+          },
+          {
+            label: "3 victoires consécutives",
+            points: "+10",
+          },
+          {
+            label: "5 victoires consécutives",
+            points: "+20",
+          },
+          {
+            label: "Performance contre un joueur mieux classé",
+            points: "+15",
+          },
+          {
+            label: "Set perdu 0-6",
+            points: "−5",
+          },
+          {
+            label: "Match perdu 0-6, 0-6",
+            points: "−15",
+          },
+          {
+            label: "Contre-performance contre un joueur moins bien classé",
+            points: "−10",
+          },
+          {
+            label: "Défaite au jeu décisif du dernier set",
+            points: "−10 au total",
+          },
+        ];
+
   if (loading) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto flex min-h-[70vh] max-w-lg items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-accent/20" />
+      <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        >
+          <div className="absolute left-[-18%] top-[-10%] h-105 w-105 rounded-full bg-accent/5.5 blur-[110px]" />
+          <div className="absolute bottom-[-18%] right-[-12%] h-115 w-115 rounded-full bg-indigo-500/8 blur-[120px]" />
+        </div>
 
-            <p className="mt-4 text-sm font-medium text-muted">
-              Chargement du classement...
-            </p>
+        <div className="mx-auto max-w-lg">
+          <div className="mb-7 flex items-center justify-between">
+            <div className="space-y-2.5">
+              <div className="h-2.5 w-24 animate-pulse rounded-full bg-white/8" />
+              <div className="h-9 w-40 animate-pulse rounded-xl bg-white/8" />
+              <div className="h-3 w-56 animate-pulse rounded-full bg-white/5" />
+            </div>
+
+            <div className="h-12 w-12 animate-pulse rounded-full bg-white/8" />
+          </div>
+
+          <div className="space-y-4">
+            <div className="h-48 animate-pulse rounded-[28px] bg-white/5" />
+            <div className="h-32 animate-pulse rounded-[28px] bg-white/5" />
+            <div className="h-40 animate-pulse rounded-[28px] bg-white/5" />
+            <div className="h-80 animate-pulse rounded-[28px] bg-white/5" />
           </div>
         </div>
       </main>
@@ -475,29 +858,37 @@ export default function RankingPage() {
   const activePlayerIds = new Set(
     matchPlayers
       .filter(
-        (matchPlayer) =>
-          matchPlayer.player_id !== null &&
-          modeMatchIds.has(matchPlayer.match_id)
+        (item) =>
+          modeMatchIds.has(item.match_id) &&
+          item.player_id
       )
-      .map((matchPlayer) => matchPlayer.player_id)
+      .map((item) => item.player_id as string)
   );
 
   const rankedPlayers = players
     .filter((player) => activePlayerIds.has(player.id))
-    .sort(
-      (a, b) =>
-        getPlayerPoints(b) -
-        getPlayerPoints(a)
-    );
+    .map((player) => ({
+      player,
+      points: getPlayerPoints(
+        pointsByPlayerAndSport,
+        player.id,
+        mode
+      ),
+    }))
+    .filter(
+      (
+        item
+      ): item is {
+        player: Player;
+        points: number;
+      } => item.points !== null
+    )
+    .sort((a, b) => b.points - a.points)
+    .map((item) => item.player);
 
   const podium = rankedPlayers.slice(0, 3);
-
   const topPlayer = rankedPlayers[0] ?? null;
 
-  /*
-   * Le champion est maintenant actif dans les 3 modes :
-   * Tennis, Padel et Super Tie-Break.
-   */
   const currentChampion = getChampion(mode);
 
   const currentChampionPlayer = currentChampion
@@ -507,669 +898,863 @@ export default function RankingPage() {
       ) ?? null
     : null;
 
+  const topPoints = topPlayer
+    ? getPlayerPoints(
+        pointsByPlayerAndSport,
+        topPlayer.id,
+        mode
+      ) ?? 1000
+    : 0;
+
   const topDivision = topPlayer
-    ? getDivision(getPlayerPoints(topPlayer))
+    ? getDivision(topPoints)
     : null;
 
+  function getDivisionProgress(
+    points: number,
+    division: Division
+  ) {
+    if (division.max === null) return 100;
+
+    const range =
+      division.max - division.min + 1;
+    const current = points - division.min;
+
+    return Math.min(
+      100,
+      Math.max(0, (current / range) * 100)
+    );
+  }
+
+  function getNextDivision(points: number) {
+    if (points < 1000) return 1000;
+    if (points < 1100) return 1100;
+    if (points < 1200) return 1200;
+    if (points < 1300) return 1300;
+    return null;
+  }
+
+  const topNextDivision = topPlayer
+    ? getNextDivision(topPoints)
+    : null;
+
+  const pointsToNextDivision =
+    topNextDivision !== null
+      ? Math.max(0, topNextDivision - topPoints)
+      : 0;
+
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-      <div className="mx-auto max-w-lg pb-8">
-        {/* HEADER */}
+    <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        aria-hidden="true"
+      >
+        <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+        <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
+      </div>
 
-        <header>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <SportIcon
-                sport={mode}
-                className="h-5 w-5"
-              />
-            </div>
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
+      <div className="mx-auto max-w-lg space-y-5 pb-8">
+        <header className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="eyebrow">
                 Classement
-              </p>
+              </span>
 
-              <h1 className="mt-1 text-3xl font-bold tracking-tight">
+              <span className="h-1 w-1 rounded-full bg-white/20" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
                 {sportLabel}
-              </h1>
+              </span>
             </div>
+
+            <h1 className="mt-1 font-display text-3xl font-bold tracking-[-0.04em]">
+              Classement
+            </h1>
+
+            <p className="mt-2 max-w-sm text-sm leading-5 text-muted">
+              Ta position dans la hiérarchie SmashBreakPoint.
+            </p>
           </div>
 
-          <p className="mt-4 text-sm leading-6 text-muted">
-            Gagne des points à chaque match et grimpe
-            progressivement dans le classement {sportLabel}.
-          </p>
+          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent shadow-[0_0_30px_var(--accent-glow)]">
+            <div className="absolute inset-0 rounded-full bg-accent/6 blur-xl" />
+
+            <SportIcon
+              sport={mode}
+              className="relative h-5 w-5"
+            />
+          </div>
         </header>
 
-        {/* ERROR */}
-
         {message && (
-          <div className="mt-6 rounded-2xl border border-danger/20 bg-danger/5 p-4">
-            <p className="text-sm font-medium text-danger">
-              {message}
-            </p>
+          <div className="flex items-start gap-3 rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3.5 text-sm text-danger">
+            <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{message}</span>
           </div>
         )}
 
-        {/* CHAMPION */}
+        {topPlayer ? (
+          <section className="glass-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
+            <div
+              className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/10 blur-3xl"
+              aria-hidden="true"
+            />
 
-        {currentChampionPlayer && (
-          <section className="mt-5 overflow-hidden rounded-3xl border border-accent/20 bg-surface">
-            <div className="p-5">
+            <div
+              className="pointer-events-none absolute bottom-0 left-0 h-28 w-44 rounded-full bg-accent/5 blur-3xl"
+              aria-hidden="true"
+            />
+
+            <div className="relative">
               <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                      <CrownIcon />
+                <div>
+                  <p className="eyebrow">
+                    Leader actuel
+                  </p>
+
+                  <div className="mt-4 flex items-center gap-3.5">
+                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-accent/25 bg-accent/10 font-display text-xl font-bold text-accent shadow-[0_0_28px_var(--accent-glow)]">
+                      01
                     </div>
 
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-accent">
-                      Champion actuel
-                    </p>
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-xl font-bold tracking-tight">
+                        {getPlayerName(topPlayer)}
+                      </p>
+
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <DivisionBadge
+                          division={getDivision(topPoints)}
+                          compact
+                        />
+
+                        {isChampion(topPlayer.id) && (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-white/20" />
+
+                            <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-accent">
+                              <CrownIcon className="h-3 w-3" />
+                              Champion
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-
-                  <h2 className="mt-4 truncate text-2xl font-bold tracking-tight">
-                    {getPlayerName(currentChampionPlayer)}
-                  </h2>
-
-                  <p className="mt-1 text-sm text-muted">
-                    N°1 {sportLabel}
-                  </p>
                 </div>
 
-                <div className="shrink-0 rounded-2xl bg-accent/10 px-4 py-3 text-right">
-                  <p className="text-2xl font-bold text-accent">
-                    {getPlayerPoints(currentChampionPlayer)}
-                  </p>
+                <Link
+                  href={`/ranking/player/${topPlayer.id}`}
+                  aria-label={`Voir le profil de ${getPlayerName(
+                    topPlayer
+                  )}`}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/8 bg-white/5 text-muted transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+                >
+                  <ChevronRightIcon className="h-4 w-4" />
+                </Link>
+              </div>
 
-                  <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+              <div className="mt-7 grid grid-cols-[1fr_auto] items-end gap-5">
+                <div>
+                  <p className="eyebrow">
                     Points
                   </p>
-                </div>
-              </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-surface-2 p-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                    Division
-                  </p>
-
-                  <p className="mt-2 text-lg font-bold">
-                    {
-                      getDivision(
-                        getPlayerPoints(
-                          currentChampionPlayer
-                        )
-                      ).icon
-                    }{" "}
-                    {
-                      getDivision(
-                        getPlayerPoints(
-                          currentChampionPlayer
-                        )
-                      ).name
-                    }
+                  <p className="mt-1 font-display text-5xl font-bold tracking-tighter">
+                    {topPoints}
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-surface-2 p-4">
-                  <div className="flex items-center gap-2 text-muted">
-                    <FlameIcon />
+                <div className="text-right">
+                  <p className="eyebrow">
+                    Joueurs actifs
+                  </p>
 
-                    <p className="text-xs font-bold uppercase tracking-[0.14em]">
-                      Streak
-                    </p>
-                  </div>
-
-                  <p className="mt-2 text-lg font-bold">
-                    {getChampionStreak(
-                      currentChampionPlayer.id
-                    )}{" "}
-                    match
-                    {getChampionStreak(
-                      currentChampionPlayer.id
-                    ) > 1
-                      ? "s"
-                      : ""}
+                  <p className="mt-1 font-display text-2xl font-bold">
+                    {rankedPlayers.length}
                   </p>
                 </div>
               </div>
 
-              {getChampionStartedAt(
-                currentChampionPlayer.id
-              ) && (
-                <p className="mt-4 text-xs text-muted">
-                  Champion depuis le{" "}
-                  {new Date(
-                    getChampionStartedAt(
-                      currentChampionPlayer.id
-                    )!
-                  ).toLocaleDateString("fr-FR")}
-                </p>
-              )}
+              <div className="mt-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+                    {topDivision?.name}
+                  </span>
+
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-accent">
+                    {topNextDivision !== null
+                      ? `${pointsToNextDivision} pts restantes`
+                      : "Niveau maximal"}
+                  </span>
+                </div>
+
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+                  <div
+                    className="h-full rounded-full bg-accent shadow-[0_0_18px_var(--accent-glow)] transition-all duration-700"
+                    style={{
+                      width: `${getDivisionProgress(
+                        topPoints,
+                        topDivision!
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </section>
-        )}
-
-        {/* DIVISION */}
-
-        {topPlayer && topDivision && (
-          <section className="mt-5 rounded-3xl border border-border bg-surface p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  Division du leader
-                </p>
-
-                <h2 className="mt-2 text-2xl font-bold tracking-tight">
-                  {topDivision.icon}{" "}
-                  {topDivision.name}
-                </h2>
-              </div>
-
-              <div className="text-right">
-                <p className="text-2xl font-bold">
-                  {getPlayerPoints(topPlayer)}
-                </p>
-
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                  Points
-                </p>
-              </div>
+        ) : (
+          <section className="glass-strong rounded-[30px] px-5 py-9 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/8 bg-white/5 text-muted">
+              <TrophyIcon className="h-6 w-6" />
             </div>
 
-            <p className="mt-3 text-sm leading-6 text-muted">
-              {topDivision.description}
+            <p className="mt-4 font-display text-lg font-semibold">
+              Aucun classement
             </p>
 
-            <div className="mt-5 grid grid-cols-5 gap-1.5">
-              {[
-                {
-                  name: "Bronze",
-                  icon: "🥉",
-                  range: "< 1000",
-                },
-                {
-                  name: "Argent",
-                  icon: "🥈",
-                  range: "1000",
-                },
-                {
-                  name: "Or",
-                  icon: "🥇",
-                  range: "1100",
-                },
-                {
-                  name: "Platine",
-                  icon: "💠",
-                  range: "1200",
-                },
-                {
-                  name: "Diamant",
-                  icon: "💎",
-                  range: "1300+",
-                },
-              ].map((division) => (
-                <div
-                  key={division.name}
-                  className={`rounded-xl p-2 text-center ${
-                    division.name === topDivision.name
-                      ? "border border-accent/20 bg-accent/10"
-                      : "bg-surface-2"
-                  }`}
-                >
-                  <p className="text-base">
-                    {division.icon}
-                  </p>
-
-                  <p
-                    className={`mt-1 text-[9px] font-bold uppercase tracking-wide ${
-                      division.name === topDivision.name
-                        ? "text-accent"
-                        : "text-muted"
-                    }`}
-                  >
-                    {division.name}
-                  </p>
-
-                  <p className="mt-0.5 text-[8px] text-muted">
-                    {division.range}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <p className="mx-auto mt-1 max-w-xs text-sm leading-5 text-muted">
+              Joue un premier match pour apparaître dans le classement.
+            </p>
           </section>
         )}
 
-        {/* PODIUM */}
-
-        {podium.length > 0 && (
-          <section className="mt-8">
+        <section>
+          <div className="mb-3 flex items-end justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Classement
+              <p className="eyebrow">
+                Top joueurs
               </p>
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
-                Le podium
+              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                Podium
               </h2>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 items-end gap-2">
-              {/* 2ND */}
-
-              {podium[1] && (
-                <Link
-                  href={`/ranking/player/${podium[1].id}`}
-                  className="rounded-3xl border border-border bg-surface p-3 text-center transition hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
-                >
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-xl">
-                    2
-                  </div>
-
-                  <p className="mt-3 truncate text-sm font-bold">
-                    {getPlayerName(podium[1])}
-                  </p>
-
-                  <p className="mt-1 text-2xl font-bold">
-                    {getPlayerPoints(podium[1])}
-                  </p>
-
-                  <p className="mt-1 text-[10px] font-semibold text-muted">
-                    {
-                      getDivision(
-                        getPlayerPoints(podium[1])
-                      ).icon
-                    }{" "}
-                    {
-                      getDivision(
-                        getPlayerPoints(podium[1])
-                      ).name
-                    }
-                  </p>
-                </Link>
-              )}
-
-              {/* 1ST */}
-
-              {podium[0] && (
-                <Link
-                  href={`/ranking/player/${podium[0].id}`}
-                  className="relative rounded-3xl border border-accent/30 bg-surface p-4 text-center shadow-2xl transition hover:bg-surface-2 active:scale-[0.98]"
-                >
-                  {isChampion(podium[0].id) && (
-                    <span className="absolute -top-3 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-accent px-3 py-1 text-[9px] font-bold text-background">
-                      <CrownIcon />
-                      CHAMPION
-                    </span>
-                  )}
-
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-                    <TrophyIcon />
-                  </div>
-
-                  <p className="mt-3 truncate text-sm font-bold">
-                    {getPlayerName(podium[0])}
-                  </p>
-
-                  <p className="mt-1 text-3xl font-bold tracking-tight">
-                    {getPlayerPoints(podium[0])}
-                  </p>
-
-                  <p className="mt-1 text-[10px] font-semibold text-muted">
-                    {
-                      getDivision(
-                        getPlayerPoints(podium[0])
-                      ).icon
-                    }{" "}
-                    {
-                      getDivision(
-                        getPlayerPoints(podium[0])
-                      ).name
-                    }
-                  </p>
-                </Link>
-              )}
-
-              {/* 3RD */}
-
-              {podium[2] && (
-                <Link
-                  href={`/ranking/player/${podium[2].id}`}
-                  className="rounded-3xl border border-border bg-surface p-3 text-center transition hover:border-white/10 hover:bg-surface-2 active:scale-[0.98]"
-                >
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-xl">
-                    3
-                  </div>
-
-                  <p className="mt-3 truncate text-sm font-bold">
-                    {getPlayerName(podium[2])}
-                  </p>
-
-                  <p className="mt-1 text-2xl font-bold">
-                    {getPlayerPoints(podium[2])}
-                  </p>
-
-                  <p className="mt-1 text-[10px] font-semibold text-muted">
-                    {
-                      getDivision(
-                        getPlayerPoints(podium[2])
-                      ).icon
-                    }{" "}
-                    {
-                      getDivision(
-                        getPlayerPoints(podium[2])
-                      ).name
-                    }
-                  </p>
-                </Link>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* FULL RANKING */}
-
-        <section className="mt-8">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Classement
-              </p>
-
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
-                Tous les joueurs
-              </h2>
-            </div>
-
-            <span className="text-xs font-medium text-muted">
+            <span className="text-xs text-muted">
               {rankedPlayers.length} joueur
               {rankedPlayers.length > 1 ? "s" : ""}
             </span>
           </div>
 
-          <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-surface">
-            {rankedPlayers.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-sm text-muted">
-                  Aucun joueur disponible.
+          {podium.length > 0 ? (
+            <div className="grid grid-cols-3 items-end gap-2">
+              {[1, 0, 2].map((index) => {
+                const player = podium[index];
+
+                if (!player) {
+                  return <div key={index} />;
+                }
+
+                const rank = index + 1;
+                const points =
+                  getPlayerPoints(
+                    pointsByPlayerAndSport,
+                    player.id,
+                    mode
+                  ) ?? 1000;
+                const division =
+                  getDivision(points);
+                const champion = isChampion(
+                  player.id
+                );
+                const isFirst = rank === 1;
+
+                return (
+                  <Link
+                    key={player.id}
+                    href={`/ranking/player/${player.id}`}
+                    className={`group relative overflow-hidden rounded-[26px] border p-3.5 text-center transition-all duration-200 hover:-translate-y-1 ${
+                      isFirst
+                        ? "border-accent/20 bg-accent/4.5 shadow-[0_18px_45px_var(--accent-glow)]"
+                        : "border-white/8 bg-white/3.5 hover:border-white/12 hover:bg-white/5"
+                    }`}
+                  >
+                    {isFirst && (
+                      <div
+                        className="pointer-events-none absolute inset-x-4 top-0 h-20 rounded-full bg-accent/10 blur-2xl"
+                        aria-hidden="true"
+                      />
+                    )}
+
+                    <div className="relative">
+                      <div
+                        className={`mx-auto grid place-items-center rounded-full border font-display font-bold ${
+                          isFirst
+                            ? "h-12 w-12 border-accent/25 bg-accent/10 text-lg text-accent"
+                            : "h-10 w-10 border-white/8 bg-white/5 text-sm text-muted"
+                        }`}
+                      >
+                        {rank}
+                      </div>
+
+                      <div className="mt-3 truncate text-xs font-semibold">
+                        {getPlayerName(player)}
+                      </div>
+
+                      <div className="mt-1 font-display text-lg font-bold">
+                        {points}
+                      </div>
+
+                      <div className="mt-1 flex justify-center">
+                        <DivisionBadge
+                          division={division}
+                          compact
+                        />
+                      </div>
+
+                      {champion && (
+                        <div className="mt-2 flex items-center justify-center gap-1 text-[8px] font-semibold uppercase tracking-widest text-accent">
+                          <CrownIcon className="h-3 w-3" />
+                          Champion
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="glass relative overflow-hidden rounded-[28px] p-5">
+          <div
+            className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-accent/10 blur-3xl"
+            aria-hidden="true"
+          />
+
+          <div className="relative">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">
+                  Champion actuel
+                </p>
+
+                <h2 className="mt-2 font-display text-xl font-bold tracking-tight">
+                  {currentChampionPlayer
+                    ? getPlayerName(
+                        currentChampionPlayer
+                      )
+                    : "Aucun champion"}
+                </h2>
+
+                {currentChampionPlayer && (
+                  <p className="mt-1 text-xs text-muted">
+                    {sportLabel}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
+                <CrownIcon className="h-5 w-5" />
+              </div>
+            </div>
+
+            {currentChampionPlayer &&
+            currentChampion ? (
+              <>
+                <div className="mt-5 grid grid-cols-2 gap-2.5">
+                  <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
+                    <p className="eyebrow">
+                      Règne
+                    </p>
+
+                    <p className="mt-1.5 font-display text-xl font-bold">
+                      {
+                        currentChampion.matches_as_champion
+                      }
+                    </p>
+
+                    <p className="mt-0.5 text-[11px] text-muted">
+                      matchs défendus
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
+                    <p className="eyebrow">
+                      Depuis
+                    </p>
+
+                    <p className="mt-1.5 font-display text-xl font-bold">
+                      {new Date(
+                        currentChampion.started_at
+                      ).toLocaleDateString(
+                        "fr-FR",
+                        {
+                          day: "2-digit",
+                          month: "short",
+                        }
+                      )}
+                    </p>
+
+                    <p className="mt-0.5 text-[11px] text-muted">
+                      début du règne
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
+                  <div className="h-1 w-1 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                  Champion en titre
+                </div>
+              </>
+            ) : (
+              <p className="mt-4 max-w-sm text-sm leading-5 text-muted">
+                Le premier champion sera désigné après les prochains matchs.
+              </p>
+            )}
+          </div>
+        </section>
+
+        {topDivision && topPlayer && (
+          <section className="glass relative overflow-hidden rounded-[28px] p-5">
+            <div className="flex items-start justify-between gap-5">
+              <div className="min-w-0">
+                <p className="eyebrow">
+                  Progression de division
+                </p>
+
+                <div className="mt-2.5">
+                  <DivisionBadge
+                    division={topDivision}
+                  />
+                </div>
+
+                <p className="mt-2 max-w-xs text-sm leading-5 text-muted">
+                  {topDivision.description}
                 </p>
               </div>
-            ) : (
-              rankedPlayers.map((player, index) => {
-                const playerPoints =
-                  getPlayerPoints(player);
 
+              <div className="shrink-0 text-right">
+                <p className="eyebrow">
+                  Points
+                </p>
+
+                <p className="mt-1 font-display text-3xl font-bold tracking-tight">
+                  {topPoints}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+                <span>
+                  {topDivision.name}
+                </span>
+
+                <span className="text-accent">
+                  {topDivision.max === null
+                    ? "Élite"
+                    : `${Math.round(
+                        getDivisionProgress(
+                          topPoints,
+                          topDivision
+                        )
+                      )}%`}
+                </span>
+              </div>
+
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="h-full rounded-full bg-accent shadow-[0_0_16px_var(--accent-glow)] transition-all duration-500"
+                  style={{
+                    width: `${getDivisionProgress(
+                      topPoints,
+                      topDivision
+                    )}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.12em] text-muted-2">
+                <span>
+                  {topDivision.min} pts
+                </span>
+
+                <span>
+                  {topDivision.max === null
+                    ? "Niveau maximal"
+                    : getNextDivision(topPoints)
+                      ? `${getNextDivision(
+                          topPoints
+                        )} pts`
+                      : "Prochain niveau"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-5 gap-1">
+              {[
+                "Bronze",
+                "Argent",
+                "Or",
+                "Platine",
+                "Diamant",
+              ].map((divisionName) => {
+                const isCurrent =
+                  divisionName ===
+                  topDivision.name;
+
+                return (
+                  <div
+                    key={divisionName}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl py-2 ${
+                      isCurrent
+                        ? "bg-white/5 text-foreground"
+                        : "text-muted-2"
+                    }`}
+                  >
+                    <DivisionMark
+                      name={divisionName}
+                      className={`h-6 w-6 ${
+                        isCurrent
+                          ? getDivisionAccent(
+                              divisionName
+                            )
+                          : ""
+                      }`}
+                    />
+
+                    <span className="text-[8px] font-semibold uppercase tracking-[0.08em]">
+                      {divisionName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <section>
+          <div className="mb-3 flex items-end justify-between">
+            <div>
+              <p className="eyebrow">
+                Classement complet
+              </p>
+
+              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                Tous les joueurs
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+              <ArrowUpIcon className="h-3 w-3 text-accent" />
+              Points
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[28px] border border-white/8 bg-white/2.5">
+            {rankedPlayers.map(
+              (player, index) => {
+                const points =
+                  getPlayerPoints(
+                    pointsByPlayerAndSport,
+                    player.id,
+                    mode
+                  ) ?? 1000;
                 const division =
-                  getDivision(playerPoints);
-
-                const playerIsChampion =
+                  getDivision(points);
+                const playerMatches =
+                  getRecentConfrontations(
+                    player.id
+                  );
+                const expanded =
+                  expandedPlayerId ===
+                  player.id;
+                const champion =
                   isChampion(player.id);
-
-                const isExpanded =
-                  expandedPlayerId === player.id;
-
-                const recentMatches =
-                  isExpanded
-                    ? getRecentConfrontations(player.id)
-                    : [];
+                const streak =
+                  getChampionStreak(
+                    player.id
+                  );
 
                 return (
                   <div
                     key={player.id}
-                    className="border-b border-border last:border-b-0"
+                    className="border-b border-white/5 last:border-b-0"
                   >
-                    {/* MAIN ROW */}
-
                     <button
                       type="button"
                       onClick={() =>
                         setExpandedPlayerId(
-                          isExpanded
+                          expanded
                             ? null
                             : player.id
                         )
                       }
-                      className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-surface-2"
+                      className="group flex w-full items-center gap-3 px-3.5 py-3.5 text-left transition-colors hover:bg-white/4.5"
                     >
-                      {/* POSITION */}
-
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-sm font-bold text-muted">
-                        {index + 1}
+                      <div
+                        className={`w-7 shrink-0 text-center font-display text-[11px] font-bold ${
+                          index === 0
+                            ? "text-accent"
+                            : "text-muted-2"
+                        }`}
+                      >
+                        {String(
+                          index + 1
+                        ).padStart(2, "0")}
                       </div>
 
-                      {/* PLAYER */}
+                      <div
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border ${
+                          index === 0
+                            ? "border-accent/20 bg-accent/10 text-accent"
+                            : "border-white/8 bg-white/5 text-muted"
+                        }`}
+                      >
+                        <span className="text-[11px] font-semibold">
+                          {getPlayerName(
+                            player
+                          )
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </span>
+                      </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-bold">
-                            {getPlayerName(player)}
-                          </p>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                          <span className="truncate text-sm font-semibold">
+                            {getPlayerName(
+                              player
+                            )}
+                          </span>
 
-                          {playerIsChampion && (
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-accent">
-                              <CrownIcon />
-                            </span>
+                          {champion && (
+                            <CrownIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
                           )}
                         </div>
 
-                        <p className="mt-1 truncate text-xs text-muted">
-                          {division.icon}{" "}
-                          {division.name}
-                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <DivisionBadge
+                            division={division}
+                            compact
+                          />
+
+                          {champion &&
+                            streak > 0 && (
+                              <>
+                                <span className="h-1 w-1 rounded-full bg-white/20" />
+
+                                <span className="text-[9px] uppercase tracking-[0.08em] text-accent">
+                                  {streak} défense
+                                  {streak > 1
+                                    ? "s"
+                                    : ""}
+                                </span>
+                              </>
+                            )}
+                        </div>
                       </div>
 
-                      {/* POINTS */}
+                      <div className="shrink-0 text-right">
+                        <div className="font-display text-base font-bold">
+                          {points}
+                        </div>
 
-                      <div className="text-right">
-                        <p className="text-xl font-bold">
-                          {playerPoints}
-                        </p>
-
-                        <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted">
-                          points
-                        </p>
+                        <div className="mt-0.5 text-[8px] uppercase tracking-[0.14em] text-muted">
+                          pts
+                        </div>
                       </div>
 
-                      {/* ARROW */}
-
-                      <div className="shrink-0 text-muted">
+                      <div className="shrink-0 text-muted-2">
                         <ChevronDownIcon
-                          open={isExpanded}
+                          open={expanded}
+                          className="h-4 w-4"
                         />
                       </div>
                     </button>
 
-                    {/* EXPANDED CONTENT */}
-
-                    {isExpanded && (
-                      <div className="border-t border-border bg-surface-2 px-4 pb-4 pt-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
-                              Dernières confrontations
-                            </p>
-
-                            <p className="mt-1 text-xs text-muted">
-                              {sportLabel}
-                            </p>
-                          </div>
+                    {expanded && (
+                      <div className="border-t border-white/5 bg-black/10 px-3.5 pb-4 pt-3">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="eyebrow">
+                            Confrontations récentes
+                          </p>
 
                           <Link
                             href={`/ranking/player/${player.id}`}
                             onClick={(event) =>
                               event.stopPropagation()
                             }
-                            className="shrink-0 rounded-xl bg-accent/10 px-3 py-2 text-[11px] font-bold text-accent transition hover:bg-accent/20"
+                            className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent transition-opacity hover:opacity-80"
                           >
-                            Profil complet
+                            Profil
+                            <ChevronRightIcon className="h-3 w-3" />
                           </Link>
                         </div>
 
-                        {recentMatches.length === 0 ? (
-                          <div className="mt-3 rounded-2xl bg-surface p-4">
-                            <p className="text-sm text-muted">
-                              Aucune confrontation récente.
-                            </p>
+                        {playerMatches.length >
+                        0 ? (
+                          <div className="space-y-2">
+                            {playerMatches.map(
+                              (match) => (
+                                <Link
+                                  key={match.id}
+                                  href={`/matches/${match.id}`}
+                                  onClick={(
+                                    event
+                                  ) =>
+                                    event.stopPropagation()
+                                  }
+                                  className="group flex items-center gap-3 rounded-2xl border border-white/5 bg-white/2.5 px-3 py-2.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
+                                >
+                                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/5 text-muted">
+                                    <SportIcon
+                                      sport={
+                                        match.sport
+                                      }
+                                      className="h-3.5 w-3.5"
+                                    />
+                                  </div>
+
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-medium">
+                                      vs{" "}
+                                      {getOpponentNames(
+                                        player.id,
+                                        match.id
+                                      )}
+                                    </p>
+
+                                    <p className="mt-0.5 text-[10px] text-muted">
+                                      {getFormatLabel(
+                                        match.format
+                                      )}
+                                      {" · "}
+                                      {new Date(
+                                        match.created_at
+                                      ).toLocaleDateString(
+                                        "fr-FR",
+                                        {
+                                          day: "2-digit",
+                                          month:
+                                            "short",
+                                        }
+                                      )}
+                                    </p>
+                                  </div>
+
+                                  <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
+                                </Link>
+                              )
+                            )}
                           </div>
                         ) : (
-                          <div className="mt-3 space-y-2">
-                            {recentMatches.map((match) => (
-                              <Link
-                                key={match.id}
-                                href={`/matches/${match.id}`}
-                                className="flex items-center gap-3 rounded-2xl bg-surface p-3 transition hover:bg-background"
-                              >
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-xs font-bold text-muted">
-                                  {match.format ===
-                                  "doubles"
-                                    ? "D"
-                                    : "S"}
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-semibold">
-                                    vs{" "}
-                                    {getOpponentNames(
-                                      player.id,
-                                      match.id
-                                    )}
-                                  </p>
-
-                                  <p className="mt-0.5 text-[10px] text-muted">
-                                    {getFormatLabel(
-                                      match.format
-                                    )}{" "}
-                                    ·{" "}
-                                    {new Date(
-                                      match.created_at
-                                    ).toLocaleDateString(
-                                      "fr-FR"
-                                    )}
-                                  </p>
-                                </div>
-
-                                <ChevronRightIcon />
-                              </Link>
-                            ))}
+                          <div className="rounded-2xl border border-white/5 bg-white/2.5 px-3 py-4 text-center text-xs text-muted">
+                            Aucun match récent.
                           </div>
                         )}
-
-                        <Link
-                          href={`/ranking/player/${player.id}`}
-                          onClick={(event) =>
-                            event.stopPropagation()
-                          }
-                          className="mt-3 flex min-h-11 items-center justify-center rounded-2xl border border-border bg-surface text-sm font-bold transition hover:bg-background"
-                        >
-                          Voir le profil complet →
-                        </Link>
                       </div>
                     )}
                   </div>
                 );
-              })
+              }
             )}
           </div>
         </section>
 
-        {/* POINTS HISTORY */}
-
         <Link
           href="/ranking/history"
-          className="mt-4 flex min-h-14 items-center justify-between rounded-2xl border border-border bg-surface px-4 transition-colors hover:bg-surface-2"
+          className="group flex items-center gap-4 rounded-3xl border border-white/8 bg-white/3.5 px-4 py-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
         >
-          <div>
-            <p className="text-sm font-bold text-foreground">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+            <ArrowUpIcon className="h-4 w-4" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">
               Historique des points
             </p>
 
             <p className="mt-0.5 text-xs text-muted">
-              Voir l&apos;évolution de vos points
+              Consulte l’évolution de ton classement.
             </p>
           </div>
 
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-            →
-          </div>
+          <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
         </Link>
 
-        {/* POINTS EXPLANATION */}
+        {/* RÈGLES DE NOTATION */}
 
-        <section className="mt-6 rounded-3xl border border-border bg-surface p-5">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <ArrowUpIcon />
-            </div>
+        <section className="glass relative overflow-hidden rounded-[28px] p-5">
+          <div
+            className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/8 blur-3xl"
+            aria-hidden="true"
+          />
 
-            <div>
-              <p className="font-bold">
-                Comment fonctionnent les points ?
-              </p>
+          <div className="relative">
+            <div className="flex items-start gap-3.5">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+                <SportIcon
+                  sport={mode}
+                  className="h-4 w-4"
+                />
+              </div>
 
-              {mode === "super_tiebreak" ? (
-                <>
-                  <p className="mt-2 text-sm leading-6 text-muted">
-                    Le classement Super Tie-Break utilise
-                    son propre système de points, indépendant
-                    des classements Tennis et Padel.
-                  </p>
+              <div className="min-w-0">
+                <p className="eyebrow">
+                  Règles du classement
+                </p>
 
-                  <p className="mt-3 text-sm leading-6 text-muted">
-                    Les résultats Super Tie-Break
-                    n&apos;affectent donc pas tes points
-                    Tennis ou Padel.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="mt-2 text-sm leading-6 text-muted">
-                    Une victoire rapporte{" "}
-                    <span className="font-semibold text-foreground">
-                      +25 points
-                    </span>{" "}
-                    et une défaite fait perdre{" "}
-                    <span className="font-semibold text-foreground">
-                      20 points
-                    </span>
-                    .
-                  </p>
+                <h2 className="mt-1.5 font-display text-lg font-bold tracking-tight">
+                  Comment sont calculés les points ?
+                </h2>
 
-                  <p className="mt-3 text-sm leading-6 text-muted">
-                    Des bonus récompensent les grosses
-                    performances : bulle, double bulle,
-                    victoire propre, série de victoires
-                    et victoire contre un joueur mieux
-                    classé.
-                  </p>
-
-                  <p className="mt-3 text-sm leading-6 text-muted">
-                    Les défaites peuvent également entraîner
-                    des malus selon le score et le niveau
-                    de l&apos;adversaire.
-                  </p>
-                </>
-              )}
-
-              <p className="mt-3 text-sm leading-6 text-muted">
-                Plus tes points augmentent, plus tu montes
-                dans les divisions : Bronze, Argent, Or,
-                Platine puis Diamant.
-              </p>
-
-              <div className="mt-4 flex items-start gap-2 rounded-2xl bg-accent/5 p-3">
-                <div className="mt-0.5 shrink-0 text-accent">
-                  <CrownIcon />
-                </div>
-
-                <p className="text-xs font-medium leading-5 text-muted">
-                  Le joueur actuellement premier est le
-                  Champion. Son compteur indique combien
-                  de matchs il a conservé la première
-                  place.
+                <p className="mt-2 text-sm leading-5 text-muted">
+                  Voici le barème appliqué pour le{" "}
+                  <span className="font-semibold text-foreground">
+                    {sportLabel}
+                  </span>
+                  .
                 </p>
               </div>
+            </div>
+
+            <div className="mt-5 overflow-hidden rounded-2xl border border-white/5">
+              {scoringRules.map((rule, index) => {
+                const isPositive =
+                  rule.points.startsWith("+");
+
+                return (
+                  <div
+                    key={rule.label}
+                    className={`flex items-center gap-3 px-3.5 py-3.5 ${
+                      index !== scoringRules.length - 1
+                        ? "border-b border-white/5"
+                        : ""
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium leading-4">
+                        {rule.label}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`shrink-0 rounded-full border px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-[0.08em] ${
+                        isPositive
+                          ? "border-accent/15 bg-accent/5 text-accent"
+                          : "border-danger/15 bg-danger/5 text-danger"
+                      }`}
+                    >
+                      {rule.points}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/5 bg-white/2.5 px-3.5 py-3.5">
+              <p className="text-[11px] leading-4 text-muted">
+                <span className="font-semibold text-foreground">
+                  À retenir :
+                </span>{" "}
+                les bonus et malus sont cumulables lorsqu’ils sont
+                applicables. Lorsqu’une règle indique « au total », elle
+                remplace le montant de base correspondant.
+              </p>
             </div>
           </div>
         </section>

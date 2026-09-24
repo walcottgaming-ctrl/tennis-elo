@@ -7,8 +7,9 @@ import {
 } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/src/supabase/client";
+
 import SportIcon from "@/app/components/SportIcon";
+import { createClient } from "@/src/supabase/client";
 
 type Player = {
   id: string;
@@ -17,6 +18,116 @@ type Player = {
   last_name: string | null;
   points_super_tiebreak: number;
 };
+
+function ArrowLeftIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M15 18 9 12l6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function ShieldIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M12 3 19 6v5c0 4.6-2.7 7.8-7 10-4.3-2.2-7-5.4-7-10V6l7-3Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+function UsersIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="7" r="3.5" />
+      <path d="M2.5 20c.7-3.5 2.9-5.5 6.5-5.5s5.8 2 6.5 5.5" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 6.8" />
+      <path d="M17 14.8c2.7.5 4.1 2.2 4.5 5.2" />
+    </svg>
+  );
+}
 
 export default function NewSuperTiebreakPage() {
   const router = useRouter();
@@ -236,17 +347,32 @@ export default function NewSuperTiebreakPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background px-5 py-8 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg">
-          <div className="h-3 w-24 animate-pulse rounded-full bg-surface-2" />
+      <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+        >
+          <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-accent/10 blur-[110px]" />
+          <div className="absolute -right-45 top-[35%] h-96 w-96 rounded-full bg-indigo-500/8 blur-[130px]" />
+          <div className="absolute -bottom-45 left-[20%] h-96 w-96 rounded-full bg-violet-500/8 blur-[130px]" />
+        </div>
 
-          <div className="mt-4 h-9 w-64 animate-pulse rounded-xl bg-surface-2" />
+        <div className="mx-auto max-w-xl">
+          <div className="h-10 w-28 animate-pulse rounded-full bg-surface-2" />
 
-          <div className="mt-3 h-4 w-72 animate-pulse rounded-full bg-surface-2" />
+          <div className="mt-8 flex gap-3">
+            <div className="h-12 w-12 animate-pulse rounded-[17px] bg-surface-2" />
 
-          <div className="mt-8 space-y-4">
-            <div className="h-40 animate-pulse rounded-3xl bg-surface" />
-            <div className="h-48 animate-pulse rounded-3xl bg-surface" />
+            <div className="space-y-2">
+              <div className="h-3 w-24 animate-pulse rounded-full bg-surface-2" />
+              <div className="h-8 w-64 animate-pulse rounded-xl bg-surface-2" />
+              <div className="h-4 w-72 animate-pulse rounded-full bg-surface-2" />
+            </div>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <div className="glass h-48 animate-pulse rounded-[28px]" />
+            <div className="glass h-56 animate-pulse rounded-[28px]" />
           </div>
         </div>
       </main>
@@ -254,106 +380,150 @@ export default function NewSuperTiebreakPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-      <div className="mx-auto max-w-lg pb-8">
-        {/* HEADER */}
+    <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-accent/10 blur-[110px]" />
+
+        <div className="absolute -right-45 top-[35%] h-96 w-96 rounded-full bg-indigo-500/8 blur-[130px]" />
+
+        <div className="absolute -bottom-45 left-[20%] h-96 w-96 rounded-full bg-violet-500/8 blur-[130px]" />
+      </div>
+
+      <div className="mx-auto max-w-xl pb-8">
+        {/* Header */}
         <header>
           <Link
-            href="/supertiebreak"
-            className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-muted transition-colors hover:text-foreground"
-          >
-            <span className="text-base">←</span>
-            Super Tie-Break
-          </Link>
+  href="/supertiebreak"
+  aria-label="Retour"
+  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+>
+  <ArrowLeftIcon className="h-4 w-4" />
+</Link>
 
-          <div className="mt-6">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-              Nouveau duel
-            </p>
+          <div className="mt-7">
+            <div className="flex items-start gap-3.5">
+              <div className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-[17px] border border-accent/20 bg-accent/10 text-accent shadow-[0_0_30px_var(--accent-glow)]">
+                <div className="absolute inset-0 bg-accent/5 blur-xl" />
 
-            <h1 className="mt-1 text-3xl font-bold tracking-tight">
-              Nouveau Super Tie-Break
-            </h1>
+                <SportIcon
+                  sport="super_tiebreak"
+                  className="relative h-6 w-6"
+                />
+              </div>
 
-            <p className="mt-2 max-w-sm text-sm leading-5 text-muted">
-              Un duel en 1 contre 1. Premier à 10 points avec
-              deux points d&apos;écart.
-            </p>
+              <div className="min-w-0">
+                <p className="eyebrow">Nouveau duel</p>
+
+                <h1 className="mt-1 font-display text-[28px] font-bold leading-tight tracking-tight sm:text-3xl">
+                  Nouveau Super Tie-Break
+                </h1>
+
+                <p className="mt-2 max-w-sm text-sm leading-6 text-muted">
+                  Un duel en 1 contre 1. Premier à 10 points avec
+                  deux points d&apos;écart.
+                </p>
+              </div>
+            </div>
           </div>
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-8 space-y-4"
+          className="mt-8 space-y-3"
         >
-          {/* FORMAT */}
-          <section className="rounded-3xl border border-border bg-surface p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  01
-                </p>
+          {/* Format */}
+          <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#171920]/85 p-5 shadow-[0_24px_60px_-35px_rgba(0,0,0,0.95)] backdrop-blur-2xl sm:p-6">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-accent/7 blur-[70px]"
+            />
 
-                <h2 className="mt-1 text-lg font-bold">
-                  Format
-                </h2>
-
-                <p className="mt-1 text-sm leading-5 text-muted">
-                  Le Super Tie-Break est toujours joué en simple.
-                </p>
-              </div>
-
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <SportIcon
-                  sport="super_tiebreak"
-                  className="h-5 w-5"
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-accent/20 bg-accent/5 p-4">
-              <div className="flex items-center justify-between">
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-bold text-accent">
-                    1 contre 1
-                  </p>
+                  <p className="eyebrow">01 · Format</p>
 
-                  <p className="mt-1 text-xs text-muted">
-                    Match compétitif · classement Super Tie-Break
+                  <h2 className="mt-1.5 font-display text-xl font-semibold tracking-tight">
+                    Un duel rapide
+                  </h2>
+
+                  <p className="mt-1.5 max-w-sm text-sm leading-6 text-muted">
+                    Le Super Tie-Break est toujours joué en simple,
+                    en format compétitif.
                   </p>
                 </div>
 
-                <div className="rounded-full bg-accent px-3 py-1.5 text-xs font-bold text-background">
-                  10 pts
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-accent/15 bg-accent/8 text-accent">
+                  <SportIcon
+                    sport="super_tiebreak"
+                    className="h-5 w-5"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-2.5">
+                <div className="rounded-2xl border border-accent/15 bg-accent/5 p-4">
+                  <p className="eyebrow text-accent">
+                    Format
+                  </p>
+
+                  <p className="mt-2 font-display text-lg font-bold">
+                    1 contre 1
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-muted">
+                    Simple
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/6 bg-white/3 p-4">
+                  <p className="eyebrow">
+                    Objectif
+                  </p>
+
+                  <p className="mt-2 font-display text-lg font-bold">
+                    10 pts
+                  </p>
+
+                  <p className="mt-1 text-[10px] text-muted">
+                    2 points d&apos;écart
+                  </p>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* ADVERSAIRE */}
-          <section className="rounded-3xl border border-border bg-surface p-5">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                02
-              </p>
+          {/* Adversaire */}
+          <section className="relative overflow-hidden rounded-[28px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="eyebrow">02 · Adversaire</p>
 
-              <h2 className="mt-1 text-lg font-bold">
-                Adversaire
-              </h2>
+                <h2 className="mt-1.5 font-display text-xl font-semibold tracking-tight">
+                  Qui affrontes-tu ?
+                </h2>
 
-              <p className="mt-1 text-sm leading-5 text-muted">
-                Choisis le joueur que tu affrontes.
-              </p>
+                <p className="mt-1.5 text-sm leading-6 text-muted">
+                  Tes amis apparaissent en priorité.
+                </p>
+              </div>
+
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/7 bg-white/4 text-muted">
+                <UsersIcon className="h-5 w-5" />
+              </div>
             </div>
 
-            <div className="mt-5">
+            <div className="relative mt-5">
               <select
                 id="opponent"
                 value={opponentId}
                 onChange={(event) =>
                   setOpponentId(event.target.value)
                 }
-                className="min-h-14 w-full appearance-none rounded-2xl border border-border bg-surface-2 px-4 text-sm font-medium text-foreground outline-none transition focus:border-accent"
+                className="min-h-14 w-full appearance-none rounded-2xl border border-white/8 bg-white/4 px-4 pr-12 text-sm font-medium text-foreground outline-none transition-all duration-200 hover:border-white/12 hover:bg-white/5 focus:border-accent/40 focus:bg-white/6"
               >
                 <option value="">
                   Sélectionner un adversaire
@@ -375,169 +545,218 @@ export default function NewSuperTiebreakPage() {
                   );
                 })}
               </select>
+
+              <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
             </div>
 
             {orderedPlayers.length === 0 && (
-              <div className="mt-4 rounded-2xl border border-border bg-surface-2 p-4">
+              <div className="mt-4 rounded-2xl border border-white/6 bg-white/3 p-4">
                 <p className="text-sm font-semibold">
                   Aucun adversaire disponible.
                 </p>
 
-                <p className="mt-1 text-xs leading-5 text-muted">
+                <p className="mt-1.5 text-xs leading-5 text-muted">
                   Il faut qu&apos;un autre joueur possède un profil
                   SmashBreakPoint pour participer au classement
                   Super Tie-Break.
                 </p>
               </div>
             )}
+
+            {friends.length > 0 && !selectedOpponent && (
+              <div className="mt-3 flex items-center gap-2 text-[10px] text-muted">
+                <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                {friends.length} ami
+                {friends.length > 1 ? "s" : ""} disponible
+                {friends.length > 1 ? "s" : ""}
+              </div>
+            )}
           </section>
 
-          {/* ADVERSAIRE SELECTIONNE */}
+          {/* Duel */}
           {selectedOpponent && (
-            <section className="rounded-3xl border border-border bg-surface p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                03
-              </p>
+            <section className="relative overflow-hidden rounded-[28px] border border-accent/15 bg-accent/[0.035] p-5 backdrop-blur-xl sm:p-6">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-accent/8 blur-[80px]"
+              />
 
-              <h2 className="mt-1 text-lg font-bold">
-                Duel
-              </h2>
-
-              <div className="mt-5 space-y-3">
-                {/* MOI */}
-                <div className="flex items-center justify-between rounded-2xl border border-accent/20 bg-accent/5 px-4 py-4">
+              <div className="relative">
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-accent">
-                      Joueur 1
-                    </p>
+                    <p className="eyebrow">03 · Duel</p>
 
-                    <p className="mt-1 text-sm font-bold">
-                      Toi
-                    </p>
+                    <h2 className="mt-1.5 font-display text-xl font-semibold tracking-tight">
+                      Prêt à jouer
+                    </h2>
                   </div>
 
-                  <span className="text-sm font-bold text-accent">
-                    Toi
-                  </span>
-                </div>
-
-                <div className="flex justify-center">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface-2 text-[10px] font-black text-muted">
-                    VS
+                  <div className="grid h-10 w-10 place-items-center rounded-xl border border-accent/15 bg-accent/8 text-accent">
+                    <ShieldIcon className="h-5 w-5" />
                   </div>
                 </div>
 
-                {/* ADVERSAIRE */}
-                <div className="flex items-center justify-between rounded-2xl border border-border bg-surface-2 px-4 py-4">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-wide text-muted">
-                      Joueur 2
-                    </p>
+                <div className="mt-5 space-y-2">
+                  {/* Joueur 1 */}
+                  <div className="rounded-[22px] border border-accent/20 bg-accent/6 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="eyebrow text-accent">
+                          Joueur 1
+                        </p>
 
-                    <p className="mt-1 truncate text-sm font-bold">
-                      {playerName(selectedOpponent)}
-                    </p>
+                        <p className="mt-1.5 text-sm font-semibold">
+                          Toi
+                        </p>
+                      </div>
+
+                      <div className="grid h-10 w-10 place-items-center rounded-full bg-accent font-display text-sm font-bold text-[#0b0d13] shadow-[0_0_18px_var(--accent-glow)]">
+                        1
+                      </div>
+                    </div>
                   </div>
 
-                  <p className="ml-4 shrink-0 text-right">
-                    <span className="block text-[10px] font-bold uppercase tracking-wide text-muted">
-                      Score
-                    </span>
+                  {/* VS */}
+                  <div className="flex items-center gap-3 py-0.5">
+                    <div className="h-px flex-1 bg-white/7" />
 
-                    <span className="text-sm font-bold">
-                      {selectedOpponent.points_super_tiebreak}
-                    </span>
-                  </p>
+                    <div className="grid h-7 w-7 place-items-center rounded-full border border-white/8 bg-white/4 text-[8px] font-bold tracking-[0.12em] text-muted">
+                      VS
+                    </div>
+
+                    <div className="h-px flex-1 bg-white/7" />
+                  </div>
+
+                  {/* Joueur 2 */}
+                  <div className="rounded-[22px] border border-white/7 bg-white/3 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="eyebrow">
+                          Joueur 2
+                        </p>
+
+                        <p className="mt-1.5 truncate text-sm font-semibold">
+                          {playerName(selectedOpponent)}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="eyebrow">
+                          Classement
+                        </p>
+
+                        <p className="mt-1 font-display text-base font-bold text-accent">
+                          {selectedOpponent.points_super_tiebreak.toLocaleString(
+                            "fr-FR"
+                          )}
+                        </p>
+
+                        <p className="mt-0.5 text-[9px] uppercase tracking-widest text-muted">
+                          points
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
           )}
 
-          {/* REGLES */}
-          <section className="rounded-3xl border border-border bg-surface p-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-              À savoir
-            </p>
+          {/* Règles */}
+          <section className="rounded-[28px] border border-white/7 bg-white/3 p-5 backdrop-blur-xl sm:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="eyebrow">À savoir</p>
 
-            <div className="mt-4 space-y-3">
-              <div className="flex gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-muted">
-                  1
+                <h2 className="mt-1.5 font-display text-lg font-semibold">
+                  Règles du duel
+                </h2>
+              </div>
+
+              <span className="rounded-full border border-white/6 bg-white/4 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted">
+                STB
+              </span>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <div className="flex gap-3 rounded-2xl border border-white/5 bg-white/2.5 p-3.5">
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-white/7 bg-white/4 text-[10px] font-bold text-muted">
+                  01
                 </div>
 
-                <p className="text-sm leading-5 text-muted">
+                <p className="text-xs leading-5 text-muted">
                   Le premier joueur à atteindre 10 points gagne,
                   avec au moins 2 points d&apos;écart.
                 </p>
               </div>
 
-              <div className="flex gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-muted">
-                  2
+              <div className="flex gap-3 rounded-2xl border border-white/5 bg-white/2.5 p-3.5">
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-white/7 bg-white/4 text-[10px] font-bold text-muted">
+                  02
                 </div>
 
-                <p className="text-sm leading-5 text-muted">
+                <p className="text-xs leading-5 text-muted">
                   Le résultat est enregistré uniquement dans le
                   classement Super Tie-Break.
                 </p>
               </div>
 
-              <div className="flex gap-3">
-                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-xs font-bold text-muted">
-                  3
+              <div className="flex gap-3 rounded-2xl border border-white/5 bg-white/2.5 p-3.5">
+                <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-white/7 bg-white/4 text-[10px] font-bold text-muted">
+                  03
                 </div>
 
-                <p className="text-sm leading-5 text-muted">
+                <p className="text-xs leading-5 text-muted">
                   Les points Tennis et Padel ne sont pas modifiés.
                 </p>
               </div>
             </div>
           </section>
 
-          {/* MESSAGE */}
+          {/* Message */}
           {message && (
-            <div className="rounded-2xl border border-danger/20 bg-danger/5 p-4">
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-sm font-bold text-danger">
+            <div className="rounded-[22px] border border-danger/20 bg-danger/5 p-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-danger/10 text-xs font-bold text-danger">
                   !
                 </div>
 
-                <p className="text-sm font-medium leading-5 text-danger">
+                <p className="pt-1 text-xs font-medium leading-5 text-danger">
                   {message}
                 </p>
               </div>
             </div>
           )}
 
-          {/* SUBMIT */}
+          {/* Submit */}
           <div className="pt-2">
             <button
               type="submit"
               disabled={saving || !opponentId}
-              className="group flex min-h-16 w-full items-center justify-between rounded-2xl bg-accent px-5 text-left text-background transition-all duration-200 hover:brightness-95 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              className="group relative flex min-h-16 w-full items-center justify-between overflow-hidden rounded-[22px] bg-accent px-5 text-left text-[#0b0d13] shadow-[0_12px_35px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_15px_42px_var(--accent-glow)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
             >
-              <div>
-                <p className="font-bold">
+              <div className="relative">
+                <p className="font-semibold">
                   {saving
                     ? "Création du duel..."
                     : "Commencer le Super Tie-Break"}
                 </p>
 
                 {!saving && opponentId && (
-                  <p className="mt-0.5 text-sm font-medium text-background/60">
-                    Tu sais déjà qui affronter
+                  <p className="mt-0.5 text-[11px] font-medium text-[#0b0d13]/60">
+                    Le duel va commencer
                   </p>
                 )}
 
                 {!saving && !opponentId && (
-                  <p className="mt-0.5 text-sm font-medium text-background/60">
+                  <p className="mt-0.5 text-[11px] font-medium text-[#0b0d13]/60">
                     Sélectionne d&apos;abord ton adversaire
                   </p>
                 )}
               </div>
 
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-background/10 text-xl transition-transform duration-200 group-hover:translate-x-0.5">
-                →
+              <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#0b0d13]/10 transition-transform duration-200 group-hover:translate-x-0.5">
+                <ArrowRightIcon />
               </span>
             </button>
           </div>

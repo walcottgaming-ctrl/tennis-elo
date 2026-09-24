@@ -36,6 +36,7 @@ type MatchResult = {
 };
 
 type RankingHistory = {
+  match_id: string;
   sport: "tennis" | "padel";
   old_points: number | null;
   new_points: number | null;
@@ -51,14 +52,21 @@ type OpponentStats = {
   losses: number;
 };
 
-function TrophyIcon() {
+function TrophyIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" />
       <path d="M8 6H5v2a3 3 0 0 0 3 3" />
@@ -70,28 +78,42 @@ function TrophyIcon() {
   );
 }
 
-function FlameIcon() {
+function FlameIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M12 21c4 0 7-2.8 7-7 0-3.2-1.8-5.5-4.7-8.2.1 2.3-.8 3.7-2 4.5.2-3.7-1.5-6.4-4.4-8.3.3 3.4-2 5.2-2 8.2 0 4.2 2.9 7.8 6.1 7.8Z" />
     </svg>
   );
 }
 
-function TargetIcon() {
+function TargetIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <circle cx="12" cy="12" r="8" />
       <circle cx="12" cy="12" r="4" />
@@ -100,14 +122,21 @@ function TargetIcon() {
   );
 }
 
-function UsersIcon() {
+function UsersIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <circle cx="9" cy="8" r="3" />
       <path d="M3.5 19c.6-3.1 2.4-4.8 5.5-4.8s4.9 1.7 5.5 4.8" />
@@ -117,19 +146,70 @@ function UsersIcon() {
   );
 }
 
-function ChartIcon() {
+function ChartIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
-      className="h-5 w-5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M4 19V9" />
       <path d="M10 19V5" />
       <path d="M16 19v-7" />
       <path d="M22 19H2" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M19 12H5" />
+      <path d="m11 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
     </svg>
   );
 }
@@ -151,51 +231,112 @@ export default async function StatsPage() {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
-        <div className="mx-auto max-w-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-            Statistiques
-          </p>
+      <main className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5 sm:pt-6">
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
+              backgroundAttachment: "fixed",
+            }}
+          />
+        </div>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Mes statistiques
-          </h1>
-
-          <div className="mt-6 rounded-3xl border border-border bg-surface p-6">
-            <p className="text-sm leading-6 text-muted">
-              Tu dois être connecté pour voir tes statistiques.
-            </p>
-
-            <Link
-              href="/login"
-              className="mt-5 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background"
-            >
-              Se connecter
-            </Link>
+        <div className="mx-auto max-w-lg pb-8">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl">
+            <ChartIcon className="h-4 w-4" />
           </div>
+
+          <header className="mt-8">
+            <p className="eyebrow text-accent">Statistiques</p>
+
+            <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">
+              Mes statistiques
+            </h1>
+
+            <p className="mt-3 text-sm leading-6 text-muted">
+              Analyse tes résultats, tes séries et ta progression.
+            </p>
+          </header>
+
+          <section className="glass-strong relative mt-7 overflow-hidden rounded-[28px] p-6">
+            <div
+              className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full blur-3xl"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--accent) 10%, transparent)",
+              }}
+            />
+
+            <div className="relative">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
+                <ChartIcon className="h-5 w-5" />
+              </div>
+
+              <h2 className="mt-6 font-display text-xl font-semibold tracking-tight">
+                Connexion nécessaire
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Tu dois être connecté pour voir tes statistiques.
+              </p>
+
+              <Link
+                href="/login"
+                className="group mt-6 flex min-h-14 items-center justify-between rounded-2xl bg-accent px-5 text-sm font-semibold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
+              >
+                <span>Se connecter</span>
+
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b0d13]/10 transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowRightIcon className="h-4 w-4" />
+                </span>
+              </Link>
+            </div>
+          </section>
         </div>
       </main>
     );
   }
 
-  const { data: matches, error: matchesError } = await supabase
-    .from("matches")
-    .select("id, sport, format, created_at")
-    .order("created_at", { ascending: false });
+  const { data: matches, error: matchesError } =
+    await supabase
+      .from("matches")
+      .select("id, sport, format, created_at")
+      .order("created_at", { ascending: false });
 
   if (matchesError) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+      <main className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5 sm:pt-6">
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
+              backgroundAttachment: "fixed",
+            }}
+          />
+        </div>
+
         <div className="mx-auto max-w-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-            Statistiques
-          </p>
+          <Link
+            href="/dashboard"
+            aria-label="Retour à l'accueil"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+          >
+            <ArrowLeftIcon />
+          </Link>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Mes statistiques
-          </h1>
+          <header className="mt-8">
+            <p className="eyebrow text-accent">Statistiques</p>
 
-          <div className="mt-6 rounded-2xl border border-danger/20 bg-danger/5 p-4">
+            <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">
+              Mes statistiques
+            </h1>
+          </header>
+
+          <div className="mt-7 rounded-2xl border border-danger/20 bg-danger/5 p-4 backdrop-blur-xl">
             <p className="text-sm font-medium text-danger">
               Impossible de charger les matchs.
             </p>
@@ -210,45 +351,71 @@ export default async function StatsPage() {
 
   if (matchIds.length === 0) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+      <main className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5 sm:pt-6">
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
+              backgroundAttachment: "fixed",
+            }}
+          />
+        </div>
+
         <div className="mx-auto max-w-lg pb-8">
           <Link
             href="/dashboard"
-            className="text-sm font-medium text-muted transition-colors hover:text-foreground"
+            aria-label="Retour à l'accueil"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
           >
-            ← Accueil
+            <ArrowLeftIcon />
           </Link>
 
-          <header className="mt-6">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-              Tes performances
-            </p>
+          <header className="mt-8">
+            <p className="eyebrow text-accent">Tes performances</p>
 
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">
+            <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">
               Mes statistiques
             </h1>
           </header>
 
-          <section className="mt-6 rounded-3xl border border-border bg-surface p-6 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <ChartIcon />
+          <section className="glass-strong relative mt-7 overflow-hidden rounded-[28px] p-6 text-center">
+            <div
+              className="pointer-events-none absolute left-1/2 top-0 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+              style={{
+                background:
+                  "color-mix(in srgb, var(--accent) 10%, transparent)",
+              }}
+            />
+
+            <div className="relative">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
+                <ChartIcon className="h-6 w-6" />
+              </div>
+
+              <p className="eyebrow mt-6">Première étape</p>
+
+              <h2 className="mt-2 font-display text-xl font-semibold tracking-tight">
+                Pas encore de statistiques
+              </h2>
+
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted">
+                Joue ton premier match pour commencer à construire tes
+                statistiques.
+              </p>
+
+              <Link
+                href="/matches/new"
+                className="group mt-6 flex min-h-14 items-center justify-between rounded-2xl bg-accent px-5 text-left text-sm font-semibold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
+              >
+                <span>Créer un match</span>
+
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0b0d13]/10 transition-transform duration-200 group-hover:translate-x-0.5">
+                  <ArrowRightIcon />
+                </span>
+              </Link>
             </div>
-
-            <h2 className="mt-4 text-xl font-bold">
-              Pas encore de statistiques
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Joue ton premier match pour commencer à construire tes
-              statistiques.
-            </p>
-
-            <Link
-              href="/matches/new"
-              className="mt-6 flex min-h-14 items-center justify-center rounded-2xl bg-accent px-5 text-sm font-bold text-background"
-            >
-              Créer un match
-            </Link>
           </section>
         </div>
       </main>
@@ -263,17 +430,36 @@ export default async function StatsPage() {
 
   if (matchPlayersError) {
     return (
-      <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+      <main className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5 sm:pt-6">
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
+              backgroundAttachment: "fixed",
+            }}
+          />
+        </div>
+
         <div className="mx-auto max-w-lg">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-            Statistiques
-          </p>
+          <Link
+            href="/dashboard"
+            aria-label="Retour à l'accueil"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+          >
+            <ArrowLeftIcon />
+          </Link>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">
-            Mes statistiques
-          </h1>
+          <header className="mt-8">
+            <p className="eyebrow text-accent">Statistiques</p>
 
-          <div className="mt-6 rounded-2xl border border-danger/20 bg-danger/5 p-4">
+            <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">
+              Mes statistiques
+            </h1>
+          </header>
+
+          <div className="mt-7 rounded-2xl border border-danger/20 bg-danger/5 p-4 backdrop-blur-xl">
             <p className="text-sm font-medium text-danger">
               Impossible de charger les joueurs des matchs.
             </p>
@@ -291,7 +477,7 @@ export default async function StatsPage() {
   const { data: rankingHistory } = await supabase
     .from("ranking_history")
     .select(
-      "sport, old_points, new_points, points_change, created_at"
+      "match_id, sport, old_points, new_points, points_change, created_at"
     )
     .eq("player_id", user.id)
     .order("created_at", { ascending: true });
@@ -577,162 +763,268 @@ export default async function StatsPage() {
     }
   );
 
-  const tennisPointsHistory = pointsHistory.filter(
+  /*
+   * POINTS DE CLASSEMENT
+   *
+   * ranking_history.new_points = source de vérité.
+   *
+   * Pour retrouver le dernier état, on utilise la date réelle
+   * du match via matches.created_at et match_id comme départage.
+   *
+   * On ne se base PAS sur ranking_history.created_at car un
+   * recompute peut recréer toutes les lignes avec le même timestamp.
+   */
+
+  const matchById = new Map(
+    allMatches.map((match) => [match.id, match])
+  );
+
+  const getMatchTime = (item: RankingHistory) => {
+    const match = matchById.get(item.match_id);
+
+    if (!match) {
+      return 0;
+    }
+
+    return new Date(match.created_at).getTime();
+  };
+
+  const sortedPointsHistory = [...pointsHistory].sort(
+    (a, b) => {
+      const aTime = getMatchTime(a);
+      const bTime = getMatchTime(b);
+
+      if (aTime !== bTime) {
+        return aTime - bTime;
+      }
+
+      return a.match_id.localeCompare(b.match_id);
+    }
+  );
+
+  const tennisPointsHistory = sortedPointsHistory.filter(
     (item) => item.sport === "tennis"
   );
 
-  const padelPointsHistory = pointsHistory.filter(
+  const padelPointsHistory = sortedPointsHistory.filter(
     (item) => item.sport === "padel"
   );
 
-  const latestTennisPoints =
+  const latestTennisHistory =
     tennisPointsHistory.length > 0
-      ? tennisPointsHistory[tennisPointsHistory.length - 1].new_points ?? 0
-      : 0;
+      ? tennisPointsHistory[
+          tennisPointsHistory.length - 1
+        ]
+      : null;
+
+  const latestPadelHistory =
+    padelPointsHistory.length > 0
+      ? padelPointsHistory[
+          padelPointsHistory.length - 1
+        ]
+      : null;
+
+  const latestTennisPoints =
+    latestTennisHistory?.new_points ?? 1000;
 
   const latestPadelPoints =
-    padelPointsHistory.length > 0
-      ? padelPointsHistory[padelPointsHistory.length - 1].new_points ?? 0
-      : 0;
+    latestPadelHistory?.new_points ?? 1000;
 
-  const tennisPointsChange = tennisPointsHistory.reduce(
-    (total, item) => total + (item.points_change ?? 0),
-    0
-  );
+  const tennisPointsChange =
+    latestTennisPoints - 1000;
 
-  const padelPointsChange = padelPointsHistory.reduce(
-    (total, item) => total + (item.points_change ?? 0),
-    0
-  );
+  const padelPointsChange =
+    latestPadelPoints - 1000;
 
-  const recentPointsHistory = [...pointsHistory]
+  const recentPointsHistory = [
+    ...sortedPointsHistory,
+  ]
     .reverse()
     .slice(0, 5);
 
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+    <main className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5 sm:pt-6">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
+            backgroundAttachment: "fixed",
+          }}
+        />
+
+        <div
+          className="absolute left-1/2 top-24 h-64 w-64 -translate-x-1/2 rounded-full blur-[100px]"
+          style={{
+            background:
+              "color-mix(in srgb, var(--accent) 6%, transparent)",
+          }}
+        />
+      </div>
+
       <div className="mx-auto max-w-lg pb-8">
-        {/* Header */}
+        {/* HEADER */}
         <header>
           <Link
             href="/dashboard"
-            className="text-sm font-medium text-muted transition-colors hover:text-foreground"
+            aria-label="Retour à l'accueil"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
           >
-            ← Accueil
+            <ArrowLeftIcon className="h-4 w-4" />
           </Link>
 
-          <div className="mt-6">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-              Tes performances
-            </p>
+          <div className="mt-8">
+            <div className="flex items-center gap-2">
+              <span className="eyebrow text-accent">
+                Tes performances
+              </span>
 
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">
+              <span className="h-1 w-1 rounded-full bg-accent/60" />
+
+              <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-2">
+                Analyse
+              </span>
+            </div>
+
+            <h1 className="mt-2 font-display text-[2.15rem] font-bold leading-none tracking-[-0.04em] sm:text-4xl">
               Mes statistiques
             </h1>
 
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Une vue complète de tes résultats et de ta progression.
+            <p className="mt-4 max-w-md text-sm leading-6 text-muted">
+              Une vue complète de tes résultats, de ta progression
+              et de tes confrontations.
             </p>
           </div>
         </header>
 
-        {/* Bilan */}
-        <section className="mt-7 rounded-3xl border border-border bg-surface p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              <TrophyIcon />
+        {/* BILAN */}
+        <section className="glass-strong relative mt-8 overflow-hidden rounded-[30px]">
+          <div
+            className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full blur-[80px]"
+            style={{
+              background:
+                "color-mix(in srgb, var(--accent) 11%, transparent)",
+            }}
+          />
+
+          <div className="relative p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-accent/20 bg-accent/10 text-accent shadow-[0_0_20px_var(--accent-glow)]">
+                  <TrophyIcon />
+                </div>
+
+                <div>
+                  <p className="eyebrow">Ton bilan</p>
+
+                  <p className="mt-1 text-xs text-muted">
+                    Tous tes matchs enregistrés
+                  </p>
+                </div>
+              </div>
+
+              <div className="hidden rounded-full border border-white/8 bg-white/4 px-3 py-1.5 sm:block">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+                  {totalMatches} match
+                  {totalMatches > 1 ? "s" : ""}
+                </span>
+              </div>
             </div>
 
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Ton bilan
-              </p>
+            <div className="mt-8 grid grid-cols-2 gap-3">
+              <div className="rounded-[22px] border border-white/6 bg-white/3 p-4">
+                <p className="text-xs font-medium text-muted">
+                  Matchs disputés
+                </p>
 
-              <p className="mt-1 text-sm font-medium text-muted">
-                Sur l&apos;ensemble de tes matchs
-              </p>
+                <p className="mt-2 font-display text-4xl font-bold tracking-[-0.04em]">
+                  {totalMatches}
+                </p>
+
+                <p className="mt-1 text-xs text-muted-2">
+                  {wins} victoire{wins > 1 ? "s" : ""}
+                </p>
+              </div>
+
+              <div className="rounded-[22px] border border-accent/12 bg-accent/5 p-4">
+                <p className="text-xs font-medium text-muted">
+                  Taux de victoire
+                </p>
+
+                <p className="mt-2 font-display text-4xl font-bold tracking-[-0.04em] text-accent">
+                  {winRate}%
+                </p>
+
+                <p className="mt-1 text-xs text-muted-2">
+                  {losses} défaite{losses > 1 ? "s" : ""}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted">Matchs</p>
+            <div className="mt-5">
+              <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+                <div
+                  className="h-full rounded-full bg-accent shadow-[0_0_16px_var(--accent-glow)] transition-all"
+                  style={{
+                    width: `${winRate}%`,
+                  }}
+                />
+              </div>
 
-              <p className="mt-1 text-4xl font-bold tracking-tight">
-                {totalMatches}
-              </p>
+              <div className="mt-2 flex items-center justify-between text-[11px] font-medium text-muted-2">
+                <span>Défaites</span>
+                <span>Victoires</span>
+              </div>
             </div>
-
-            <div>
-              <p className="text-sm text-muted">
-                Taux de victoire
-              </p>
-
-              <p className="mt-1 text-4xl font-bold tracking-tight text-accent">
-                {winRate}%
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 h-2 overflow-hidden rounded-full bg-surface-2">
-            <div
-              className="h-full rounded-full bg-accent transition-all"
-              style={{
-                width: `${winRate}%`,
-              }}
-            />
-          </div>
-
-          <div className="mt-3 flex justify-between text-xs font-medium text-muted">
-            <span>{wins} victoire(s)</span>
-            <span>{losses} défaite(s)</span>
           </div>
         </section>
 
-        {/* Points */}
-        <section className="mt-4">
-          <div className="mb-3 flex items-end justify-between">
+        {/* POINTS */}
+        <section className="mt-7">
+          <div className="mb-3 flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Classement
-              </p>
+              <p className="eyebrow">Classement</p>
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
+              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                 Progression des points
               </h2>
             </div>
 
             <Link
               href="/ranking/history"
-              className="text-xs font-bold text-accent"
+              className="group flex items-center gap-1.5 text-xs font-semibold text-accent transition-colors hover:text-foreground"
             >
-              Historique →
+              Historique
+              <ArrowRightIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
             </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <div className="glass relative overflow-hidden rounded-3xl p-4 sm:p-5">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/8 blur-2xl" />
+
+              <div className="relative flex items-center justify-between gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
                   <SportIcon
                     sport="tennis"
                     className="h-5 w-5"
                   />
                 </div>
 
-                <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                  Tennis
-                </span>
+                <span className="eyebrow">Tennis</span>
               </div>
 
-              <p className="mt-4 text-3xl font-bold tracking-tight">
+              <p className="relative mt-6 font-display text-3xl font-bold tracking-[-0.04em]">
                 {latestTennisPoints}
               </p>
 
-              <p className="text-xs text-muted">points</p>
+              <p className="text-xs text-muted">
+                points
+              </p>
 
               <p
-                className={`mt-3 text-sm font-bold ${
+                className={`mt-4 text-xs font-semibold ${
                   tennisPointsChange > 0
                     ? "text-accent"
                     : tennisPointsChange < 0
@@ -745,28 +1037,30 @@ export default async function StatsPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <div className="glass relative overflow-hidden rounded-3xl p-4 sm:p-5">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/8 blur-2xl" />
+
+              <div className="relative flex items-center justify-between gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
                   <SportIcon
                     sport="padel"
                     className="h-5 w-5"
                   />
                 </div>
 
-                <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted">
-                  Padel
-                </span>
+                <span className="eyebrow">Padel</span>
               </div>
 
-              <p className="mt-4 text-3xl font-bold tracking-tight">
+              <p className="relative mt-6 font-display text-3xl font-bold tracking-[-0.04em]">
                 {latestPadelPoints}
               </p>
 
-              <p className="text-xs text-muted">points</p>
+              <p className="text-xs text-muted">
+                points
+              </p>
 
               <p
-                className={`mt-3 text-sm font-bold ${
+                className={`mt-4 text-xs font-semibold ${
                   padelPointsChange > 0
                     ? "text-accent"
                     : padelPointsChange < 0
@@ -781,54 +1075,58 @@ export default async function StatsPage() {
           </div>
         </section>
 
-        {/* Évolutions récentes */}
+        {/* HISTORIQUE RÉCENT */}
         {recentPointsHistory.length > 0 && (
-          <section className="mt-4 rounded-3xl border border-border bg-surface p-5">
-            <div className="flex items-center justify-between">
+          <section className="glass mt-5 rounded-[26px] p-5 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  Dernières évolutions
-                </p>
+                <p className="eyebrow">Dernières évolutions</p>
 
-                <h2 className="mt-1 text-xl font-bold tracking-tight">
-                  Tes points
+                <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
+                  Activité récente
                 </h2>
               </div>
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                <ChartIcon />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-muted">
+                <ChartIcon className="h-4 w-4" />
               </div>
             </div>
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 space-y-2">
               {recentPointsHistory.map((item, index) => {
                 const change = item.points_change ?? 0;
 
+                const matchDate =
+                  matchById.get(item.match_id)?.created_at ??
+                  item.created_at;
+
                 return (
                   <div
-                    key={`${item.created_at}-${index}`}
-                    className="flex items-center justify-between gap-3 rounded-2xl bg-surface-2 p-4"
+                    key={`${item.match_id}-${item.sport}-${index}`}
+                    className="group flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-white/2.5 p-3.5 transition-all duration-200 hover:border-white/9 hover:bg-white/4.5"
                   >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/6 bg-white/5 text-muted">
                         <SportIcon
                           sport={item.sport}
                           className="h-4 w-4"
                         />
+                      </div>
 
-                        <p className="text-sm font-bold">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">
                           {item.sport === "tennis"
                             ? "Tennis"
                             : "Padel"}
                         </p>
-                      </div>
 
-                      <p className="mt-1 text-xs text-muted">
-                        {formatDate(item.created_at)}
-                      </p>
+                        <p className="mt-0.5 text-[11px] text-muted">
+                          {formatDate(matchDate)}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="shrink-0 text-right">
                       <p
                         className={`text-sm font-bold ${
                           change > 0
@@ -842,8 +1140,9 @@ export default async function StatsPage() {
                         {change} pts
                       </p>
 
-                      <p className="mt-1 text-xs text-muted">
-                        {item.old_points ?? 0} → {item.new_points ?? 0}
+                      <p className="mt-0.5 text-[11px] text-muted-2">
+                        {item.old_points ?? 0} →{" "}
+                        {item.new_points ?? 0}
                       </p>
                     </div>
                   </div>
@@ -853,134 +1152,183 @@ export default async function StatsPage() {
           </section>
         )}
 
-        {/* Tennis / Padel */}
-        <section className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <SportIcon
-                sport="tennis"
-                className="h-5 w-5"
-              />
-            </div>
+        {/* SPORTS */}
+        <section className="mt-7">
+          <div className="mb-3">
+            <p className="eyebrow">Répartition</p>
 
-            <p className="mt-4 text-sm font-medium text-muted">
-              Tennis
-            </p>
-
-            <p className="mt-1 text-3xl font-bold tracking-tight">
-              {tennisWinRate}%
-            </p>
-
-            <p className="mt-2 text-xs leading-5 text-muted">
-              {tennisWins} victoire(s) · {tennisLosses} défaite(s)
-            </p>
+            <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
+              Tennis & Padel
+            </h2>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <SportIcon
-                sport="padel"
-                className="h-5 w-5"
-              />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass rounded-3xl p-4 sm:p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
+                  <SportIcon
+                    sport="tennis"
+                    className="h-5 w-5"
+                  />
+                </div>
+
+                <span className="eyebrow">
+                  {tennisMatches} match
+                  {tennisMatches > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <p className="mt-5 text-xs font-medium text-muted">
+                Tennis
+              </p>
+
+              <p className="mt-1 font-display text-3xl font-bold tracking-[-0.04em]">
+                {tennisWinRate}%
+              </p>
+
+              <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{
+                    width: `${tennisWinRate}%`,
+                  }}
+                />
+              </div>
+
+              <p className="mt-3 text-[11px] leading-5 text-muted">
+                {tennisWins} victoire
+                {tennisWins > 1 ? "s" : ""} · {tennisLosses} défaite
+                {tennisLosses > 1 ? "s" : ""}
+              </p>
             </div>
 
-            <p className="mt-4 text-sm font-medium text-muted">
-              Padel
-            </p>
+            <div className="glass rounded-3xl p-4 sm:p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
+                  <SportIcon
+                    sport="padel"
+                    className="h-5 w-5"
+                  />
+                </div>
 
-            <p className="mt-1 text-3xl font-bold tracking-tight">
-              {padelWinRate}%
-            </p>
+                <span className="eyebrow">
+                  {padelMatches} match
+                  {padelMatches > 1 ? "s" : ""}
+                </span>
+              </div>
 
-            <p className="mt-2 text-xs leading-5 text-muted">
-              {padelWins} victoire(s) · {padelLosses} défaite(s)
-            </p>
+              <p className="mt-5 text-xs font-medium text-muted">
+                Padel
+              </p>
+
+              <p className="mt-1 font-display text-3xl font-bold tracking-[-0.04em]">
+                {padelWinRate}%
+              </p>
+
+              <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{
+                    width: `${padelWinRate}%`,
+                  }}
+                />
+              </div>
+
+              <p className="mt-3 text-[11px] leading-5 text-muted">
+                {padelWins} victoire
+                {padelWins > 1 ? "s" : ""} · {padelLosses} défaite
+                {padelLosses > 1 ? "s" : ""}
+              </p>
+            </div>
           </div>
         </section>
 
-        {/* Séries */}
-        <section className="mt-4">
+        {/* SÉRIES */}
+        <section className="mt-7">
           <div className="mb-3">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-              Dynamique
-            </p>
+            <p className="eyebrow">Dynamique</p>
 
-            <h2 className="mt-1 text-xl font-bold tracking-tight">
+            <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
               Tes séries
             </h2>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <div className="glass relative overflow-hidden rounded-3xl p-4 sm:p-5">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/7 blur-2xl" />
+
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
                 <FlameIcon />
               </div>
 
-              <p className="mt-4 text-sm text-muted">
+              <p className="mt-5 text-xs font-medium text-muted">
                 Série actuelle
               </p>
 
-              <p className="mt-1 text-3xl font-bold tracking-tight">
+              <p className="mt-1 font-display text-4xl font-bold tracking-[-0.04em]">
                 {currentStreak}
               </p>
 
-              <p className="mt-1 text-xs font-medium text-muted">
+              <p className="mt-1 text-xs font-medium text-muted-2">
                 {currentStreakType === "win"
-                  ? "victoire(s)"
+                  ? `victoire${currentStreak > 1 ? "s" : ""}`
                   : currentStreakType === "loss"
-                    ? "défaite(s)"
+                    ? `défaite${currentStreak > 1 ? "s" : ""}`
                     : "aucune série"}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border bg-surface p-5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <div className="glass relative overflow-hidden rounded-3xl p-4 sm:p-5">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/7 blur-2xl" />
+
+              <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
                 <TrophyIcon />
               </div>
 
-              <p className="mt-4 text-sm text-muted">
+              <p className="mt-5 text-xs font-medium text-muted">
                 Meilleure série
               </p>
 
-              <p className="mt-1 text-3xl font-bold tracking-tight">
+              <p className="mt-1 font-display text-4xl font-bold tracking-[-0.04em]">
                 {bestWinStreak}
               </p>
 
-              <p className="mt-1 text-xs font-medium text-muted">
-                victoire(s)
+              <p className="mt-1 text-xs font-medium text-muted-2">
+                victoire
+                {bestWinStreak > 1 ? "s" : ""}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Adversaires */}
-        <section className="mt-4 rounded-3xl border border-border bg-surface p-5">
+        {/* ADVERSAIRES */}
+        <section className="glass mt-7 rounded-[26px] p-5 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
               <UsersIcon />
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Confrontations
-              </p>
+              <p className="eyebrow">Confrontations</p>
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
+              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                 Tes adversaires
               </h2>
             </div>
           </div>
 
-          <p className="mt-2 text-sm text-muted">
-            Tes confrontations joueur par joueur.
+          <p className="mt-2 text-sm leading-5 text-muted">
+            Ton historique face à chaque adversaire.
           </p>
 
           {opponentStats.length === 0 ? (
-            <p className="mt-5 text-sm text-muted">
-              Pas encore de confrontation enregistrée.
-            </p>
+            <div className="mt-5 rounded-2xl border border-white/5 bg-white/2.5 p-4">
+              <p className="text-sm leading-5 text-muted">
+                Pas encore de confrontation enregistrée.
+              </p>
+            </div>
           ) : (
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 space-y-2.5">
               {opponentStats.map((opponent) => {
                 const opponentWinRate =
                   opponent.matches > 0
@@ -992,40 +1340,47 @@ export default async function StatsPage() {
                 return (
                   <div
                     key={opponent.playerId}
-                    className="rounded-2xl bg-surface-2 p-4"
+                    className="rounded-2xl border border-white/5 bg-white/2.5 p-4 transition-all duration-200 hover:border-white/9 hover:bg-white/4.5"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold">
+                        <p className="truncate text-sm font-semibold">
                           {opponent.name}
                         </p>
 
-                        <p className="mt-1 text-xs text-muted">
-                          {opponent.matches}{" "}
-                          {opponent.matches > 1
-                            ? "matchs"
-                            : "match"}
+                        <p className="mt-1 text-[11px] text-muted">
+                          {opponent.matches} match
+                          {opponent.matches > 1 ? "s" : ""}
                         </p>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-accent">
+                      <div className="shrink-0 text-right">
+                        <p className="font-display text-xl font-bold text-accent">
                           {opponentWinRate}%
                         </p>
 
-                        <p className="text-xs text-muted">
-                          réussite
+                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-2">
+                          victoires
                         </p>
                       </div>
                     </div>
 
+                    <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/5">
+                      <div
+                        className="h-full rounded-full bg-accent"
+                        style={{
+                          width: `${opponentWinRate}%`,
+                        }}
+                      />
+                    </div>
+
                     <div className="mt-3 flex gap-2">
-                      <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+                      <span className="rounded-full border border-accent/10 bg-accent/10 px-3 py-1 text-[11px] font-semibold text-accent">
                         {opponent.wins} victoire
                         {opponent.wins > 1 ? "s" : ""}
                       </span>
 
-                      <span className="rounded-full bg-danger/10 px-3 py-1 text-xs font-bold text-danger">
+                      <span className="rounded-full border border-danger/10 bg-danger/10 px-3 py-1 text-[11px] font-semibold text-danger">
                         {opponent.losses} défaite
                         {opponent.losses > 1 ? "s" : ""}
                       </span>
@@ -1037,101 +1392,137 @@ export default async function StatsPage() {
           )}
         </section>
 
-        {/* Formats */}
-        <section className="mt-4 rounded-3xl border border-border bg-surface p-5">
+        {/* FORMATS */}
+        <section className="glass mt-5 rounded-[26px] p-5 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
               <UsersIcon />
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Formats
-              </p>
+              <p className="eyebrow">Formats</p>
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
+              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                 Simple ou double
               </h2>
             </div>
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-sm text-muted">Simple</p>
+            <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted">
+                  Simple
+                </p>
 
-              <p className="mt-1 text-3xl font-bold">
+                <span className="eyebrow">
+                  {singlesMatches}
+                </span>
+              </div>
+
+              <p className="mt-3 font-display text-3xl font-bold tracking-[-0.04em]">
                 {singlesMatches}
+              </p>
+
+              <p className="mt-1 text-[11px] text-muted-2">
+                match{singlesMatches > 1 ? "s" : ""}
               </p>
             </div>
 
-            <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-sm text-muted">Double</p>
+            <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted">
+                  Double
+                </p>
 
-              <p className="mt-1 text-3xl font-bold">
+                <span className="eyebrow">
+                  {doublesMatches}
+                </span>
+              </div>
+
+              <p className="mt-3 font-display text-3xl font-bold tracking-[-0.04em]">
                 {doublesMatches}
+              </p>
+
+              <p className="mt-1 text-[11px] text-muted-2">
+                match{doublesMatches > 1 ? "s" : ""}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Sets */}
-        <section className="mt-4 rounded-3xl border border-border bg-surface p-5">
+        {/* SETS */}
+        <section className="glass mt-5 rounded-[26px] p-5 sm:p-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
               <TargetIcon />
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                Performance
-              </p>
+              <p className="eyebrow">Performance</p>
 
-              <h2 className="mt-1 text-xl font-bold tracking-tight">
+              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
                 Les sets
               </h2>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-xs text-muted">Gagnés</p>
+          <div className="mt-5 grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4 text-center">
+              <p className="text-[11px] font-medium text-muted">
+                Gagnés
+              </p>
 
-              <p className="mt-1 text-xl font-bold text-accent">
+              <p className="mt-2 font-display text-2xl font-bold text-accent">
                 {setsWon}
               </p>
             </div>
 
-            <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-xs text-muted">Perdus</p>
+            <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4 text-center">
+              <p className="text-[11px] font-medium text-muted">
+                Perdus
+              </p>
 
-              <p className="mt-1 text-xl font-bold text-danger">
+              <p className="mt-2 font-display text-2xl font-bold text-danger">
                 {setsLost}
               </p>
             </div>
 
-            <div className="rounded-2xl bg-surface-2 p-4">
-              <p className="text-xs text-muted">Taux</p>
+            <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4 text-center">
+              <p className="text-[11px] font-medium text-muted">
+                Taux
+              </p>
 
-              <p className="mt-1 text-xl font-bold">
+              <p className="mt-2 font-display text-2xl font-bold">
                 {setWinRate}%
               </p>
             </div>
           </div>
+
+          <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/5">
+            <div
+              className="h-full rounded-full bg-accent shadow-[0_0_12px_var(--accent-glow)]"
+              style={{
+                width: `${setWinRate}%`,
+              }}
+            />
+          </div>
         </section>
 
-        {/* Navigation */}
-        <div className="mt-5 space-y-3">
+        {/* NAVIGATION */}
+        <div className="mt-5 space-y-2.5">
           <Link
             href="/ranking/history"
-            className="flex min-h-14 items-center justify-between rounded-2xl border border-border bg-surface px-5 text-sm font-bold transition-colors hover:bg-surface-2"
+            className="glass group flex min-h-14 items-center justify-between rounded-2xl px-5 text-sm font-semibold transition-all duration-200 hover:border-white/9 hover:bg-white/5"
           >
-            <span>Voir tout mon historique de points</span>
-            <span className="text-accent">→</span>
+            <span>Voir mon historique de points</span>
+
+            <ArrowRightIcon className="text-accent transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
 
           <Link
             href="/dashboard"
-            className="flex min-h-14 items-center justify-center rounded-2xl border border-border bg-surface text-sm font-bold transition-colors hover:bg-surface-2"
+            className="glass flex min-h-14 items-center justify-center rounded-2xl text-sm font-semibold text-muted transition-all duration-200 hover:border-white/9 hover:bg-white/5 hover:text-foreground"
           >
             Retour à l&apos;accueil
           </Link>

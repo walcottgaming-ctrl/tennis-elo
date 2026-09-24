@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { createClient } from "@/src/supabase/client";
 
 type ReactionRow = {
@@ -15,6 +16,29 @@ type MatchReactionsProps = {
   initialReactions: ReactionRow[];
 };
 
+function SmileIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M8.5 14.5c.9 1.1 2.1 1.7 3.5 1.7s2.6-.6 3.5-1.7" />
+      <path d="M9 10h.01M15 10h.01" />
+    </svg>
+  );
+}
+
 function isEmoji(value: string) {
   const trimmed = value.trim();
 
@@ -23,7 +47,7 @@ function isEmoji(value: string) {
   }
 
   try {
-    return /\p{Extended_Pictographic}/u.test(trimmed);
+    return /^\p{Extended_Pictographic}/u.test(trimmed);
   } catch {
     return true;
   }
@@ -36,7 +60,10 @@ function getSingleGrapheme(value: string) {
     return "";
   }
 
-  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
+  if (
+    typeof Intl !== "undefined" &&
+    "Segmenter" in Intl
+  ) {
     const segmenter = new Intl.Segmenter(undefined, {
       granularity: "grapheme",
     });
@@ -63,9 +90,9 @@ export default function MatchReactions({
     useState<ReactionRow[]>(initialReactions);
 
   const [emojiInput, setEmojiInput] = useState("");
-  const [isPickerOpen, setIsPickerOpen] =
-    useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
   const [error, setError] = useState<string | null>(
     null
   );
@@ -125,11 +152,10 @@ export default function MatchReactions({
       existingReaction &&
       existingReaction.reaction === reaction
     ) {
-      const { error: deleteError } =
-        await supabase
-          .from("match_reactions")
-          .delete()
-          .eq("id", existingReaction.id);
+      const { error: deleteError } = await supabase
+        .from("match_reactions")
+        .delete()
+        .eq("id", existingReaction.id);
 
       if (deleteError) {
         setError(
@@ -149,21 +175,20 @@ export default function MatchReactions({
       return;
     }
 
-    const { data, error: upsertError } =
-      await supabase
-        .from("match_reactions")
-        .upsert(
-          {
-            match_id: matchId,
-            user_id: currentUserId,
-            reaction,
-          },
-          {
-            onConflict: "match_id,user_id",
-          }
-        )
-        .select("id, user_id, reaction")
-        .single();
+    const { data, error: upsertError } = await supabase
+      .from("match_reactions")
+      .upsert(
+        {
+          match_id: matchId,
+          user_id: currentUserId,
+          reaction,
+        },
+        {
+          onConflict: "match_id,user_id",
+        }
+      )
+      .select("id, user_id, reaction")
+      .single();
 
     if (upsertError || !data) {
       setError(
@@ -209,17 +234,15 @@ export default function MatchReactions({
 
   return (
     <section className="mt-8">
-      <div className="mb-3">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">
-          Réactions
-        </p>
+      <div className="mb-4">
+        <p className="eyebrow">Réactions</p>
 
-        <h2 className="mt-1 text-2xl font-bold tracking-tight">
+        <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
           Ton avis sur le match
         </h2>
       </div>
 
-      <div className="rounded-3xl border border-border bg-surface p-4">
+      <div className="glass rounded-[26px] p-4 sm:p-5">
         {groupedReactions.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {groupedReactions.map((item) => (
@@ -231,53 +254,93 @@ export default function MatchReactions({
                 }
                 disabled={isSaving}
                 aria-label={`Réagir avec ${item.reaction}`}
+                aria-pressed={
+                  item.reactedByCurrentUser
+                }
                 className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3.5 transition-all duration-200 active:scale-[0.97] ${
                   item.reactedByCurrentUser
-                    ? "border-accent/40 bg-accent/10"
-                    : "border-border bg-surface-2 hover:border-white/15"
+                    ? "border-accent/40 bg-accent/10 shadow-[0_0_18px_var(--accent-glow)]"
+                    : "border-white/8 bg-white/5 hover:border-white/15 hover:bg-white/10"
                 }`}
               >
                 <span className="text-xl leading-none">
                   {item.reaction}
                 </span>
 
-                <span className="text-xs font-bold text-muted">
+                <span
+                  className={`text-xs font-semibold ${
+                    item.reactedByCurrentUser
+                      ? "text-accent"
+                      : "text-muted"
+                  }`}
+                >
                   {item.count}
                 </span>
               </button>
             ))}
           </div>
         ) : (
-          <p className="text-sm leading-5 text-muted">
-            Sois le premier à réagir à ce match.
-          </p>
+          <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/5 text-muted">
+                <SmileIcon className="h-4 w-4" />
+              </div>
+
+              <p className="text-sm leading-6 text-muted">
+                Sois le premier à réagir à ce match.
+              </p>
+            </div>
+          </div>
         )}
 
-        <div className="mt-4 border-t border-border pt-4">
+        <div className="mt-5 border-t border-white/5 pt-4">
           <button
             type="button"
             onClick={() =>
               setIsPickerOpen((current) => !current)
             }
-            className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-surface-2 px-4 text-sm font-semibold transition-all duration-200 hover:border-white/15 hover:bg-white/5 active:scale-[0.98]"
+            aria-expanded={isPickerOpen}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
+              isPickerOpen
+                ? "border-accent/30 bg-accent/10 text-accent"
+                : "border-white/8 bg-white/5 text-foreground hover:border-white/15 hover:bg-white/10"
+            }`}
           >
-            <span className="text-lg">
-              {currentUserReaction ?? "＋"}
-            </span>
+            {currentUserReaction ? (
+              <span className="text-lg leading-none">
+                {currentUserReaction}
+              </span>
+            ) : (
+              <SmileIcon className="h-4 w-4" />
+            )}
 
-            {currentUserReaction
-              ? "Changer ma réaction"
-              : "Ajouter une réaction"}
+            <span>
+              {currentUserReaction
+                ? "Changer ma réaction"
+                : "Ajouter une réaction"}
+            </span>
           </button>
 
           {isPickerOpen && (
-            <div className="mt-3 rounded-2xl border border-border bg-surface-2 p-3">
-              <p className="text-xs leading-5 text-muted">
-                Choisis n&apos;importe quel emoji depuis ton
-                clavier.
-              </p>
+            <div className="glass-strong mt-3 overflow-hidden rounded-[22px] p-4">
+              <div className="flex items-start gap-3">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
+                  <SmileIcon className="h-4 w-4" />
+                </div>
 
-              <div className="mt-3 flex gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">
+                    Choisir une réaction
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-muted">
+                    Utilise le clavier emoji de ton
+                    appareil pour choisir ta réaction.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex gap-2">
                 <input
                   value={emojiInput}
                   onChange={(event) =>
@@ -290,35 +353,36 @@ export default function MatchReactions({
                     }
                   }}
                   maxLength={16}
-                  placeholder="😊"
+                  placeholder="Choisir un emoji"
                   aria-label="Emoji"
-                  className="min-h-12 min-w-0 flex-1 rounded-xl border border-border bg-surface px-4 text-2xl outline-none transition-colors placeholder:text-muted focus:border-accent/50"
+                  className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white/8 bg-white/5 px-4 text-2xl outline-none transition-all duration-200 placeholder:text-muted focus:border-accent focus:bg-white/10"
                 />
 
                 <button
                   type="button"
                   onClick={submitCustomEmoji}
                   disabled={
-                    isSaving ||
-                    !emojiInput.trim()
+                    isSaving || !emojiInput.trim()
                   }
-                  className="min-h-12 rounded-xl bg-accent px-4 text-sm font-bold text-background transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="min-h-12 rounded-2xl bg-accent px-4 text-sm font-semibold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Ajouter
                 </button>
               </div>
 
               <p className="mt-2 text-[11px] leading-4 text-muted">
-                Sur mobile, le clavier emoji de ton téléphone
-                permet d&apos;en choisir n&apos;importe lequel.
+                Une seule réaction est conservée par
+                joueur.
               </p>
             </div>
           )}
 
           {error && (
-            <p className="mt-3 text-xs font-medium text-danger">
-              {error}
-            </p>
+            <div className="mt-3 rounded-xl border border-danger/25 bg-danger/10 px-3 py-2.5">
+              <p className="text-xs font-medium leading-5 text-danger">
+                {error}
+              </p>
+            </div>
           )}
         </div>
       </div>

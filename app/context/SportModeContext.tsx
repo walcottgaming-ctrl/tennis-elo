@@ -21,7 +21,8 @@ const SportModeContext =
   createContext<SportModeContextValue | null>(null);
 
 const STORAGE_KEY = "smashbreakpoint-sport-mode";
-const STORAGE_EVENT = "smashbreakpoint-sport-mode-change";
+const STORAGE_EVENT =
+  "smashbreakpoint-sport-mode-change";
 
 function getStoredMode(): SportMode {
   const storedMode =

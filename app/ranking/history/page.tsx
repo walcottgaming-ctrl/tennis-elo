@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/src/supabase/client";
 import RankingProgression from "@/app/components/RankingProgression";
 import SportIcon from "@/app/components/SportIcon";
@@ -14,6 +14,7 @@ type Sport = SportMode;
 
 type RankingHistory = {
   id: string;
+  match_id: string;
   player_id: string;
   sport: Sport;
   old_points: number | null;
@@ -29,6 +30,14 @@ type RankingHistory = {
   malus_double_bulle: number | null;
   malus_contre_performance: number | null;
   amortisseur_tiebreak: number | null;
+  bonus_stb_large: number | null;
+  bonus_stb_perfect: number | null;
+  created_at: string;
+};
+
+type Match = {
+  id: string;
+  sport: Sport;
   created_at: string;
 };
 
@@ -37,19 +46,23 @@ type Profile = {
   first_name: string | null;
   last_name: string | null;
   username: string | null;
-  points_tennis: number | null;
-  points_padel: number | null;
-  points_super_tiebreak: number | null;
 };
 
-function ArrowUpIcon() {
+function ArrowUpIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M12 19V5" />
       <path d="m6 11 6-6 6 6" />
@@ -57,17 +70,89 @@ function ArrowUpIcon() {
   );
 }
 
-function ArrowDownIcon() {
+function ArrowDownIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
     >
       <path d="M12 5v14" />
       <path d="m18 13-6 6-6-6" />
+    </svg>
+  );
+}
+
+function ArrowLeftIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m9 18 6-6-6 6" />
+    </svg>
+  );
+}
+
+function CalculatorIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M8 7h8" />
+      <path d="M8 11h2M14 11h2M8 15h2M14 15h2M8 18h2M14 18h2" />
     </svg>
   );
 }
@@ -99,15 +184,6 @@ function getSportLabel(sport: Sport) {
   return "Super Tie-Break";
 }
 
-function getSportIcon(sport: Sport) {
-  return (
-    <SportIcon
-      sport={sport}
-      className="h-5 w-5"
-    />
-  );
-}
-
 function getPositiveDetails(item: RankingHistory) {
   return [
     ["Bulle", item.bonus_bulle],
@@ -115,6 +191,8 @@ function getPositiveDetails(item: RankingHistory) {
     ["Victoire propre", item.bonus_victoire_propre],
     ["Série", item.bonus_serie],
     ["Performer", item.bonus_performer],
+    ["Super Tie-Break large", item.bonus_stb_large],
+    ["Super Tie-Break parfait", item.bonus_stb_perfect],
   ].filter(([, value]) => value !== null && value !== 0);
 }
 
@@ -133,6 +211,7 @@ export default function RankingHistoryPage() {
   const { mode } = useSportMode();
 
   const [history, setHistory] = useState<RankingHistory[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
@@ -147,7 +226,9 @@ export default function RankingHistoryPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        setMessage("Vous devez être connecté pour voir votre historique.");
+        setMessage(
+          "Vous devez être connecté pour voir votre historique."
+        );
         setLoading(false);
         return;
       }
@@ -155,12 +236,11 @@ export default function RankingHistoryPage() {
       const [
         { data: profileData, error: profileError },
         { data: historyData, error: historyError },
+        { data: matchesData, error: matchesError },
       ] = await Promise.all([
         supabase
           .from("profiles")
-          .select(
-            "id, first_name, last_name, username, points_tennis, points_padel, points_super_tiebreak"
-          )
+          .select("id, first_name, last_name, username")
           .eq("id", user.id)
           .single(),
 
@@ -169,6 +249,7 @@ export default function RankingHistoryPage() {
           .select(
             `
               id,
+              match_id,
               player_id,
               sport,
               old_points,
@@ -184,11 +265,22 @@ export default function RankingHistoryPage() {
               malus_double_bulle,
               malus_contre_performance,
               amortisseur_tiebreak,
+              bonus_stb_large,
+              bonus_stb_perfect,
               created_at
             `
           )
           .eq("player_id", user.id)
-          .order("created_at", { ascending: false }),
+          .order("created_at", {
+            ascending: true,
+          }),
+
+        supabase
+          .from("matches")
+          .select("id, sport, created_at")
+          .order("created_at", {
+            ascending: true,
+          }),
       ]);
 
       if (profileError) {
@@ -197,320 +289,651 @@ export default function RankingHistoryPage() {
 
       if (historyError) {
         console.error(historyError);
-        setMessage("Impossible de charger votre historique.");
+        setMessage(
+          "Impossible de charger votre historique."
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (matchesError) {
+        console.error(matchesError);
+        setMessage(
+          "Impossible de charger les matchs."
+        );
         setLoading(false);
         return;
       }
 
       setProfile(profileData);
-      setHistory((historyData ?? []) as RankingHistory[]);
+
+      setHistory(
+        (historyData ?? []) as RankingHistory[]
+      );
+
+      setMatches(
+        (matchesData ?? []) as Match[]
+      );
+
       setLoading(false);
     }
 
     loadHistory();
   }, []);
 
-  const filteredHistory = history.filter(
-    (item) => item.sport === mode
+  const filteredHistory = useMemo(
+    () =>
+      history.filter(
+        (item) => item.sport === mode
+      ),
+    [history, mode]
   );
 
-  const currentPoints =
-    mode === "tennis"
-      ? profile?.points_tennis ?? 0
-      : mode === "padel"
-        ? profile?.points_padel ?? 0
-        : profile?.points_super_tiebreak ?? 0;
+  /*
+   * Source de vérité :
+   *
+   * Les points actuels viennent du dernier
+   * ranking_history.new_points.
+   *
+   * Mais pour déterminer quel est réellement
+   * le dernier résultat, on utilise :
+   *
+   * 1. matches.created_at
+   * 2. matches.id en cas d'égalité
+   */
+
+  const currentPoints = useMemo(() => {
+    const matchById = new Map(
+      matches.map((match) => [
+        match.id,
+        match,
+      ])
+    );
+
+    let latestHistory:
+      | RankingHistory
+      | null = null;
+
+    let latestMatch: Match | null = null;
+
+    for (const item of filteredHistory) {
+      if (item.new_points === null) {
+        continue;
+      }
+
+      const match =
+        matchById.get(item.match_id);
+
+      if (!match) {
+        continue;
+      }
+
+      if (
+        !latestHistory ||
+        !latestMatch
+      ) {
+        latestHistory = item;
+        latestMatch = match;
+        continue;
+      }
+
+      const currentMatchTime =
+        new Date(
+          match.created_at
+        ).getTime();
+
+      const latestMatchTime =
+        new Date(
+          latestMatch.created_at
+        ).getTime();
+
+      if (
+        currentMatchTime >
+          latestMatchTime ||
+        (
+          currentMatchTime ===
+            latestMatchTime &&
+          match.id >
+            latestMatch.id
+        )
+      ) {
+        latestHistory = item;
+        latestMatch = match;
+      }
+    }
+
+    return latestHistory?.new_points ?? 1000;
+  }, [filteredHistory, matches]);
 
   return (
-    <main className="min-h-screen bg-background px-5 py-7 pb-28 text-foreground">
+    <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-accent/10 blur-[100px]" />
+        <div className="absolute -right-35 top-[32%] h-80 w-80 rounded-full bg-accent/5 blur-[120px]" />
+        <div className="absolute -bottom-45 left-[35%] h-96 w-96 rounded-full bg-indigo-500/10 blur-[130px]" />
+      </div>
+
       <div className="mx-auto max-w-lg pb-8">
-        {/* Header */}
-        <header className="mb-7">
+        <header className="mb-6">
           <Link
             href="/ranking"
-            className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+            aria-label="Retour au classement"
+            className="mb-5 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
           >
-            <span aria-hidden="true">←</span>
-            Classement
+            <ArrowLeftIcon className="h-4 w-4" />
           </Link>
 
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.16em] text-muted">
-            Progression
-          </p>
-
-          <h1 className="text-3xl font-bold tracking-tight">
-            Historique des points
-          </h1>
-
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Suivez l&apos;évolution de votre classement et découvrez pourquoi
-            vos points ont changé.
-          </p>
-        </header>
-
-        {/* Current points */}
-        <section className="mb-5 rounded-3xl border border-border bg-surface p-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                {getSportLabel(mode)}
+            <div className="min-w-0">
+              <p className="eyebrow">
+                Progression · {getSportLabel(mode)}
               </p>
 
-              <p className="mt-2 text-4xl font-bold tracking-tight">
-                {currentPoints}
-                <span className="ml-1 text-lg font-bold text-accent">
-                  pts
-                </span>
-              </p>
+              <h1 className="mt-1 font-display text-3xl font-bold tracking-tight sm:text-[34px]">
+                Historique des points
+              </h1>
 
-              <p className="mt-1 text-sm text-muted">
-                Total actuel
+              <p className="mt-2 max-w-md text-sm leading-6 text-muted">
+                Suis l&apos;évolution de ton classement et comprends chaque
+                variation de points.
               </p>
             </div>
 
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-              {getSportIcon(mode)}
+            <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent shadow-[0_0_28px_var(--accent-glow)]">
+              <div className="absolute inset-0 rounded-full bg-accent/10 blur-xl" />
+
+              <SportIcon
+                sport={mode}
+                className="relative h-5 w-5"
+              />
+            </div>
+          </div>
+        </header>
+
+        <section className="glass-strong relative mb-5 overflow-hidden rounded-[28px] p-5 sm:p-6">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/10 blur-[70px]" />
+
+          <div className="relative">
+            <div className="flex items-end justify-between gap-5">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className="grid h-8 w-8 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+                    <SportIcon
+                      sport={mode}
+                      className="h-3.5 w-3.5"
+                    />
+                  </div>
+
+                  <p className="eyebrow">
+                    {getSportLabel(mode)}
+                  </p>
+                </div>
+
+                <div className="mt-3 flex items-baseline gap-2">
+                  <span className="font-display text-5xl font-bold tracking-[-0.04em]">
+                    {currentPoints}
+                  </span>
+
+                  <span className="text-sm font-semibold text-accent">
+                    pts
+                  </span>
+                </div>
+
+                <p className="mt-1 text-xs text-muted">
+                  Total actuel
+                </p>
+              </div>
+
+              <div className="hidden text-right sm:block">
+                <p className="eyebrow">
+                  Évolutions
+                </p>
+
+                <p className="mt-1 font-display text-2xl font-bold">
+                  {filteredHistory.length}
+                </p>
+
+                <p className="text-[10px] uppercase tracking-[0.14em] text-muted">
+                  enregistrées
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 h-px bg-white/6" />
+
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-accent/10 bg-accent/10 text-accent">
+                  <ArrowUpIcon className="h-3.5 w-3.5" />
+                </div>
+
+                <span className="truncate text-xs text-muted">
+                  Progression du classement
+                </span>
+              </div>
+
+              <span className="shrink-0 rounded-full border border-accent/10 bg-accent/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent">
+                {getSportLabel(mode)}
+              </span>
             </div>
           </div>
         </section>
 
-        {/* Loading */}
         {loading && (
-          <div className="rounded-3xl border border-border bg-surface p-6 text-center">
-            <p className="text-sm text-muted">
-              Chargement de votre historique...
-            </p>
+          <div className="space-y-3">
+            <div className="h-28 animate-pulse rounded-[26px] border border-white/5 bg-white/4" />
+            <div className="h-52 animate-pulse rounded-[26px] border border-white/5 bg-white/4" />
+            <div className="h-52 animate-pulse rounded-[26px] border border-white/5 bg-white/4" />
           </div>
         )}
 
-        {/* Error */}
         {!loading && message && (
-          <div className="rounded-2xl border border-danger/20 bg-danger/5 p-4">
-            <p className="text-sm font-medium text-danger">
-              {message}
-            </p>
-          </div>
-        )}
+          <div className="glass rounded-[26px] border-danger/15 p-5">
+            <div className="flex items-start gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-danger/10 text-danger">
+                <span className="text-sm font-bold">
+                  !
+                </span>
+              </div>
 
-        {/* Empty state */}
-        {!loading && !message && profile && filteredHistory.length === 0 && (
-          <div className="rounded-3xl border border-border bg-surface p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-2 text-muted">
-              {getSportIcon(mode)}
-            </div>
-
-            <h2 className="mt-4 text-lg font-bold">
-              Aucun historique
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Vos changements de points en{" "}
-              {getSportLabel(mode).toLowerCase()} apparaîtront ici après vos
-              matchs.
-            </p>
-          </div>
-        )}
-
-        {/* Progression */}
-        {!loading && !message && profile && (
-          <RankingProgression
-            userId={profile.id}
-            sport={mode}
-            currentPoints={currentPoints}
-          />
-        )}
-
-        {/* History */}
-        {!loading && !message && filteredHistory.length > 0 && (
-          <section className="mt-5">
-            <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                  Dernières évolutions
+                <p className="text-sm font-semibold">
+                  Impossible de charger l&apos;historique
                 </p>
 
-                <h2 className="mt-1 text-xl font-bold tracking-tight">
-                  Votre parcours
+                <p className="mt-1 text-xs leading-5 text-muted">
+                  {message}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading &&
+          !message &&
+          profile &&
+          filteredHistory.length === 0 && (
+            <div className="glass-strong relative overflow-hidden rounded-[28px] p-7 text-center">
+              <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-32 -translate-x-1/2 rounded-full bg-accent/10 blur-[70px]" />
+
+              <div className="relative">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+                  <SportIcon
+                    sport={mode}
+                    className="h-5 w-5"
+                  />
+                </div>
+
+                <h2 className="mt-5 font-display text-lg font-bold">
+                  Aucun historique
+                </h2>
+
+                <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted">
+                  Tes changements de points en{" "}
+                  {getSportLabel(
+                    mode
+                  ).toLowerCase()}{" "}
+                  apparaîtront ici après tes matchs.
+                </p>
+              </div>
+            </div>
+          )}
+
+        {!loading && !message && profile && (
+          <section className="glass rounded-[28px] p-4 sm:p-5">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="eyebrow">
+                  Évolution
+                </p>
+
+                <h2 className="mt-1 font-display text-lg font-bold tracking-tight">
+                  Ta progression
                 </h2>
               </div>
 
-              <span className="rounded-full bg-surface-2 px-3 py-1.5 text-xs font-bold text-muted">
-                {filteredHistory.length}{" "}
-                {filteredHistory.length > 1
-                  ? "évolutions"
-                  : "évolution"}
-              </span>
+              <div className="grid h-10 w-10 place-items-center rounded-full border border-accent/10 bg-accent/10 text-accent">
+                <ArrowUpIcon className="h-4 w-4" />
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {filteredHistory.map((item) => {
-                const change = item.points_change ?? 0;
-                const positiveDetails = getPositiveDetails(item);
-                const negativeDetails = getNegativeDetails(item);
-
-                return (
-                  <article
-                    key={item.id}
-                    className="rounded-3xl border border-border bg-surface p-5"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div
-                          className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
-                            change > 0
-                              ? "bg-accent/10 text-accent"
-                              : change < 0
-                                ? "bg-danger/10 text-danger"
-                                : "bg-surface-2 text-muted"
-                          }`}
-                        >
-                          {change > 0 ? (
-                            <ArrowUpIcon />
-                          ) : change < 0 ? (
-                            <ArrowDownIcon />
-                          ) : (
-                            getSportIcon(item.sport)
-                          )}
-                        </div>
-
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-bold">
-                              {change > 0
-                                ? "Points gagnés"
-                                : change < 0
-                                  ? "Points perdus"
-                                  : "Évolution"}
-                            </p>
-
-                            <span className="rounded-full bg-surface-2 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
-                              {getSportLabel(item.sport)}
-                            </span>
-                          </div>
-
-                          <p className="mt-1 text-xs text-muted">
-                            {formatDate(item.created_at)} ·{" "}
-                            {formatTime(item.created_at)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <p
-                          className={`text-xl font-bold ${
-                            change > 0
-                              ? "text-accent"
-                              : change < 0
-                                ? "text-danger"
-                                : "text-muted"
-                          }`}
-                        >
-                          {change > 0 ? "+" : ""}
-                          {change}
-                        </p>
-
-                        <p className="text-xs font-medium text-muted">
-                          points
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Points before / after */}
-                    <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl bg-surface-2 p-4">
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                          Avant
-                        </p>
-
-                        <p className="mt-1 text-lg font-bold">
-                          {item.old_points ?? 0}
-                        </p>
-                      </div>
-
-                      <div className="text-muted">→</div>
-
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
-                          Après
-                        </p>
-
-                        <p className="mt-1 text-lg font-bold">
-                          {item.new_points ?? 0}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Calculation details */}
-                    {(item.base_points ||
-                      positiveDetails.length > 0 ||
-                      negativeDetails.length > 0 ||
-                      item.amortisseur_tiebreak) && (
-                      <div className="mt-4 border-t border-border pt-4">
-                        <p className="mb-3 text-xs font-bold uppercase tracking-[0.16em] text-muted">
-                          Détail du calcul
-                        </p>
-
-                        <div className="space-y-2">
-                          {item.base_points !== null &&
-                            item.base_points !== 0 && (
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-muted">
-                                  Points de base
-                                </span>
-
-                                <span className="font-bold">
-                                  {item.base_points > 0 ? "+" : ""}
-                                  {item.base_points}
-                                </span>
-                              </div>
-                            )}
-
-                          {positiveDetails.map(([label, value]) => (
-                            <div
-                              key={`positive-${label}`}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="text-muted">
-                                {label}
-                              </span>
-
-                              <span className="font-bold text-accent">
-                                +{value}
-                              </span>
-                            </div>
-                          ))}
-
-                          {negativeDetails.map(([label, value]) => (
-                            <div
-                              key={`negative-${label}`}
-                              className="flex items-center justify-between text-sm"
-                            >
-                              <span className="text-muted">
-                                {label}
-                              </span>
-
-                              <span className="font-bold text-danger">
-                                {Number(value) > 0 ? "-" : ""}
-                                {Math.abs(Number(value))}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-black/10 p-1">
+              <RankingProgression
+                userId={profile.id}
+                sport={mode}
+                currentPoints={currentPoints}
+              />
             </div>
           </section>
         )}
 
-        {/* Back to ranking */}
+        {!loading &&
+          !message &&
+          filteredHistory.length > 0 && (
+            <section className="mt-7">
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div>
+                  <p className="eyebrow">
+                    Dernières évolutions
+                  </p>
+
+                  <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+                    Ton parcours
+                  </h2>
+                </div>
+
+                <span className="shrink-0 rounded-full border border-white/8 bg-white/4.5 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+                  {filteredHistory.length}{" "}
+                  {filteredHistory.length > 1
+                    ? "évolutions"
+                    : "évolution"}
+                </span>
+              </div>
+
+              <div className="relative space-y-3">
+                {filteredHistory
+                  .slice()
+                  .sort((a, b) => {
+                    const matchA =
+                      matches.find(
+                        (match) =>
+                          match.id ===
+                          a.match_id
+                      );
+
+                    const matchB =
+                      matches.find(
+                        (match) =>
+                          match.id ===
+                          b.match_id
+                      );
+
+                    if (!matchA || !matchB) {
+                      return (
+                        new Date(
+                          b.created_at
+                        ).getTime() -
+                        new Date(
+                          a.created_at
+                        ).getTime()
+                      );
+                    }
+
+                    const timeA =
+                      new Date(
+                        matchA.created_at
+                      ).getTime();
+
+                    const timeB =
+                      new Date(
+                        matchB.created_at
+                      ).getTime();
+
+                    if (timeA !== timeB) {
+                      return timeB - timeA;
+                    }
+
+                    return b.match_id.localeCompare(
+                      a.match_id
+                    );
+                  })
+                  .map((item) => {
+                    const change =
+                      item.points_change ?? 0;
+
+                    const positiveDetails =
+                      getPositiveDetails(item);
+
+                    const negativeDetails =
+                      getNegativeDetails(item);
+
+                    const hasCalculationDetails =
+                      (item.base_points !== null &&
+                        item.base_points !== 0) ||
+                      positiveDetails.length > 0 ||
+                      negativeDetails.length > 0;
+
+                    return (
+                      <article
+                        key={item.id}
+                        className="glass group relative overflow-hidden rounded-[28px] p-4 transition-all duration-200 hover:border-white/12 sm:p-5"
+                      >
+                        {change > 0 && (
+                          <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-accent/5 blur-[60px]" />
+                        )}
+
+                        <div className="relative flex items-start gap-3">
+                          <div
+                            className={`relative z-10 grid h-11 w-11 shrink-0 place-items-center rounded-full border ${
+                              change > 0
+                                ? "border-accent/15 bg-accent/10 text-accent shadow-[0_0_18px_var(--accent-glow)]"
+                                : change < 0
+                                  ? "border-danger/15 bg-danger/10 text-danger"
+                                  : "border-white/8 bg-white/5 text-muted"
+                            }`}
+                          >
+                            {change > 0 ? (
+                              <ArrowUpIcon />
+                            ) : change < 0 ? (
+                              <ArrowDownIcon />
+                            ) : (
+                              <SportIcon
+                                sport={item.sport}
+                                className="h-4 w-4"
+                              />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="text-sm font-semibold">
+                                    {change > 0
+                                      ? "Points gagnés"
+                                      : change < 0
+                                        ? "Points perdus"
+                                        : "Évolution"}
+                                  </p>
+
+                                  <span className="rounded-full border border-white/5 bg-white/4.5 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-muted">
+                                    {getSportLabel(
+                                      item.sport
+                                    )}
+                                  </span>
+                                </div>
+
+                                <p className="mt-1 text-[11px] text-muted">
+                                  {formatDate(
+                                    item.created_at
+                                  )}{" "}
+                                  ·{" "}
+                                  {formatTime(
+                                    item.created_at
+                                  )}
+                                </p>
+                              </div>
+
+                              <div className="shrink-0 text-right">
+                                <p
+                                  className={`font-display text-xl font-bold tracking-tight ${
+                                    change > 0
+                                      ? "text-accent"
+                                      : change < 0
+                                        ? "text-danger"
+                                        : "text-muted"
+                                  }`}
+                                >
+                                  {change > 0
+                                    ? "+"
+                                    : ""}
+                                  {change}
+                                </p>
+
+                                <p className="text-[9px] uppercase tracking-[0.14em] text-muted">
+                                  points
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl border border-white/5 bg-black/10 px-3.5 py-3.5">
+                              <div>
+                                <p className="eyebrow">
+                                  Avant
+                                </p>
+
+                                <p className="mt-1 font-display text-lg font-bold">
+                                  {item.old_points ??
+                                    0}
+                                </p>
+                              </div>
+
+                              <div
+                                className={`grid h-8 w-8 place-items-center rounded-full border ${
+                                  change > 0
+                                    ? "border-accent/10 bg-accent/5 text-accent"
+                                    : change < 0
+                                      ? "border-danger/10 bg-danger/5 text-danger"
+                                      : "border-white/5 bg-white/5 text-muted"
+                                }`}
+                              >
+                                {change > 0 ? (
+                                  <ArrowUpIcon className="h-3.5 w-3.5" />
+                                ) : change < 0 ? (
+                                  <ArrowDownIcon className="h-3.5 w-3.5" />
+                                ) : (
+                                  <span className="text-xs">
+                                    —
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="text-right">
+                                <p className="eyebrow">
+                                  Après
+                                </p>
+
+                                <p className="mt-1 font-display text-lg font-bold">
+                                  {item.new_points ??
+                                    0}
+                                </p>
+                              </div>
+                            </div>
+
+                            {hasCalculationDetails && (
+                              <div className="mt-4 border-t border-white/5 pt-4">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="grid h-8 w-8 place-items-center rounded-full border border-white/5 bg-white/5 text-muted">
+                                    <CalculatorIcon className="h-3.5 w-3.5" />
+                                  </div>
+
+                                  <div>
+                                    <p className="eyebrow">
+                                      Détail du calcul
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="mt-3 space-y-1.5">
+                                  {item.base_points !== null &&
+                                    item.base_points !== 0 && (
+                                      <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/2.5 px-3 py-2 text-xs">
+                                        <span className="text-muted">
+                                          Points de base
+                                        </span>
+
+                                        <span className="font-semibold">
+                                          {item.base_points >
+                                          0
+                                            ? "+"
+                                            : ""}
+                                          {
+                                            item.base_points
+                                          }
+                                        </span>
+                                      </div>
+                                    )}
+
+                                  {positiveDetails.map(
+                                    ([
+                                      label,
+                                      value,
+                                    ]) => (
+                                      <div
+                                        key={`positive-${label}`}
+                                        className="flex items-center justify-between rounded-xl border border-accent/5 bg-accent/5 px-3 py-2 text-xs"
+                                      >
+                                        <span className="text-muted">
+                                          {label}
+                                        </span>
+
+                                        <span className="font-semibold text-accent">
+                                          +{value}
+                                        </span>
+                                      </div>
+                                    )
+                                  )}
+
+                                  {negativeDetails.map(
+                                    ([
+                                      label,
+                                      value,
+                                    ]) => (
+                                      <div
+                                        key={`negative-${label}`}
+                                        className="flex items-center justify-between rounded-xl border border-danger/5 bg-danger/5 px-3 py-2 text-xs"
+                                      >
+                                        <span className="text-muted">
+                                          {label}
+                                        </span>
+
+                                        <span className="font-semibold text-danger">
+                                          {Number(
+                                            value
+                                          ) > 0
+                                            ? "-"
+                                            : ""}
+                                          {Math.abs(
+                                            Number(
+                                              value
+                                            )
+                                          )}
+                                        </span>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+              </div>
+            </section>
+          )}
+
         <Link
           href="/ranking"
-          className="mt-5 flex min-h-14 items-center justify-center rounded-2xl border border-border bg-surface text-sm font-bold text-foreground transition-colors hover:bg-surface-2"
+          className="group mt-7 flex min-h-14 items-center gap-3 rounded-3xl border border-white/8 bg-white/4.5 px-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
         >
-          Retour au classement
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-accent/10 bg-accent/10 text-accent">
+            <ArrowLeftIcon className="h-4 w-4" />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">
+              Retour au classement
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-muted">
+              Voir le classement{" "}
+              {getSportLabel(mode)}
+            </p>
+          </div>
+
+          <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
     </main>
