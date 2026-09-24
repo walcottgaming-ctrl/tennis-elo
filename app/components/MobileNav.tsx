@@ -137,13 +137,14 @@ export default function MobileNav() {
 
   return (
     <>
-      <div className="h-24 md:hidden" />
+      {/* Espace réservé pour éviter que le contenu passe sous la navigation */}
+      <div className="h-20 md:hidden" />
 
       <nav
         className="fixed inset-x-0 bottom-3 z-50 px-3 sm:px-4 md:hidden"
         aria-label="Navigation principale"
       >
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto w-full max-w-lg">
           <div className="rounded-[25px] border border-white/10 bg-[#11141c]/92 p-1.5 shadow-[0_-18px_50px_-24px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
             <div className="grid grid-cols-5 gap-1">
               {items.map((item) => {
@@ -158,14 +159,14 @@ export default function MobileNav() {
                     aria-current={
                       active ? "page" : undefined
                     }
-                    className={`group flex min-h-16 min-w-0 flex-col items-center justify-center rounded-[19px] px-1 text-[10px] font-semibold transition-all duration-200 active:scale-[0.97] ${
+                    className={`group flex min-h-15 min-w-0 flex-col items-center justify-center rounded-[19px] px-0.5 text-[10px] font-semibold transition-all duration-200 active:scale-[0.97] ${
                       active
                         ? "text-accent"
                         : "text-muted hover:bg-white/5 hover:text-foreground"
                     }`}
                   >
                     <span
-                      className={`relative grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 ${
+                      className={`relative grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-all duration-200 ${
                         active
                           ? "bg-accent text-[#0b0d13] shadow-[0_0_22px_var(--accent-glow)]"
                           : "text-muted group-hover:bg-white/5 group-hover:text-foreground"
@@ -185,7 +186,7 @@ export default function MobileNav() {
                     </span>
 
                     <span
-                      className={`mt-1.5 max-w-full truncate px-0.5 tracking-tight transition-colors duration-200 ${
+                      className={`mt-1.5 whitespace-nowrap px-0.5 text-[10px] leading-none tracking-tight transition-colors duration-200 ${
                         active
                           ? "text-accent"
                           : "text-muted"
