@@ -141,7 +141,7 @@ export default function MobileNav() {
       <div className="h-20 md:hidden" />
 
       <nav
-        className="fixed inset-x-0 bottom-3 z-50 px-3 sm:px-4 md:hidden"
+        className="fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-50 px-3 sm:px-4 md:hidden"
         aria-label="Navigation principale"
       >
         <div className="mx-auto w-full max-w-lg">

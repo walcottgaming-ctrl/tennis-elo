@@ -1,5 +1,7 @@
 "use client";
 
+import { motion } from "motion/react";
+
 type EloPoint = {
   label: string;
   elo: number;
@@ -7,338 +9,502 @@ type EloPoint = {
 
 type EloChartProps = {
   points: EloPoint[];
+  modeLabel?: string;
+  weeklyChange?: number;
 };
-
-function ChartIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M4 18V6" />
-      <path d="M4 18h16" />
-      <path d="m7 14 3-4 3 2 5-6" />
-    </svg>
-  );
-}
 
 export default function EloChart({
   points,
+  modeLabel = "Performance",
+  weeklyChange = 0,
 }: EloChartProps) {
-  if (points.length === 0) {
+  if (!points || points.length === 0) {
     return (
-      <section className="glass rounded-[26px] p-5 sm:p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
-            <ChartIcon />
+      <section className="glass relative overflow-hidden rounded-[28px] p-6">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/5 blur-3xl" />
+
+        <div className="relative">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <p className="eyebrow mb-2">PERFORMANCE</p>
+
+              <h2 className="font-display text-2xl font-bold text-white">
+                Progression
+              </h2>
+            </div>
+
+            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              <span className="text-xs font-medium text-muted">
+                {modeLabel}
+              </span>
+            </div>
           </div>
 
-          <div>
-            <p className="eyebrow">
-              Progression
-            </p>
+          <div className="flex min-h-55 items-center justify-center rounded-2xl border border-white/5 bg-white/2">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 19L10 13L14 17L21 9"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-muted"
+                  />
+                </svg>
+              </div>
 
-            <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-              Évolution de l&apos;ELO
-            </h2>
+              <p className="text-sm font-medium text-white">
+                Pas encore assez de données
+              </p>
+
+              <p className="mt-1 text-xs text-muted">
+                Joue quelques matchs pour voir ta progression.
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-white/6 bg-white/2.5 px-4 py-5">
-          <p className="text-sm leading-6 text-muted">
-            Pas encore assez de matchs pour afficher
-            l&apos;évolution.
-          </p>
         </div>
       </section>
     );
   }
 
-  const values = points.map(
-    (point) => point.elo
-  );
+  const width = 900;
+  const height = 300;
 
-  const minElo = Math.min(...values);
-  const maxElo = Math.max(...values);
+  const paddingLeft = 24;
+  const paddingRight = 24;
+  const paddingTop = 24;
+  const paddingBottom = 36;
 
-  const range = Math.max(
-    maxElo - minElo,
-    1
-  );
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
 
-  const width = 320;
-  const height = 180;
-  const padding = 20;
+  const values = points.map((point) => point.elo);
 
-  const chartWidth =
-    width - padding * 2;
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
 
-  const chartHeight =
-    height - padding * 2;
+  const valueRange = Math.max(maxValue - minValue, 1);
+
+  const firstValue = values[0];
+  const currentValue = values[values.length - 1];
+
+  const totalChange = currentValue - firstValue;
+
+  const formatNumber = (value: number) =>
+    new Intl.NumberFormat("fr-FR").format(Math.round(value));
+
+  const formatChange = (value: number) => {
+    if (value > 0) {
+      return `+${formatNumber(value)}`;
+    }
+
+    if (value < 0) {
+      return formatNumber(value);
+    }
+
+    return "0";
+  };
 
   const getX = (index: number) => {
     if (points.length === 1) {
-      return width / 2;
+      return paddingLeft + chartWidth / 2;
     }
 
     return (
-      padding +
-      (index / (points.length - 1)) *
-        chartWidth
+      paddingLeft + (index / (points.length - 1)) * chartWidth
     );
   };
 
-  const getY = (elo: number) => {
+  const getY = (value: number) => {
+    const normalized = (value - minValue) / valueRange;
+
     return (
-      padding +
-      ((maxElo - elo) / range) *
-        chartHeight
+      paddingTop +
+      chartHeight -
+      normalized * chartHeight
     );
   };
 
   const linePoints = points
-    .map(
-      (point, index) =>
-        `${getX(index)},${getY(point.elo)}`
-    )
+    .map((point, index) => `${getX(index)},${getY(point.elo)}`)
     .join(" ");
 
-  const currentElo =
-    points[points.length - 1].elo;
+  const areaPoints = [
+    `${getX(0)},${paddingTop + chartHeight}`,
+    ...points.map(
+      (point, index) => `${getX(index)},${getY(point.elo)}`
+    ),
+    `${getX(points.length - 1)},${paddingTop + chartHeight}`,
+  ].join(" ");
 
-  const firstElo = points[0].elo;
+  const firstPoint = {
+    x: getX(0),
+    y: getY(firstValue),
+  };
 
-  const totalChange =
-    currentElo - firstElo;
+  const currentPoint = {
+    x: getX(points.length - 1),
+    y: getY(currentValue),
+  };
+
+  const middleValue = (minValue + maxValue) / 2;
+  const middleY = getY(middleValue);
+
+  const changeIsPositive = totalChange > 0;
+  const changeIsNegative = totalChange < 0;
+
+  const weeklyIsPositive = weeklyChange > 0;
+  const weeklyIsNegative = weeklyChange < 0;
 
   return (
-    <section className="glass-strong mt-4 overflow-hidden rounded-[28px] p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent">
-              <ChartIcon />
-            </div>
+    <section className="glass relative overflow-hidden rounded-[28px] p-6">
+      {/* Ambient light */}
+      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/5 blur-3xl" />
 
-            <div className="min-w-0">
-              <p className="eyebrow">
+      <div className="relative">
+        {/* Header */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="eyebrow mb-2">PERFORMANCE</p>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="font-display text-2xl font-bold text-white">
                 Progression
-              </p>
-
-              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-                Évolution de l&apos;ELO
               </h2>
+
+              <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <span className="text-xs font-medium text-muted">
+                  {modeLabel}
+                </span>
+              </div>
             </div>
           </div>
 
-          <p className="mt-3 text-sm text-muted">
-            Ton évolution au fil des matchs
-          </p>
+          {/* Current points */}
+          <motion.div
+            key={currentValue}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="text-left sm:text-right"
+          >
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
+              Points actuels
+            </p>
+
+            <p className="mt-1 font-display text-3xl font-bold tracking-tight text-white">
+              {formatNumber(currentValue)}
+            </p>
+          </motion.div>
         </div>
 
-        <div className="shrink-0 text-right">
-          <p className="eyebrow">
-            Actuel
-          </p>
+        {/* Main stats */}
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {/* Starting points */}
+          <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+              Départ
+            </p>
 
-          <p className="mt-1 font-display text-2xl font-semibold tracking-tight text-accent">
-            {currentElo.toLocaleString(
-              "fr-FR"
-            )}
-          </p>
+            <p className="mt-2 font-display text-xl font-bold text-white">
+              {formatNumber(firstValue)}
+            </p>
+          </div>
 
-          {points.length > 1 && (
+          {/* Total evolution */}
+          <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+              Évolution
+            </p>
+
             <p
-              className={`mt-0.5 text-xs font-semibold ${
-                totalChange > 0
+              className={`mt-2 font-display text-xl font-bold ${
+                changeIsPositive
                   ? "text-success"
-                  : totalChange < 0
+                  : changeIsNegative
                     ? "text-danger"
-                    : "text-muted"
+                    : "text-white"
               }`}
             >
-              {totalChange > 0
-                ? `+${totalChange}`
-                : totalChange}
+              {formatChange(totalChange)}
             </p>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className="mt-6 overflow-hidden rounded-[22px] border border-white/6 bg-[#0f1219]/70 p-3 sm:p-4">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="h-auto w-full"
-          role="img"
-          aria-label="Évolution de l'ELO"
+          {/* Weekly evolution */}
+          <div className="rounded-2xl border border-white/5 bg-white/2.5 p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted">
+              Cette semaine
+            </p>
+
+            <p
+              className={`mt-2 font-display text-xl font-bold ${
+                weeklyIsPositive
+                  ? "text-success"
+                  : weeklyIsNegative
+                    ? "text-danger"
+                    : "text-white"
+              }`}
+            >
+              {formatChange(weeklyChange)}
+            </p>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <motion.div
+          className="relative overflow-hidden rounded-2xl border border-white/5 bg-white/2"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.4,
+            ease: "easeOut",
+          }}
         >
-          <defs>
-            <linearGradient
-              id="elo-line-gradient"
-              x1="0"
-              y1="0"
-              x2="1"
-              y2="0"
-            >
-              <stop
-                offset="0%"
-                stopColor="var(--accent)"
-                stopOpacity="0.45"
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--accent)"
-              />
-            </linearGradient>
-
-            <linearGradient
-              id="elo-area-gradient"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop
-                offset="0%"
-                stopColor="var(--accent)"
-                stopOpacity="0.14"
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--accent)"
-                stopOpacity="0"
-              />
-            </linearGradient>
-          </defs>
-
-          <line
-            x1={padding}
-            y1={padding}
-            x2={padding}
-            y2={height - padding}
-            stroke="currentColor"
-            strokeWidth="1"
-            className="text-white/8"
-          />
-
-          <line
-            x1={padding}
-            y1={height - padding}
-            x2={width - padding}
-            y2={height - padding}
-            stroke="currentColor"
-            strokeWidth="1"
-            className="text-white/8"
-          />
-
-          <line
-            x1={padding}
-            y1={height / 2}
-            x2={width - padding}
-            y2={height / 2}
-            stroke="currentColor"
-            strokeWidth="1"
-            strokeDasharray="3 5"
-            className="text-white/5"
-          />
-
-          {points.length > 1 && (
-            <polygon
-              points={`${padding},${height - padding} ${linePoints} ${width - padding},${height - padding}`}
-              fill="url(#elo-area-gradient)"
-            />
-          )}
-
-          <polyline
-            points={linePoints}
-            fill="none"
-            stroke="url(#elo-line-gradient)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {points.map(
-            (point, index) => {
-              const x = getX(index);
-              const y = getY(
-                point.elo
-              );
-
-              const isCurrent =
-                index ===
-                points.length - 1;
-
-              return (
-                <g
-                  key={`${point.label}-${index}`}
-                >
-                  {isCurrent && (
-                    <circle
-                      cx={x}
-                      cy={y}
-                      r="8"
-                      fill="var(--accent)"
-                      opacity="0.12"
+          <div className="overflow-x-auto">
+            <div className="min-w-155">
+              <svg
+                viewBox={`0 0 ${width} ${height}`}
+                className="h-auto w-full"
+                role="img"
+                aria-label={`Progression des points en ${modeLabel}`}
+              >
+                <defs>
+                  <linearGradient
+                    id="progression-area-gradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor="currentColor"
+                      stopOpacity="0.18"
                     />
-                  )}
 
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={isCurrent ? 4.5 : 3}
-                    fill="var(--accent)"
-                  />
-                </g>
-              );
-            }
-          )}
-        </svg>
-      </div>
+                    <stop
+                      offset="100%"
+                      stopColor="currentColor"
+                      stopOpacity="0"
+                    />
+                  </linearGradient>
 
-      <div className="mt-4 flex items-center justify-between gap-4 text-xs font-medium text-muted">
-        <span className="min-w-0 truncate">
-          {points[0].label}
-        </span>
+                  <linearGradient
+                    id="progression-line-gradient"
+                    x1="0"
+                    y1="0"
+                    x2="1"
+                    y2="0"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor="currentColor"
+                      stopOpacity="0.45"
+                    />
 
-        <span className="min-w-0 truncate text-right">
-          {points[points.length - 1].label}
-        </span>
-      </div>
+                    <stop
+                      offset="100%"
+                      stopColor="currentColor"
+                      stopOpacity="1"
+                    />
+                  </linearGradient>
+                </defs>
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5">
-        <div className="rounded-2xl border border-white/6 bg-white/2.5 p-4">
-          <p className="eyebrow">
-            Plus bas
-          </p>
+                {/* Horizontal guide */}
+                <line
+                  x1={paddingLeft}
+                  x2={width - paddingRight}
+                  y1={middleY}
+                  y2={middleY}
+                  stroke="currentColor"
+                  strokeOpacity="0.08"
+                  strokeDasharray="4 8"
+                />
 
-          <p className="mt-1 font-display text-xl font-semibold tracking-tight">
-            {minElo.toLocaleString(
-              "fr-FR"
-            )}
-          </p>
-        </div>
+                {/* Bottom line */}
+                <line
+                  x1={paddingLeft}
+                  x2={width - paddingRight}
+                  y1={paddingTop + chartHeight}
+                  y2={paddingTop + chartHeight}
+                  stroke="currentColor"
+                  strokeOpacity="0.08"
+                />
 
-        <div className="rounded-2xl border border-accent/10 bg-accent/5 p-4">
-          <p className="eyebrow">
-            Plus haut
-          </p>
+                {/* Area */}
+                <motion.polygon
+                  points={areaPoints}
+                  fill="url(#progression-area-gradient)"
+                  className="text-accent"
+                  initial={{
+                    opacity: 0,
+                  }}
+                  animate={{
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    delay: 0.15,
+                  }}
+                />
 
-          <p className="mt-1 font-display text-xl font-semibold tracking-tight text-accent">
-            {maxElo.toLocaleString(
-              "fr-FR"
-            )}
-          </p>
+                {/* Main line */}
+                <motion.polyline
+                  points={linePoints}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-accent"
+                  pathLength={1}
+                  initial={{
+                    pathLength: 0,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    pathLength: 1,
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    ease: "easeOut",
+                  }}
+                />
+
+                {/* Data points */}
+                {points.map((point, index) => {
+                  const x = getX(index);
+                  const y = getY(point.elo);
+                  const isCurrent = index === points.length - 1;
+
+                  return (
+                    <motion.g
+                      key={`${point.label}-${index}`}
+                      initial={{
+                        opacity: 0,
+                        scale: 0,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      transition={{
+                        duration: 0.25,
+                        delay: 0.45 + index * 0.04,
+                      }}
+                      style={{
+                        transformOrigin: `${x}px ${y}px`,
+                      }}
+                    >
+                      {!isCurrent && (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r="4"
+                          className="fill-accent"
+                        />
+                      )}
+
+                      {isCurrent && (
+                        <>
+                          <motion.circle
+                            cx={x}
+                            cy={y}
+                            r="14"
+                            className="fill-accent"
+                            initial={{
+                              opacity: 0.08,
+                              scale: 0.8,
+                            }}
+                            animate={{
+                              opacity: [0.05, 0.16, 0.05],
+                              scale: [0.8, 1.15, 0.8],
+                            }}
+                            transition={{
+                              duration: 2,
+                              repeat: Infinity,
+                              ease: "easeInOut",
+                            }}
+                          />
+
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="6"
+                            className="fill-accent"
+                          />
+
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="3"
+                            className="fill-background"
+                          />
+                        </>
+                      )}
+                    </motion.g>
+                  );
+                })}
+
+                {/* Start label */}
+                <text
+                  x={firstPoint.x}
+                  y={height - 12}
+                  textAnchor="start"
+                  className="fill-current text-[11px] text-muted"
+                >
+                  Départ
+                </text>
+
+                {/* Current label */}
+                <text
+                  x={currentPoint.x}
+                  y={height - 12}
+                  textAnchor="end"
+                  className="fill-current text-[11px] text-muted"
+                >
+                  Maintenant
+                </text>
+              </svg>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Footer */}
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_rgba(255,255,255,0.35)]" />
+
+            <span className="text-xs text-muted">
+              {points.length}{" "}
+              {points.length > 1 ? "matchs suivis" : "match suivi"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs text-muted">
+            <span>
+              Min.{" "}
+              <strong className="font-semibold text-white">
+                {formatNumber(minValue)}
+              </strong>
+            </span>
+
+            <span>
+              Max.{" "}
+              <strong className="font-semibold text-white">
+                {formatNumber(maxValue)}
+              </strong>
+            </span>
+          </div>
         </div>
       </div>
     </section>

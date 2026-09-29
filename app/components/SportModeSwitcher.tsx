@@ -1,14 +1,21 @@
 "use client";
 
-import { useSportMode } from "@/app/context/SportModeContext";
+import { motion } from "motion/react";
 import SportIcon from "@/app/components/SportIcon";
+import { useSportMode } from "@/app/context/SportModeContext";
 
 const modes = [
-  { value: "tennis" as const, label: "Tennis" },
-  { value: "padel" as const, label: "Padel" },
   {
-    value: "super_tiebreak" as const,
-    label: "Super Tie-Break",
+    id: "tennis" as const,
+    label: "Tennis",
+  },
+  {
+    id: "padel" as const,
+    label: "Padel",
+  },
+  {
+    id: "super_tiebreak" as const,
+    label: "STB",
   },
 ];
 
@@ -16,39 +23,52 @@ export default function SportModeSwitcher() {
   const { mode, setMode } = useSportMode();
 
   return (
-    <div
-      className="inline-flex items-center rounded-full border border-white/10 bg-[#11141c]/90 p-1 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.95)] backdrop-blur-2xl"
-      aria-label="Mode de jeu"
-    >
+    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/4 p-1">
       {modes.map((item) => {
-        const isActive = mode === item.value;
+        const isActive = mode === item.id;
 
         return (
-          <button
-            key={item.value}
+          <motion.button
+            key={item.id}
             type="button"
-            onClick={() => setMode(item.value)}
-            aria-label={item.label}
-            aria-pressed={isActive}
-            title={item.label}
-            className={`relative grid h-8 w-8 place-items-center rounded-full transition-all duration-200 active:scale-95 ${
-              isActive
-                ? "bg-accent text-[#0b0d13] shadow-[0_0_18px_var(--accent-glow)]"
-                : "text-muted hover:bg-white/5 hover:text-foreground"
-            }`}
+            onClick={() => setMode(item.id)}
+            whileTap={{ scale: 0.95 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 30,
+            }}
+            className="relative flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium"
           >
-            <SportIcon
-              sport={item.value}
-              className="h-4 w-4"
-            />
-
             {isActive && (
-              <span
-                className="absolute -bottom-0.5 h-0.5 w-2 rounded-full bg-[#0b0d13]/70"
-                aria-hidden="true"
+              <motion.div
+                layoutId="sport-switcher-active"
+                className="absolute inset-0 rounded-full bg-accent"
+                transition={{
+                  type: "spring",
+                  stiffness: 420,
+                  damping: 32,
+                }}
               />
             )}
-          </button>
+
+            <motion.span
+  className="relative z-10 flex items-center gap-2"
+  animate={{
+  scale: isActive ? 1 : 0.97,
+  opacity: isActive ? 1 : 0.65,
+  color: isActive ? "rgb(17, 17, 17)" : undefined,
+}}
+  transition={{
+    duration: 0.2,
+    ease: "easeOut",
+  }}
+>
+  <SportIcon sport={item.id} className="h-3.75 w-3.75" />
+
+  <span>{item.label}</span>
+</motion.span>
+          </motion.button>
         );
       })}
     </div>

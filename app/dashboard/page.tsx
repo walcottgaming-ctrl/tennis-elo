@@ -1,13 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import {
+  AnimatePresence,
+  motion,
+  type Variants,
+} from "motion/react";
 
 import SportIcon from "@/app/components/SportIcon";
 import SportModeSwitcher from "@/app/components/SportModeSwitcher";
 import { useSportMode } from "@/app/context/SportModeContext";
 
 import { createClient } from "@/src/supabase/client";
+
+import EloChart from "./_components/EloChart";
 
 type Sport =
   | "tennis"
@@ -51,7 +60,56 @@ type Friendship = {
   status: "pending" | "accepted" | "rejected";
 };
 
-function getPlayerName(player: RankingPlayer | null) {
+/*
+ * ============================================================
+ * ANIMATIONS
+ * ============================================================
+ */
+
+const sectionVariants: Variants = {
+  hidden: {
+    opacity: 0,
+    y: 18,
+  },
+
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+      ease: "easeOut",
+    },
+  },
+};
+
+const sectionVariantsDelayed = (
+  delay: number
+): Variants => ({
+  hidden: {
+    opacity: 0,
+    y: 18,
+  },
+
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+      delay,
+      ease: "easeOut",
+    },
+  },
+});
+
+/*
+ * ============================================================
+ * HELPERS
+ * ============================================================
+ */
+
+function getPlayerName(
+  player: RankingPlayer | null
+) {
   if (!player) return "Joueur";
 
   const fullName = [
@@ -62,15 +120,13 @@ function getPlayerName(player: RankingPlayer | null) {
     .join(" ")
     .trim();
 
-  return fullName || player.username || "Joueur";
+  return (
+    fullName ||
+    player.username ||
+    "Joueur"
+  );
 }
 
-/*
- * Récupère les points actuels depuis ranking_history.
- *
- * IMPORTANT :
- * On utilise new_points et non points_change.
- */
 function getPlayerPoints(
   pointsByPlayerAndSport: Map<
     string,
@@ -86,6 +142,12 @@ function getPlayerPoints(
       ?.new_points ?? null
   );
 }
+
+/*
+ * ============================================================
+ * ICONS
+ * ============================================================
+ */
 
 function PlusIcon({
   className = "h-4 w-4",
@@ -220,10 +282,18 @@ function ProfileIcon({
   );
 }
 
+/*
+ * ============================================================
+ * PAGE
+ * ============================================================
+ */
+
 export default function DashboardPage() {
   const { mode } = useSportMode();
 
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] =
+    useState<Match[]>([]);
+
   const [rankingMatches, setRankingMatches] =
     useState<Match[]>([]);
 
@@ -242,8 +312,29 @@ export default function DashboardPage() {
   const [currentUserId, setCurrentUserId] =
     useState<string | null>(null);
 
+  /*
+   * IDs de tous les matchs du joueur.
+   *
+   * Important :
+   * matches contient uniquement les 20 derniers matchs
+   * affichables sur le dashboard.
+   *
+   * userMatchIds permet donc de calculer les vrais totaux
+   * indépendamment de cette limite de 20.
+   */
+  const [userMatchIds, setUserMatchIds] =
+    useState<string[]>([]);
+
   const [selectedFriendId, setSelectedFriendId] =
     useState("");
+
+  const [now] = useState(() => Date.now());
+
+  /*
+   * ============================================================
+   * LOAD DASHBOARD
+   * ============================================================
+   */
 
   useEffect(() => {
     async function loadDashboard() {
@@ -259,18 +350,13 @@ export default function DashboardPage() {
 
       /*
        * PROFIL
-       *
-       * Les points du profil ne sont pas utilisés
-       * comme source de vérité pour le classement.
        */
       const {
         data: profileData,
         error: profileError,
       } = await supabase
         .from("profiles")
-        .select(
-          "username, first_name"
-        )
+        .select("username, first_name")
         .eq("id", user.id)
         .single();
 
@@ -281,16 +367,15 @@ export default function DashboardPage() {
         );
       } else {
         setProfile({
-          username: profileData.username ?? null,
-          first_name: profileData.first_name ?? null,
+          username:
+            profileData.username ?? null,
+          first_name:
+            profileData.first_name ?? null,
         });
       }
 
       /*
        * TOUS LES JOUEURS
-       *
-       * Les points profiles.points_xxx ne sont plus
-       * nécessaires ici.
        */
       const {
         data: rankingData,
@@ -308,15 +393,13 @@ export default function DashboardPage() {
         );
       } else {
         setRankingPlayers(
-          (rankingData ?? []) as RankingPlayer[]
+          (rankingData ??
+            []) as RankingPlayer[]
         );
       }
 
       /*
        * HISTORIQUE DU CLASSEMENT
-       *
-       * ranking_history.new_points est la source
-       * de vérité des points actuels.
        */
       const {
         data: rankingHistoryData,
@@ -337,16 +420,13 @@ export default function DashboardPage() {
         );
       } else {
         setRankingHistory(
-          (rankingHistoryData ?? []) as RankingHistory[]
+          (rankingHistoryData ??
+            []) as RankingHistory[]
         );
       }
 
       /*
-       * MATCHS UTILISÉS POUR DÉTERMINER
-       * LE DERNIER POINT DE CHAQUE JOUEUR.
-       *
-       * On utilise matches.created_at plutôt que
-       * ranking_history.created_at.
+       * MATCHS UTILISÉS POUR LA CHRONOLOGIE
        */
       const {
         data: rankingMatchesData,
@@ -367,7 +447,8 @@ export default function DashboardPage() {
         );
       } else {
         setRankingMatches(
-          (rankingMatchesData ?? []) as Match[]
+          (rankingMatchesData ??
+            []) as Match[]
         );
       }
 
@@ -394,7 +475,8 @@ export default function DashboardPage() {
         );
       } else {
         setFriendships(
-          (friendshipsData ?? []) as Friendship[]
+          (friendshipsData ??
+            []) as Friendship[]
         );
       }
 
@@ -422,12 +504,24 @@ export default function DashboardPage() {
           (row) => row.match_id
         );
 
+      /*
+       * On conserve TOUS les IDs pour les statistiques.
+       */
+      setUserMatchIds(playerMatchIds);
+
       if (playerMatchIds.length === 0) {
         setMatches([]);
         return;
       }
 
-      const { data, error } = await supabase
+      /*
+       * On ne charge que les 20 derniers matchs
+       * pour la liste du dashboard.
+       */
+      const {
+        data,
+        error,
+      } = await supabase
         .from("matches")
         .select(
           "id, sport, format, created_at"
@@ -456,22 +550,8 @@ export default function DashboardPage() {
    * ============================================================
    * POINTS ACTUELS PAR JOUEUR / SPORT
    * ============================================================
-   *
-   * On cherche le dernier match chronologique
-   * de chaque joueur et de chaque sport.
-   *
-   * Source des points :
-   *
-   * ranking_history.new_points
-   *
-   * Chronologie :
-   *
-   * matches.created_at
-   *
-   * Départage si même timestamp :
-   *
-   * matches.id
    */
+
   const pointsByPlayerAndSport = useMemo(() => {
     const map = new Map<
       string,
@@ -494,7 +574,8 @@ export default function DashboardPage() {
         map.get(history.player_id);
 
       if (!playerMap) {
-        playerMap = new Map<Sport, RankingHistory>();
+        playerMap =
+          new Map<Sport, RankingHistory>();
 
         map.set(
           history.player_id,
@@ -512,18 +593,10 @@ export default function DashboardPage() {
         ? matchById.get(previous.match_id)
         : null;
 
-      /*
-       * Si le match n'existe pas,
-       * on ne peut pas déterminer sa position
-       * chronologique.
-       */
       if (!currentMatch) {
         continue;
       }
 
-      /*
-       * Premier historique pour ce joueur/sport.
-       */
       if (!previous || !previousMatch) {
         playerMap.set(
           history.sport,
@@ -542,19 +615,13 @@ export default function DashboardPage() {
           previousMatch.created_at
         ).getTime();
 
-      /*
-       * Le dernier match chronologique
-       * donne les points actuels.
-       */
       if (
         currentMatchTime >
           previousMatchTime ||
-        (
-          currentMatchTime ===
-            previousMatchTime &&
+        (currentMatchTime ===
+          previousMatchTime &&
           currentMatch.id >
-            previousMatch.id
-        )
+            previousMatch.id)
       ) {
         playerMap.set(
           history.sport,
@@ -570,8 +637,11 @@ export default function DashboardPage() {
   ]);
 
   /*
-   * MATCHS FILTRÉS PAR SPORT
+   * ============================================================
+   * MATCHS RÉCENTS PAR SPORT
+   * ============================================================
    */
+
   const filteredMatches = useMemo(() => {
     return matches
       .filter(
@@ -579,11 +649,21 @@ export default function DashboardPage() {
       )
       .sort(
         (a, b) =>
-          new Date(b.created_at).getTime() -
-          new Date(a.created_at).getTime()
+          new Date(
+            b.created_at
+          ).getTime() -
+          new Date(
+            a.created_at
+          ).getTime()
       )
       .slice(0, 5);
   }, [matches, mode]);
+
+  /*
+   * ============================================================
+   * LIBELLÉS SPORT
+   * ============================================================
+   */
 
   const sportLabel =
     mode === "tennis"
@@ -599,13 +679,41 @@ export default function DashboardPage() {
 
   /*
    * ============================================================
-   * POINTS DE L'UTILISATEUR
+   * MATCHS TOTAUX DU SPORT ACTIF
    * ============================================================
    *
-   * ranking_history.new_points
-   *
-   * 1000 si aucun historique.
+   * Contrairement à filteredMatches, cette valeur ne dépend
+   * PAS de la limite des 20 matchs chargés pour l'affichage.
    */
+
+  const totalMatchesForMode = useMemo(() => {
+    if (
+      userMatchIds.length === 0 ||
+      rankingMatches.length === 0
+    ) {
+      return 0;
+    }
+
+    const userMatchIdSet =
+      new Set(userMatchIds);
+
+    return rankingMatches.filter(
+      (match) =>
+        match.sport === mode &&
+        userMatchIdSet.has(match.id)
+    ).length;
+  }, [
+    userMatchIds,
+    rankingMatches,
+    mode,
+  ]);
+
+  /*
+   * ============================================================
+   * POINTS UTILISATEUR
+   * ============================================================
+   */
+
   const tennisPoints = currentUserId
     ? getPlayerPoints(
         pointsByPlayerAndSport,
@@ -622,13 +730,14 @@ export default function DashboardPage() {
       ) ?? 1000
     : 1000;
 
-  const superTiebreakPoints = currentUserId
-    ? getPlayerPoints(
-        pointsByPlayerAndSport,
-        currentUserId,
-        "super_tiebreak"
-      ) ?? 1000
-    : 1000;
+  const superTiebreakPoints =
+    currentUserId
+      ? getPlayerPoints(
+          pointsByPlayerAndSport,
+          currentUserId,
+          "super_tiebreak"
+        ) ?? 1000
+      : 1000;
 
   const points =
     mode === "tennis"
@@ -642,6 +751,7 @@ export default function DashboardPage() {
    * CLASSEMENT
    * ============================================================
    */
+
   const rankedPlayers = useMemo(() => {
     return rankingPlayers
       .filter(
@@ -675,12 +785,13 @@ export default function DashboardPage() {
     pointsByPlayerAndSport,
   ]);
 
-  const currentRankIndex = currentUserId
-    ? rankedPlayers.findIndex(
-        (player) =>
-          player.id === currentUserId
-      )
-    : -1;
+  const currentRankIndex =
+    currentUserId
+      ? rankedPlayers.findIndex(
+          (player) =>
+            player.id === currentUserId
+        )
+      : -1;
 
   const currentRank =
     currentRankIndex >= 0
@@ -691,13 +802,17 @@ export default function DashboardPage() {
     rankedPlayers.length;
 
   /*
+   * ============================================================
    * AMIS
+   * ============================================================
    */
+
   const acceptedFriendIds = useMemo(() => {
     if (!currentUserId) return [];
 
     return friendships.map((friendship) =>
-      friendship.requester_id === currentUserId
+      friendship.requester_id ===
+      currentUserId
         ? friendship.addressee_id
         : friendship.requester_id
     );
@@ -751,7 +866,9 @@ export default function DashboardPage() {
 
   const effectiveSelectedFriendId =
     useMemo(() => {
-      if (friends.length === 0) return "";
+      if (friends.length === 0) {
+        return "";
+      }
 
       const selectedStillExists =
         friends.some(
@@ -811,44 +928,320 @@ export default function DashboardPage() {
     "Joueur";
 
   /*
-   * Ce pourcentage représente la position
-   * dans le classement.
+   * ============================================================
+   * PERFORMANCE / PROGRESSION
+   * ============================================================
    */
-  const rankProgress =
-    currentRank && totalRankedPlayers
+
+  const matchById = useMemo(() => {
+    return new Map(
+      rankingMatches.map((match) => [
+        match.id,
+        match,
+      ])
+    );
+  }, [rankingMatches]);
+
+  /*
+   * Historique utilisateur du mode actif.
+   */
+  const userHistory = useMemo(() => {
+    if (!currentUserId) return [];
+
+    return rankingHistory
+      .filter(
+        (item) =>
+          item.player_id ===
+            currentUserId &&
+          item.sport === mode &&
+          matchById.has(item.match_id)
+      )
+      .sort((a, b) => {
+        const matchA =
+          matchById.get(a.match_id);
+
+        const matchB =
+          matchById.get(b.match_id);
+
+        if (!matchA || !matchB) {
+          return 0;
+        }
+
+        const timeA = new Date(
+          matchA.created_at
+        ).getTime();
+
+        const timeB = new Date(
+          matchB.created_at
+        ).getTime();
+
+        if (timeA !== timeB) {
+          return timeA - timeB;
+        }
+
+        return a.match_id.localeCompare(
+          b.match_id
+        );
+      });
+  }, [
+    rankingHistory,
+    currentUserId,
+    mode,
+    matchById,
+  ]);
+
+  /*
+   * ============================================================
+   * GRAPHIQUE
+   * ============================================================
+   */
+
+  const progressionPoints = useMemo(() => {
+    return userHistory.map(
+      (item, index) => {
+        const match =
+          matchById.get(item.match_id);
+
+        const label = match
+          ? new Date(
+              match.created_at
+            ).toLocaleDateString(
+              "fr-FR",
+              {
+                day: "numeric",
+                month: "short",
+              }
+            )
+          : `Match ${index + 1}`;
+
+        return {
+          label,
+          elo: item.new_points,
+        };
+      }
+    );
+  }, [userHistory, matchById]);
+
+  const latestHistory =
+    userHistory[
+      userHistory.length - 1
+    ] ?? null;
+
+  const firstHistory =
+    userHistory[0] ?? null;
+
+  /*
+   * Progression totale depuis le premier
+   * mouvement de classement.
+   */
+  const totalProgression =
+    latestHistory && firstHistory
+      ? latestHistory.new_points -
+        firstHistory.old_points
+      : 0;
+
+  /*
+   * ============================================================
+   * FORME RÉCENTE — VRAIES DONNÉES
+   * ============================================================
+   *
+   * Les 5 dernières évolutions de points.
+   *
+   * On garde l'ordre chronologique :
+   * gauche = plus ancien
+   * droite = plus récent
+   */
+
+  const recentForm = useMemo(() => {
+    return userHistory.slice(-5);
+  }, [userHistory]);
+
+  const recentFormMaxChange = useMemo(() => {
+    if (recentForm.length === 0) {
+      return 1;
+    }
+
+    return Math.max(
+      ...recentForm.map((item) =>
+        Math.abs(item.points_change)
+      ),
+      1
+    );
+  }, [recentForm]);
+
+  const recentFormPoints = useMemo(() => {
+    return recentForm.reduce(
+      (total, item) =>
+        total + item.points_change,
+      0
+    );
+  }, [recentForm]);
+
+  /*
+   * ============================================================
+   * STATISTIQUES 7 JOURS
+   * ============================================================
+   */
+
+  const weekAgo =
+    now -
+    7 * 24 * 60 * 60 * 1000;
+
+  const weeklyHistory =
+    userHistory.filter((item) => {
+      const match =
+        matchById.get(item.match_id);
+
+      if (!match) return false;
+
+      return (
+        new Date(
+          match.created_at
+        ).getTime() >= weekAgo
+      );
+    });
+
+  const weeklyPoints =
+    weeklyHistory.reduce(
+      (total, item) =>
+        total + item.points_change,
+      0
+    );
+
+  const weeklyMatches = new Set(
+    weeklyHistory.map(
+      (item) => item.match_id
+    )
+  ).size;
+
+  /*
+   * ============================================================
+   * PROCHAIN RANG
+   * ============================================================
+   */
+
+  const nextRankPlayer =
+    currentRankIndex > 0
+      ? rankedPlayers[
+          currentRankIndex - 1
+        ]
+      : null;
+
+  const nextRankPoints =
+    nextRankPlayer
+      ? getPlayerPoints(
+          pointsByPlayerAndSport,
+          nextRankPlayer.id,
+          mode
+        ) ?? points
+      : points;
+
+  const pointsToNextRank =
+    nextRankPlayer
       ? Math.max(
-          5,
-          100 -
-            ((currentRank - 1) /
-              Math.max(
-                totalRankedPlayers - 1,
-                1
-              )) *
-              100
+          nextRankPoints - points,
+          0
         )
       : 0;
 
+  const playerBelow =
+    currentRankIndex >= 0
+      ? rankedPlayers[
+          currentRankIndex + 1
+        ]
+      : null;
+
+  const pointsBelow =
+    playerBelow
+      ? getPlayerPoints(
+          pointsByPlayerAndSport,
+          playerBelow.id,
+          mode
+        ) ??
+        Math.max(
+          points - 100,
+          0
+        )
+      : Math.max(
+          points - 100,
+          0
+        );
+
+  /*
+   * Progression entre le joueur derrière
+   * et le joueur devant.
+   */
+  const rankRange = Math.max(
+    nextRankPoints - pointsBelow,
+    1
+  );
+
+  const rankProgress =
+    currentRank === 1
+      ? 100
+      : nextRankPlayer
+        ? Math.min(
+            100,
+            Math.max(
+              0,
+              ((points - pointsBelow) /
+                rankRange) *
+                100
+            )
+          )
+        : 0;
+
+  /*
+   * ============================================================
+   * RENDER
+   * ============================================================
+   */
+
   return (
     <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
+      {/* ====================================================== */}
+      {/* BACKGROUND */}
+      {/* ====================================================== */}
+
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       >
         <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-accent/10 blur-[110px]" />
+
         <div className="absolute -right-45 top-[35%] h-96 w-96 rounded-full bg-indigo-500/8 blur-[130px]" />
+
         <div className="absolute -bottom-45 left-[20%] h-96 w-96 rounded-full bg-violet-500/8 blur-[130px]" />
       </div>
 
       <div className="mx-auto max-w-xl">
-        <header className="mb-6 flex items-center justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-[15px] border border-accent/20 bg-accent font-display text-lg font-bold text-[#0b0d13] shadow-[0_0_35px_var(--accent-glow)]">
-              <span className="relative z-10">
-                S
-              </span>
+        {/* ==================================================== */}
+        {/* HEADER */}
+        {/* ==================================================== */}
 
-              <div className="absolute inset-0 bg-white/20 blur-md" />
-            </div>
+        <motion.header
+          initial={{
+            opacity: 0,
+            y: -10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.4,
+          }}
+          className="mb-6 flex items-center justify-between"
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <Image
+              src="/icons/icon-192.png"
+              alt="Logo SmashBreakPoint"
+              width={44}
+              height={44}
+              priority
+              className="h-11 w-11 shrink-0 rounded-[15px] border border-accent/20 object-cover shadow-[0_0_35px_var(--accent-glow)]"
+            />
 
             <div className="min-w-0">
               <p className="eyebrow">
@@ -868,9 +1261,27 @@ export default function DashboardPage() {
           >
             <ProfileIcon className="h-4.75 w-4.75 text-muted transition-colors group-hover:text-foreground" />
           </Link>
-        </header>
+        </motion.header>
 
-        <div className="mb-5 flex items-center justify-between gap-3">
+        {/* ==================================================== */}
+        {/* MODE + NOUVEAU MATCH */}
+        {/* ==================================================== */}
+
+        <motion.div
+          initial={{
+            opacity: 0,
+            y: 10,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{
+            duration: 0.4,
+            delay: 0.05,
+          }}
+          className="mb-5 flex items-center justify-between gap-3"
+        >
           <SportModeSwitcher />
 
           <Link
@@ -885,562 +1296,963 @@ export default function DashboardPage() {
                 : "Nouveau match"}
             </span>
           </Link>
-        </div>
+        </motion.div>
 
-        {/* RANKING HERO */}
+        {/* ==================================================== */}
+        {/* CONTENU DYNAMIQUE DU MODE */}
+        {/* ==================================================== */}
 
-        <section className="group relative overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl sm:p-6">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/10 blur-[80px] transition-opacity duration-500 group-hover:bg-accent/15"
-          />
+        <AnimatePresence
+          mode="wait"
+          initial={false}
+        >
+          <motion.div
+  key={mode}
+  initial={{
+    opacity: 0,
+    y: 6,
+    filter: "blur(4px)",
+  }}
+  animate={{
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+  }}
+  exit={{
+    opacity: 0,
+    y: -4,
+    filter: "blur(2px)",
+  }}
+  transition={{
+    duration: 0.28,
+    ease: "easeOut",
+  }}
+>
+            {/* ================================================ */}
+            {/* RANKING HERO */}
+            {/* ================================================ */}
 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/15 to-transparent"
-          />
-
-          <div className="relative">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="grid h-8 w-8 place-items-center rounded-xl bg-accent/10 text-accent">
-                  <SportIcon
-                    sport={mode}
-                    className="h-4 w-4"
-                  />
-                </div>
-
-                <div>
-                  <p className="eyebrow">
-                    Classement actuel
-                  </p>
-
-                  <p className="mt-0.5 text-[11px] font-medium text-muted">
-                    {sportLabel}
-                  </p>
-                </div>
-              </div>
-
-              <span className="rounded-full border border-white/7 bg-white/4 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
-                {sportShortLabel}
-              </span>
-            </div>
-
-            <div className="mt-8 flex items-end justify-between gap-5">
-              <div>
-                <div className="flex items-baseline">
-                  <span className="font-display text-[68px] font-bold leading-[0.82] tracking-[-0.06em]">
-                    {currentRank ?? "—"}
-                  </span>
-
-                  <span className="ml-2 text-sm font-medium text-muted">
-                    / {totalRankedPlayers || "—"}
-                  </span>
-                </div>
-
-                <p className="mt-4 text-xs text-muted">
-                  Position dans le classement
-                </p>
-              </div>
-
-              <div className="text-right">
-                <p className="eyebrow">
-                  Points
-                </p>
-
-                <p className="mt-2 font-display text-[32px] font-bold leading-none tracking-tight text-accent">
-                  {points.toLocaleString(
-                    "fr-FR"
-                  )}
-                </p>
-
-                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent/8 px-2 py-1 text-[10px] font-semibold text-accent">
-                  <ArrowUpIcon />
-                  Actuel
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-[10px] font-medium text-muted">
-                  Position
-                </span>
-
-                <span className="font-display text-[10px] font-semibold text-accent">
-                  {Math.round(rankProgress)}%
-                </span>
-              </div>
-
-              <div className="h-1.5 overflow-hidden rounded-full bg-white/6">
-                <div
-                  className="h-full rounded-full bg-accent shadow-[0_0_18px_var(--accent-glow)] transition-all duration-700"
-                  style={{
-                    width: `${rankProgress}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-3 divide-x divide-white/6 rounded-2xl border border-white/5 bg-white/3">
-              <MiniStat
-                value={filteredMatches.length}
-                label="Matchs"
-              />
-
-              <MiniStat
-                value={totalRankedPlayers}
-                label="Joueurs"
-              />
-
-              <MiniStat
-                value={friends.length}
-                label="Amis"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* PERFORMANCE GRID */}
-
-        <section className="mt-3 grid grid-cols-2 gap-3">
-          <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <p className="eyebrow">
-                Forme récente
-              </p>
-
-              <span className="text-[10px] font-semibold text-muted">
-                5
-              </span>
-            </div>
-
-            <div className="mt-7 flex h-12 items-end gap-1.5">
-              {Array.from({
-                length: 5,
-              }).map((_, index) => {
-                const hasMatch =
-                  index <
-                  filteredMatches.length;
-
-                const heights = [
-                  "h-4",
-                  "h-7",
-                  "h-5",
-                  "h-10",
-                  "h-8",
-                ];
-
-                return (
-                  <div
-                    key={index}
-                    className={`flex-1 rounded-md transition-all duration-500 ${
-                      hasMatch
-                        ? `bg-accent shadow-[0_0_14px_var(--accent-glow)] ${heights[index]}`
-                        : "h-3 bg-white/7"
-                    }`}
-                  />
-                );
-              })}
-            </div>
-
-            <p className="mt-4 text-[11px] leading-relaxed text-muted">
-              {filteredMatches.length === 0
-                ? "Pas encore de match"
-                : `${filteredMatches.length} récent${
-                    filteredMatches.length > 1
-                      ? "s"
-                      : ""
-                  }`}
-            </p>
-          </div>
-
-          <Link
-            href="/friends"
-            className="group relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl transition-all duration-300 hover:border-accent/15 hover:bg-white/5 active:scale-[0.99]"
-          >
-            <div className="flex items-center justify-between">
-              <p className="eyebrow">
-                Communauté
-              </p>
-
-              <ArrowRightIcon className="h-3.5 w-3.5 text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-accent" />
-            </div>
-
-            <div className="mt-6 flex items-end justify-between">
-              <div>
-                <p className="font-display text-3xl font-bold leading-none">
-                  {friends.length}
-                </p>
-
-                <p className="mt-2 text-[11px] text-muted">
-                  {friends.length > 1
-                    ? "amis connectés"
-                    : "ami connecté"}
-                </p>
-              </div>
-
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent transition-transform duration-300 group-hover:scale-110">
-                <UsersIcon className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-accent/8 blur-2xl transition-opacity group-hover:bg-accent/15" />
-          </Link>
-        </section>
-
-        {/* HEAD TO HEAD */}
-
-        <section className="relative mt-3 overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 backdrop-blur-2xl sm:p-6">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/7 blur-[70px]"
-          />
-
-          <div className="relative">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="eyebrow">
-                  Face à face
-                </p>
-
-                <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-                  Ton duel
-                </h2>
-              </div>
-
-              <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/7 bg-white/4 text-muted">
-                <UsersIcon className="h-4 w-4" />
-              </div>
-            </div>
-
-            {friends.length === 0 ? (
-              <div className="mt-6 overflow-hidden rounded-[22px] border border-white/6 bg-white/3 p-5">
-                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent">
-                  <UsersIcon className="h-5 w-5" />
-                </div>
-
-                <p className="mt-5 text-sm font-semibold">
-                  Aucun duel disponible
-                </p>
-
-                <p className="mt-1 max-w-sm text-xs leading-5 text-muted">
-                  Ajoute des amis pour comparer
-                  vos points et vos positions.
-                </p>
-
-                <Link
-                  href="/friends"
-                  className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-xs font-bold text-[#0b0d13] shadow-[0_8px_25px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.98]"
-                >
-                  <PlusIcon className="h-3.5 w-3.5" />
-                  Ajouter un ami
-                </Link>
-              </div>
-            ) : (
-              <>
-                <div className="relative mt-6">
-                  <select
-                    value={
-                      effectiveSelectedFriendId
-                    }
-                    onChange={(event) =>
-                      setSelectedFriendId(
-                        event.target.value
-                      )
-                    }
-                    className="min-h-12 w-full appearance-none rounded-2xl border border-white/8 bg-white/4 px-4 pr-11 text-sm font-medium text-foreground outline-none transition-all duration-200 hover:bg-white/6 focus:border-accent/40 focus:bg-white/6"
-                  >
-                    {friends.map((friend) => (
-                      <option
-                        key={friend.id}
-                        value={friend.id}
-                        className="bg-[#151820] text-foreground"
-                      >
-                        {getPlayerName(friend)}
-                      </option>
-                    ))}
-                  </select>
-
-                  <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-                </div>
-
-                {selectedFriend && (
-                  <>
-                    <div className="relative mt-4 grid grid-cols-2 gap-2.5">
-                      <ComparisonCard
-                        label="Toi"
-                        name={displayName}
-                        points={points}
-                        rank={currentRank}
-                        accent
-                      />
-
-                      <ComparisonCard
-                        label="Adversaire"
-                        name={getPlayerName(
-                          selectedFriend
-                        )}
-                        points={
-                          selectedFriendPoints
-                        }
-                        rank={selectedFriendRank}
-                      />
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/6 bg-white/3 px-4 py-3.5">
-                      <div>
-                        <p className="eyebrow">
-                          Différence
-                        </p>
-
-                        <p className="mt-1 text-xs text-muted">
-                          {pointDifference >= 0
-                            ? "Tu as plus de points"
-                            : "Ton ami a plus de points"}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`font-display text-lg font-bold tabular-nums ${
-                          pointDifference >= 0
-                            ? "text-accent"
-                            : "text-danger"
-                        }`}
-                      >
-                        {pointDifference >= 0
-                          ? "+"
-                          : ""}
-                        {pointDifference.toLocaleString(
-                          "fr-FR"
-                        )}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* RECENT MATCHES */}
-
-        <section className="mt-3 overflow-hidden rounded-[30px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="eyebrow">
-                Activité
-              </p>
-
-              <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-                Derniers matchs
-              </h2>
-            </div>
-
-            <Link
-              href="/matches"
-              className="group flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
+            <motion.section
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+              className="group relative overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl sm:p-6"
             >
-              Tout voir
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-accent/10 blur-[80px] transition-opacity duration-500 group-hover:bg-accent/15"
+              />
 
-              <ArrowRightIcon className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/15 to-transparent"
+              />
 
-          {filteredMatches.length === 0 ? (
-            <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-3xl border border-dashed border-white/8 bg-white/2 px-6 text-center">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/7 bg-white/4 text-muted">
-                <SportIcon sport={mode} />
-              </div>
-
-              <p className="mt-4 text-sm font-semibold">
-                Aucun match enregistré
-              </p>
-
-              <p className="mt-1 max-w-xs text-xs leading-5 text-muted">
-                Ton historique apparaîtra ici
-                après ton premier match.
-              </p>
-
-              <Link
-                href={newMatchHref}
-                className="mt-5 flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-xs font-bold text-[#0b0d13] shadow-[0_8px_25px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.97]"
-              >
-                <PlusIcon className="h-3.5 w-3.5" />
-                Ajouter un match
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-5 space-y-2">
-              {filteredMatches
-                .slice(0, 3)
-                .map((match, index) => (
-                  <Link
-                    key={match.id}
-                    href={`/matches/${match.id}`}
-                    className="group flex items-center gap-3 rounded-[20px] border border-white/5 bg-white/3 px-3.5 py-3.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
-                  >
-                    <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/8 text-accent">
+              <div className="relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-8 w-8 place-items-center rounded-xl bg-accent/10 text-accent">
                       <SportIcon
-                        sport={match.sport}
+                        sport={mode}
                         className="h-4 w-4"
                       />
-
-                      {index === 0 && (
-                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
-                      )}
                     </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-sm font-semibold">
-                          {match.format ===
-                          "doubles"
-                            ? "Match en double"
-                            : "Match en simple"}
-                        </p>
-
-                        {index === 0 && (
-                          <span className="shrink-0 text-[8px] font-bold uppercase tracking-[0.12em] text-accent">
-                            Récent
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="mt-1 text-[10px] text-muted">
-                        {new Date(
-                          match.created_at
-                        ).toLocaleDateString(
-                          "fr-FR",
-                          {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          }
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="grid h-8 w-8 place-items-center rounded-full border border-white/6 text-muted transition-all group-hover:border-accent/20 group-hover:text-accent">
-                      <ArrowRightIcon className="h-3.5 w-3.5" />
-                    </div>
-                  </Link>
-                ))}
-            </div>
-          )}
-        </section>
-
-        {/* SPORT RANKINGS */}
-
-        <section className="mt-8">
-          <div className="mb-4 flex items-end justify-between">
-            <div>
-              <p className="eyebrow">
-                Tes classements
-              </p>
-
-              <h2 className="mt-1 font-display text-xl font-semibold">
-                Tous tes sports
-              </h2>
-            </div>
-
-            <span className="text-[10px] text-muted">
-              3 disciplines
-            </span>
-          </div>
-
-          <div className="space-y-2.5">
-            {[
-              {
-                label: "Tennis",
-                value: tennisPoints,
-                sport: "tennis" as const,
-              },
-              {
-                label: "Padel",
-                value: padelPoints,
-                sport: "padel" as const,
-              },
-              {
-                label: "Super Tie-Break",
-                value: superTiebreakPoints,
-                sport: "super_tiebreak" as const,
-              },
-            ].map((item) => {
-              const isActive =
-                item.sport === mode;
-
-              return (
-                <div
-                  key={item.sport}
-                  className={`group relative overflow-hidden rounded-[22px] border p-4 transition-all duration-300 ${
-                    isActive
-                      ? "border-accent/20 bg-accent/6 shadow-[0_10px_35px_-20px_var(--accent-glow)]"
-                      : "border-white/6 bg-white/3 hover:border-white/10 hover:bg-white/4"
-                  }`}
-                >
-                  {isActive && (
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-y-0 left-0 w-0.5 bg-accent shadow-[0_0_15px_var(--accent)]"
-                    />
-                  )}
-
-                  <div className="relative flex items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div
-                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
-                          isActive
-                            ? "bg-accent/10 text-accent"
-                            : "bg-white/4 text-muted"
-                        }`}
-                      >
-                        <SportIcon
-                          sport={item.sport}
-                          className="h-4 w-4"
-                        />
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">
-                          {item.label}
-                        </p>
-
-                        <p className="mt-0.5 text-[10px] text-muted">
-                          {isActive
-                            ? "Sport actif"
-                            : "Classement disponible"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <p
-                        className={`font-display text-xl font-bold tabular-nums ${
-                          isActive
-                            ? "text-accent"
-                            : "text-foreground"
-                        }`}
-                      >
-                        {item.value.toLocaleString(
-                          "fr-FR"
-                        )}
+                    <div>
+                      <p className="eyebrow">
+                        Classement actuel
                       </p>
 
-                      <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-muted">
-                        points
+                      <p className="mt-0.5 text-[11px] font-medium text-muted">
+                        {sportLabel}
                       </p>
                     </div>
                   </div>
+
+                  <span className="rounded-full border border-white/7 bg-white/4 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+                    {sportShortLabel}
+                  </span>
                 </div>
-              );
-            })}
-          </div>
-        </section>
+
+                <div className="mt-8 flex items-end justify-between gap-5">
+                  <div>
+                    <div className="flex items-baseline">
+                      <motion.span
+                        key={`rank-${mode}-${currentRank}`}
+                        initial={{
+  opacity: 0,
+  y: 10,
+  scale: 0.94,
+}}
+animate={{
+  opacity: 1,
+  y: 0,
+  scale: 1,
+}}
+transition={{
+  duration: 0.35,
+  ease: "easeOut",
+}}
+                        className="font-display text-[68px] font-bold leading-[0.82] tracking-[-0.06em]"
+                      >
+                        {currentRank ?? "—"}
+                      </motion.span>
+
+                      <span className="ml-2 text-sm font-medium text-muted">
+                        / {totalRankedPlayers || "—"}
+                      </span>
+                    </div>
+
+                    <p className="mt-4 text-xs text-muted">
+  {currentRank === 1 ? (
+    "Tu occupes la première place"
+  ) : nextRankPlayer ? (
+    <>
+      Encore{" "}
+      <span className="font-semibold text-accent">
+        {pointsToNextRank.toLocaleString("fr-FR")} pts
+      </span>{" "}
+      pour atteindre le{" "}
+      <span className="font-semibold text-white">
+        #{currentRank ? currentRank - 1 : "—"}
+      </span>
+    </>
+  ) : userHistory.length === 0 ? (
+    "Ton classement apparaîtra après ton premier match"
+  ) : (
+    "Position dans le classement"
+  )}
+</p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="eyebrow">
+                      Points
+                    </p>
+
+                    <motion.p
+  key={points}
+  initial={{ opacity: 0.7, scale: 0.96 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{
+    duration: 0.3,
+    ease: "easeOut",
+  }}
+  className="mt-2 font-display text-[32px] font-bold leading-none tracking-tight text-accent"
+>
+  <AnimatedNumber value={points} />
+</motion.p>
+
+                    <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent/8 px-2 py-1 text-[10px] font-semibold text-accent">
+                      <ArrowUpIcon />
+                      Actuel
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progression vers le prochain rang */}
+                <div className="mt-8">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-[10px] font-medium text-muted">
+                      {currentRank === 1
+                        ? "Première place"
+                        : nextRankPlayer
+                          ? `Vers le #${
+                              currentRank
+                                ? currentRank - 1
+                                : "—"
+                            }`
+                          : "Progression"}
+                    </span>
+
+                    <span className="font-display text-[10px] font-semibold text-accent">
+                      {Math.round(
+                        rankProgress
+                      )}
+                      %
+                    </span>
+                  </div>
+
+                  <div className="relative h-1.5 overflow-hidden rounded-full bg-white/6">
+  <motion.div
+    initial={{ width: 0 }}
+    animate={{ width: `${rankProgress}%` }}
+    transition={{
+      duration: 0.8,
+      ease: "easeOut",
+    }}
+    className="relative h-full"
+  >
+    {/* Barre */}
+    <div className="absolute inset-0 rounded-full bg-accent" />
+
+    {/* Point de progression */}
+    <motion.div
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{
+        delay: 0.55,
+        type: "spring",
+        stiffness: 400,
+        damping: 20,
+      }}
+      className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent"
+    />
+  </motion.div>
+</div>
+
+                  {nextRankPlayer ? (
+                    <div className="mt-2 flex items-center justify-between text-[9px] text-muted">
+                      <span>
+                        {pointsBelow.toLocaleString(
+                          "fr-FR"
+                        )}{" "}
+                        pts
+                      </span>
+
+                      <span className="font-semibold text-accent">
+                        {nextRankPoints.toLocaleString(
+                          "fr-FR"
+                        )}{" "}
+                        pts
+                      </span>
+                    </div>
+                  ) : currentRank === 1 ? (
+                    <p className="mt-2 text-[9px] text-muted">
+                      Tu es actuellement en tête du classement.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 divide-x divide-white/6 rounded-2xl border border-white/5 bg-white/3">
+                  <MiniStat
+                    value={
+                      totalMatchesForMode
+                    }
+                    label="Matchs"
+                  />
+
+                  <MiniStat
+                    value={
+                      totalRankedPlayers
+                    }
+                    label="Joueurs"
+                  />
+
+                  <MiniStat
+                    value={friends.length}
+                    label="Amis"
+                  />
+                </div>
+              </div>
+            </motion.section>
+
+            {/* ================================================ */}
+            {/* WEEKLY STATS */}
+            {/* ================================================ */}
+
+            <motion.section
+              variants={sectionVariantsDelayed(
+                0.05
+              )}
+              initial="hidden"
+              animate="visible"
+              className="mt-3 grid grid-cols-3 gap-2.5"
+            >
+              <WeeklyStat
+                label="Cette semaine"
+                value={
+                  weeklyPoints > 0
+                    ? `+${weeklyPoints}`
+                    : weeklyPoints.toString()
+                }
+                positive={
+                  weeklyPoints > 0
+                }
+                negative={
+                  weeklyPoints < 0
+                }
+              />
+
+              <WeeklyStat
+                label="Matchs"
+                value={weeklyMatches}
+              />
+
+              <WeeklyStat
+                label="Évolution"
+                value={
+                  totalProgression > 0
+                    ? `+${totalProgression}`
+                    : totalProgression.toString()
+                }
+                positive={
+                  totalProgression > 0
+                }
+                negative={
+                  totalProgression < 0
+                }
+              />
+            </motion.section>
+
+            {/* ================================================ */}
+            {/* PROGRESSION */}
+            {/* ================================================ */}
+
+            <motion.div
+              variants={sectionVariantsDelayed(
+                0.1
+              )}
+              initial="hidden"
+              animate="visible"
+              className="mt-3"
+            >
+              <EloChart
+                points={progressionPoints}
+                modeLabel={sportLabel}
+                weeklyChange={weeklyPoints}
+              />
+            </motion.div>
+
+            {/* ================================================ */}
+            {/* PERFORMANCE GRID */}
+            {/* ================================================ */}
+
+            <motion.section
+              variants={sectionVariantsDelayed(
+                0.12
+              )}
+              initial="hidden"
+              animate="visible"
+              className="mt-3 grid grid-cols-2 gap-3"
+            >
+              {/* FORME RÉCENTE */}
+              <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl">
+                <div className="flex items-center justify-between">
+                  <p className="eyebrow">
+                    Forme récente
+                  </p>
+
+                  <span className="text-[10px] font-semibold text-muted">
+                    {recentForm.length}/5
+                  </span>
+                </div>
+
+                <div className="mt-7 flex h-12 items-end gap-1.5">
+                  {Array.from({
+                    length: 5,
+                  }).map((_, index) => {
+                    const item =
+                      recentForm[index];
+
+                    /*
+                     * Match inexistant :
+                     * barre neutre.
+                     */
+                    if (!item) {
+                      return (
+                        <motion.div
+                          key={`empty-${index}`}
+                          initial={{
+                            scaleY: 0,
+                            transformOrigin:
+                              "bottom",
+                          }}
+                          animate={{
+                            scaleY: 1,
+                          }}
+                          transition={{
+                            duration: 0.4,
+                            delay:
+                              index * 0.06,
+                          }}
+                          className="h-3 flex-1 rounded-md bg-white/7"
+                        />
+                      );
+                    }
+
+                    const change =
+                      item.points_change;
+
+                    /*
+                     * Hauteur proportionnelle à
+                     * l'amplitude réelle du changement.
+                     *
+                     * Minimum visuel de 20%.
+                     */
+                    const intensity =
+                      Math.abs(change) /
+                      recentFormMaxChange;
+
+                    const height =
+                      20 +
+                      intensity * 80;
+
+                    const isPositive =
+                      change >= 0;
+
+                    return (
+                      <motion.div
+                        key={item.id}
+                        title={`${
+                          change >= 0
+                            ? "+"
+                            : ""
+                        }${change} pts`}
+                        initial={{
+                          height: 0,
+                        }}
+                        animate={{
+                          height: `${height}%`,
+                        }}
+                        transition={{
+                          duration: 0.55,
+                          delay:
+                            index * 0.07,
+                          ease: "easeOut",
+                        }}
+                        className={`flex-1 rounded-md shadow-[0_0_14px_var(--accent-glow)] ${
+                          isPositive
+                            ? "bg-accent"
+                            : "bg-danger"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <p className="text-[11px] leading-relaxed text-muted">
+                    {recentForm.length === 0
+                      ? "Pas encore de match"
+                      : recentForm.length ===
+                          1
+                        ? "1 dernier match"
+                        : `${recentForm.length} derniers matchs`}
+                  </p>
+
+                  {recentForm.length >
+                    0 && (
+                    <span
+                      className={`shrink-0 text-[10px] font-bold tabular-nums ${
+                        recentFormPoints > 0
+                          ? "text-accent"
+                          : recentFormPoints <
+                              0
+                            ? "text-danger"
+                            : "text-muted"
+                      }`}
+                    >
+                      {recentFormPoints >
+                      0
+                        ? "+"
+                        : ""}
+                      {recentFormPoints} pts
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* AMIS */}
+              <Link
+                href="/friends"
+                className="group relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl transition-all duration-300 hover:border-accent/15 hover:bg-white/5 active:scale-[0.99]"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="eyebrow">
+                    Tes amis
+                  </p>
+
+                  <ArrowRightIcon className="h-3.5 w-3.5 text-muted transition-transform duration-200 group-hover:translate-x-1 group-hover:text-accent" />
+                </div>
+
+                <div className="mt-6 flex items-end justify-between">
+                  <div>
+                    <p className="font-display text-3xl font-bold leading-none">
+                      {friends.length}
+                    </p>
+
+                    <p className="mt-2 text-[11px] text-muted">
+                      {friends.length > 1
+                        ? "amis connectés"
+                        : "ami connecté"}
+                    </p>
+                  </div>
+
+                  <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent transition-transform duration-300 group-hover:scale-110">
+                    <UsersIcon className="h-5 w-5" />
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-8 -right-8 h-24 w-24 rounded-full bg-accent/8 blur-2xl transition-opacity group-hover:bg-accent/15" />
+              </Link>
+            </motion.section>
+
+            {/* ================================================ */}
+{/* HEAD TO HEAD */}
+{/* ================================================ */}
+
+<motion.section
+  variants={sectionVariantsDelayed(0.15)}
+  initial="hidden"
+  animate="visible"
+  className="relative mt-3 overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 backdrop-blur-2xl sm:p-6"
+>
+  <div
+    aria-hidden="true"
+    className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/7 blur-[70px]"
+  />
+
+  <div className="relative">
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="eyebrow">
+          Face à face
+        </p>
+
+        <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
+          Ton duel
+        </h2>
+      </div>
+
+      <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/7 bg-white/4 text-muted">
+        <UsersIcon className="h-4 w-4" />
+      </div>
+    </div>
+
+    {friends.length === 0 ? (
+      <div className="mt-6 overflow-hidden rounded-[22px] border border-white/6 bg-white/3 p-5">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent">
+          <UsersIcon className="h-5 w-5" />
+        </div>
+
+        <p className="mt-5 text-sm font-semibold">
+          Aucun duel disponible
+        </p>
+
+        <p className="mt-1 max-w-sm text-xs leading-5 text-muted">
+          Ajoute des amis pour comparer vos points et vos positions.
+        </p>
+
+        <Link
+          href="/friends"
+          className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-xs font-bold text-[#0b0d13] shadow-[0_8px_25px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.98]"
+        >
+          <PlusIcon className="h-3.5 w-3.5" />
+          Ajouter un ami
+        </Link>
+      </div>
+    ) : (
+      <>
+        <div className="relative mt-6">
+          <select
+            value={effectiveSelectedFriendId}
+            onChange={(event) =>
+              setSelectedFriendId(event.target.value)
+            }
+            className="min-h-12 w-full appearance-none rounded-2xl border border-white/8 bg-white/4 px-4 pr-11 text-sm font-medium text-foreground outline-none transition-all duration-200 hover:bg-white/6 focus:border-accent/40 focus:bg-white/6"
+          >
+            {friends.map((friend) => (
+              <option
+                key={friend.id}
+                value={friend.id}
+                className="bg-[#151820] text-foreground"
+              >
+                {getPlayerName(friend)}
+              </option>
+            ))}
+          </select>
+
+          <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+        </div>
+
+        <AnimatePresence mode="wait">
+          {selectedFriend && (
+            <motion.div
+              key={selectedFriend.id}
+              initial={{
+                opacity: 0,
+                y: 6,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              exit={{
+                opacity: 0,
+                y: -4,
+              }}
+              transition={{
+                duration: 0.22,
+                ease: "easeOut",
+              }}
+            >
+              <div className="relative mt-4 grid grid-cols-2 gap-2.5">
+                <ComparisonCard
+                  label="Toi"
+                  name={displayName}
+                  points={points}
+                  rank={currentRank}
+                  accent
+                />
+
+                <ComparisonCard
+                  label="Adversaire"
+                  name={getPlayerName(selectedFriend)}
+                  points={selectedFriendPoints}
+                  rank={selectedFriendRank}
+                />
+              </div>
+
+              <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/6 bg-white/3 px-4 py-3.5">
+                <div>
+                  <p className="eyebrow">
+                    Différence
+                  </p>
+
+                  <p className="mt-1 text-xs text-muted">
+                    {pointDifference >= 0
+                      ? "Tu as plus de points"
+                      : "Ton ami a plus de points"}
+                  </p>
+                </div>
+
+                <span
+                  className={`font-display text-lg font-bold tabular-nums ${
+                    pointDifference >= 0
+                      ? "text-accent"
+                      : "text-danger"
+                  }`}
+                >
+                  {pointDifference >= 0 ? "+" : ""}
+                  {pointDifference.toLocaleString("fr-FR")}
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
+    )}
+  </div>
+</motion.section>
+
+            {/* ================================================ */}
+            {/* RECENT MATCHES */}
+            {/* ================================================ */}
+
+            <motion.section
+              variants={sectionVariantsDelayed(
+                0.18
+              )}
+              initial="hidden"
+              animate="visible"
+              className="mt-3 overflow-hidden rounded-[30px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl sm:p-6"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="eyebrow">
+                    Activité
+                  </p>
+
+                  <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
+                    Derniers matchs
+                  </h2>
+                </div>
+
+                <Link
+                  href="/matches"
+                  className="group flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
+                >
+                  Tout voir
+
+                  <ArrowRightIcon className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              {filteredMatches.length ===
+              0 ? (
+                <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-3xl border border-dashed border-white/8 bg-white/2 px-6 text-center">
+                  <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/7 bg-white/4 text-muted">
+                    <SportIcon sport={mode} />
+                  </div>
+
+                  <p className="mt-4 text-sm font-semibold">
+                    Aucun match enregistré
+                  </p>
+
+                  <p className="mt-1 max-w-xs text-xs leading-5 text-muted">
+                    Ton historique apparaîtra
+                    ici après ton premier
+                    match.
+                  </p>
+
+                  <motion.div
+  whileHover={{
+    y: -1,
+    scale: 1.015,
+  }}
+  whileTap={{
+    scale: 0.96,
+  }}
+  transition={{
+    type: "spring",
+    stiffness: 400,
+    damping: 25,
+  }}
+>
+  <Link
+  href={newMatchHref}
+  className="group flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97]"
+>
+    <motion.span
+      whileHover={{
+        rotate: 45,
+      }}
+      transition={{
+        duration: 0.2,
+        ease: "easeOut",
+      }}
+    >
+      <PlusIcon />
+    </motion.span>
+
+    Nouveau match
+  </Link>
+</motion.div>
+                </div>
+              ) : (
+                <div className="mt-5 space-y-2">
+                  {filteredMatches
+                    .slice(0, 3)
+                    .map(
+                      (
+                        match,
+                        index
+                      ) => (
+                        <motion.div
+  key={match.id}
+  initial={{
+    opacity: 0,
+    x: -10,
+  }}
+  animate={{
+    opacity: 1,
+    x: 0,
+  }}
+  transition={{
+    duration: 0.3,
+    delay: index * 0.06,
+  }}
+  whileHover={{
+    y: -1,
+  }}
+  whileTap={{
+    scale: 0.985,
+  }}
+>
+                          <Link
+                            href={`/matches/${match.id}`}
+                            className="group flex items-center gap-3 rounded-[20px] border border-white/5 bg-white/3 px-3.5 py-3.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
+                          >
+                            <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/8 text-accent">
+                              <SportIcon
+                                sport={
+                                  match.sport
+                                }
+                                className="h-4 w-4"
+                              />
+
+                              {index === 0 && (
+                                <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-semibold">
+                                  {match.format ===
+                                  "doubles"
+                                    ? "Match en double"
+                                    : "Match en simple"}
+                                </p>
+
+                                {index ===
+                                  0 && (
+                                  <span className="shrink-0 text-[8px] font-bold uppercase tracking-[0.12em] text-accent">
+                                    Récent
+                                  </span>
+                                )}
+                              </div>
+
+                              <p className="mt-1 text-[10px] text-muted">
+                                {new Date(
+                                  match.created_at
+                                ).toLocaleDateString(
+                                  "fr-FR",
+                                  {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  }
+                                )}
+                              </p>
+                            </div>
+
+                            <div className="grid h-8 w-8 place-items-center rounded-full border border-white/6 text-muted transition-all group-hover:border-accent/20 group-hover:text-accent">
+                              <ArrowRightIcon className="h-3.5 w-3.5" />
+                            </div>
+                          </Link>
+                        </motion.div>
+                      )
+                    )}
+                </div>
+              )}
+            </motion.section>
+
+            {/* ================================================ */}
+            {/* SPORT RANKINGS */}
+            {/* ================================================ */}
+
+            <motion.section
+              variants={sectionVariantsDelayed(
+                0.21
+              )}
+              initial="hidden"
+              animate="visible"
+              className="mt-8"
+            >
+              <div className="mb-4 flex items-end justify-between">
+                <div>
+                  <p className="eyebrow">
+                    Tes classements
+                  </p>
+
+                  <h2 className="mt-1 font-display text-xl font-semibold">
+                    Tous tes sports
+                  </h2>
+                </div>
+
+                <span className="text-[10px] text-muted">
+                  3 disciplines
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {[
+                  {
+                    label: "Tennis",
+                    value: tennisPoints,
+                    sport: "tennis" as const,
+                  },
+                  {
+                    label: "Padel",
+                    value: padelPoints,
+                    sport: "padel" as const,
+                  },
+                  {
+                    label: "Super Tie-Break",
+                    value:
+                      superTiebreakPoints,
+                    sport:
+                      "super_tiebreak" as const,
+                  },
+                ].map((item) => {
+                  const isActive =
+                    item.sport === mode;
+
+                  return (
+                    <motion.div
+  key={item.sport}
+  layout
+  animate={{
+    scale: isActive ? 1.01 : 1,
+  }}
+  whileHover={{
+    y: -1,
+  }}
+  transition={{
+    type: "spring",
+    stiffness: 400,
+    damping: 28,
+  }}
+  className={`group relative overflow-hidden rounded-[22px] border p-4 transition-all duration-300 ${
+    isActive
+      ? "border-accent/20 bg-accent/6 shadow-[0_10px_35px_-20px_var(--accent-glow)]"
+      : "border-white/6 bg-white/3 hover:border-white/10 hover:bg-white/4"
+  }`}
+>
+                      {isActive && (
+                        <div
+                          aria-hidden="true"
+                          className="absolute inset-y-0 left-0 w-0.5 bg-accent shadow-[0_0_15px_var(--accent)]"
+                        />
+                      )}
+
+                      <div className="relative flex items-center justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div
+                            className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
+                              isActive
+                                ? "bg-accent/10 text-accent"
+                                : "bg-white/4 text-muted"
+                            }`}
+                          >
+                            <SportIcon
+                              sport={
+                                item.sport
+                              }
+                              className="h-4 w-4"
+                            />
+                          </div>
+
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">
+                              {item.label}
+                            </p>
+
+                            <p className="mt-0.5 text-[10px] text-muted">
+                              {isActive
+                                ? "Sport actif"
+                                : "Classement disponible"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <p
+                            className={`font-display text-xl font-bold tabular-nums ${
+                              isActive
+                                ? "text-accent"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {item.value.toLocaleString(
+                              "fr-FR"
+                            )}
+                          </p>
+
+                          <p className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-muted">
+                            points
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.section>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </main>
   );
 }
+
+/*
+ * ============================================================
+ * SMALL COMPONENTS
+ * ============================================================
+ */
 
 function MiniStat({
   value,
@@ -1449,10 +2261,22 @@ function MiniStat({
   value: string | number;
   label: string;
 }) {
+  const numericValue =
+    typeof value === "number"
+      ? value
+      : Number(value);
+
   return (
     <div className="px-3 py-3.5 text-center">
       <p className="font-display text-lg font-bold leading-none tabular-nums">
-        {value}
+        {Number.isFinite(numericValue) ? (
+          <AnimatedNumber
+            value={numericValue}
+            duration={0.5}
+          />
+        ) : (
+          value
+        )}
       </p>
 
       <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted">
@@ -1461,6 +2285,101 @@ function MiniStat({
     </div>
   );
 }
+
+function WeeklyStat({
+  label,
+  value,
+  positive = false,
+  negative = false,
+}: {
+  label: string;
+  value: string | number;
+  positive?: boolean;
+  negative?: boolean;
+}) {
+  return (
+    <div className="rounded-[22px] border border-white/7 bg-white/3.5 px-3 py-4 backdrop-blur-xl">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted">
+        {label}
+      </p>
+
+      <p
+        className={`mt-2 font-display text-xl font-bold tabular-nums ${
+          positive
+            ? "text-success"
+            : negative
+              ? "text-danger"
+              : "text-foreground"
+        }`}
+      >
+        {typeof value === "number" ? (
+          <AnimatedNumber
+            value={value}
+            duration={0.5}
+          />
+        ) : (
+          value
+        )}
+      </p>
+    </div>
+  );
+}
+
+
+
+function AnimatedNumber({
+  value,
+  duration = 0.6,
+}: {
+  value: number;
+  duration?: number;
+}) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const previousValue = useRef(value);
+
+  useEffect(() => {
+    const startValue = previousValue.current;
+    const difference = value - startValue;
+
+    if (difference === 0) return;
+
+    const startTime = performance.now();
+    let frameId: number;
+
+    const animate = (currentTime: number) => {
+      const progress = Math.min(
+        (currentTime - startTime) / (duration * 1000),
+        1
+      );
+
+      const easedProgress =
+        1 - Math.pow(1 - progress, 3);
+
+      setDisplayValue(
+        Math.round(
+          startValue + difference * easedProgress
+        )
+      );
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(animate);
+      } else {
+        previousValue.current = value;
+      }
+    };
+
+    frameId = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(frameId);
+  }, [value, duration]);
+
+  return (
+    <span>
+      {displayValue.toLocaleString("fr-FR")}
+    </span>
+  );
+}
+
 
 function ComparisonCard({
   label,
