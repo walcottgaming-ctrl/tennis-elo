@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
-import MatchReactions from "@/app/components/MatchReactions";
+import MatchReactions from "./_components/MatchReactions";
 import SportIcon from "@/app/components/SportIcon";
 
 type Profile = {

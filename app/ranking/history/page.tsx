@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/src/supabase/client";
-import RankingProgression from "@/app/components/RankingProgression";
+import RankingProgression from "./_components/RankingProgression";
 import SportIcon from "@/app/components/SportIcon";
 import {
   useSportMode,

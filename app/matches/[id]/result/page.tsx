@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/src/supabase/client";
 import SportIcon from "@/app/components/SportIcon";
-import DeleteMatchButton from "@/app/components/DeleteMatchButton";
+import DeleteMatchButton from "./_components/DeleteMatchButton";
 
 type Sport = "tennis" | "padel";
 type MatchFormat = "singles" | "doubles";
