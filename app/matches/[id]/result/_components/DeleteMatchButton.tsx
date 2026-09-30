@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { createClient } from "@/src/supabase/client";
 
 type DeleteMatchButtonProps = {
@@ -53,25 +54,177 @@ export default function DeleteMatchButton({
     setDeleting(true);
     setMessage("");
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    const { error } = await supabase.rpc(
-      "delete_match",
-      {
-        p_match_id: matchId,
-      }
-    );
+      /*
+       * ========================================================
+       * 1. APPEL SUPPRESSION
+       * ========================================================
+       */
 
-    if (error) {
-      setMessage(
-        `Impossible de supprimer le match : ${error.message}`
+      const { data, error } = await supabase.rpc(
+        "delete_match",
+        {
+          p_match_id: matchId,
+        }
       );
-      setDeleting(false);
-      return;
-    }
 
-    router.push("/matches");
-    router.refresh();
+      if (error) {
+        console.error(
+          "Erreur Supabase lors de la suppression :",
+          error
+        );
+
+        const errorMessage = [
+          error.message
+            ? `Message : ${error.message}`
+            : "",
+          error.code
+            ? `Code : ${error.code}`
+            : "",
+          error.details
+            ? `Détails : ${error.details}`
+            : "",
+          error.hint
+            ? `Indice : ${error.hint}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        setMessage(
+          `Impossible de supprimer le match.\n\n${errorMessage}`
+        );
+
+        setDeleting(false);
+        return;
+      }
+
+      /*
+       * ========================================================
+       * 2. VÉRIFICATION DE LA RÉPONSE DU RPC
+       * ========================================================
+       */
+
+      if (
+        data &&
+        typeof data === "object" &&
+        "success" in data &&
+        data.success === false
+      ) {
+        const rpcMessage =
+          "message" in data &&
+          typeof data.message === "string"
+            ? data.message
+            : "La suppression du match n'a pas été confirmée.";
+
+        throw new Error(rpcMessage);
+      }
+
+      /*
+       * ========================================================
+       * 3. VÉRIFICATION DIRECTE EN BASE
+       * ========================================================
+       */
+
+      const {
+        data: remainingMatch,
+        error: verifyError,
+      } = await supabase
+        .from("matches")
+        .select("id")
+        .eq("id", matchId)
+        .maybeSingle();
+
+      if (verifyError) {
+        console.error(
+          "Erreur lors de la vérification de suppression :",
+          verifyError
+        );
+
+        const verifyMessage = [
+          verifyError.message
+            ? `Message : ${verifyError.message}`
+            : "",
+          verifyError.code
+            ? `Code : ${verifyError.code}`
+            : "",
+          verifyError.details
+            ? `Détails : ${verifyError.details}`
+            : "",
+          verifyError.hint
+            ? `Indice : ${verifyError.hint}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        throw new Error(
+          `Suppression effectuée mais vérification impossible.\n\n${verifyMessage}`
+        );
+      }
+
+      if (remainingMatch) {
+        throw new Error(
+          "La suppression n'a pas été confirmée par la base de données : le match existe toujours."
+        );
+      }
+
+      /*
+       * ========================================================
+       * 4. SUCCÈS
+       * ========================================================
+       */
+
+      router.replace("/matches");
+      router.refresh();
+    } catch (error: unknown) {
+      console.error(
+        "Erreur suppression match :",
+        error
+      );
+
+      if (
+        error &&
+        typeof error === "object" &&
+        "message" in error
+      ) {
+        const caughtError = error as {
+          message?: string;
+          code?: string;
+          details?: string;
+          hint?: string;
+        };
+
+        const errorMessage = [
+          caughtError.message
+            ? `Message : ${caughtError.message}`
+            : "",
+          caughtError.code
+            ? `Code : ${caughtError.code}`
+            : "",
+          caughtError.details
+            ? `Détails : ${caughtError.details}`
+            : "",
+          caughtError.hint
+            ? `Indice : ${caughtError.hint}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        setMessage(
+          `Impossible de supprimer le match.\n\n${errorMessage}`
+        );
+      } else {
+        setMessage(
+          "Impossible de supprimer le match : erreur inconnue."
+        );
+      }
+
+      setDeleting(false);
+    }
   }
 
   return (
@@ -95,7 +248,7 @@ export default function DeleteMatchButton({
 
       {message && (
         <div className="mt-3 rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3">
-          <p className="text-sm leading-6 text-danger">
+          <p className="whitespace-pre-line text-sm leading-6 text-danger">
             {message}
           </p>
         </div>

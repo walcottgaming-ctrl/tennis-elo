@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/src/supabase/client";
 import SportIcon from "@/app/components/SportIcon";
+import SportModeSwitcher from "@/app/components/SportModeSwitcher";
 import { useSportMode } from "@/app/context/SportModeContext";
 
 type Sport = "tennis" | "padel" | "super_tiebreak";
@@ -386,6 +387,10 @@ function DivisionBadge({
 export default function RankingPage() {
   const { mode } = useSportMode();
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(
+    null
+  );
+
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>([]);
@@ -414,6 +419,8 @@ export default function RankingPage() {
         setLoading(false);
         return;
       }
+
+      setCurrentUserId(user.id);
 
       const { data: playersData, error: playersError } =
         await supabase
@@ -836,6 +843,8 @@ export default function RankingPage() {
             <div className="h-12 w-12 animate-pulse rounded-full bg-white/8" />
           </div>
 
+          <div className="mb-5 h-10 w-56 animate-pulse rounded-full bg-white/5" />
+
           <div className="space-y-4">
             <div className="h-48 animate-pulse rounded-[28px] bg-white/5" />
             <div className="h-32 animate-pulse rounded-[28px] bg-white/5" />
@@ -898,6 +907,12 @@ export default function RankingPage() {
       ) ?? null
     : null;
 
+  /*
+   * LEADER
+   *
+   * Ces données restent liées au meilleur joueur
+   * du classement.
+   */
   const topPoints = topPlayer
     ? getPlayerPoints(
         pointsByPlayerAndSport,
@@ -908,6 +923,30 @@ export default function RankingPage() {
 
   const topDivision = topPlayer
     ? getDivision(topPoints)
+    : null;
+
+  /*
+   * UTILISATEUR CONNECTÉ
+   *
+   * Ces données sont utilisées uniquement pour
+   * "Progression de division".
+   */
+  const currentUserPlayer = currentUserId
+    ? players.find(
+        (player) => player.id === currentUserId
+      ) ?? null
+    : null;
+
+  const currentUserPoints = currentUserId
+    ? getPlayerPoints(
+        pointsByPlayerAndSport,
+        currentUserId,
+        mode
+      ) ?? 1000
+    : 0;
+
+  const currentUserDivision = currentUserPlayer
+    ? getDivision(currentUserPoints)
     : null;
 
   function getDivisionProgress(
@@ -934,13 +973,16 @@ export default function RankingPage() {
     return null;
   }
 
-  const topNextDivision = topPlayer
-    ? getNextDivision(topPoints)
+  const currentUserNextDivision = currentUserPlayer
+    ? getNextDivision(currentUserPoints)
     : null;
 
-  const pointsToNextDivision =
-    topNextDivision !== null
-      ? Math.max(0, topNextDivision - topPoints)
+  const currentUserPointsToNextDivision =
+    currentUserNextDivision !== null
+      ? Math.max(
+          0,
+          currentUserNextDivision - currentUserPoints
+        )
       : 0;
 
   return (
@@ -986,6 +1028,10 @@ export default function RankingPage() {
             />
           </div>
         </header>
+
+        <div className="-mt-1">
+          <SportModeSwitcher />
+        </div>
 
         {message && (
           <div className="flex items-start gap-3 rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3.5 text-sm text-danger">
@@ -1084,8 +1130,11 @@ export default function RankingPage() {
                   </span>
 
                   <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-accent">
-                    {topNextDivision !== null
-                      ? `${pointsToNextDivision} pts restantes`
+                    {getNextDivision(topPoints) !== null
+                      ? `${
+                          getNextDivision(topPoints)! -
+                          topPoints
+                        } pts restantes`
                       : "Niveau maximal"}
                   </span>
                 </div>
@@ -1102,6 +1151,53 @@ export default function RankingPage() {
                   />
                 </div>
               </div>
+
+              {currentChampionPlayer &&
+                currentChampion &&
+                currentChampionPlayer.id === topPlayer.id && (
+                  <div className="mt-5 grid grid-cols-2 gap-2.5">
+                    <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
+                      <p className="eyebrow">
+                        Règne
+                      </p>
+
+                      <p className="mt-1.5 font-display text-xl font-bold">
+                        {currentChampion.matches_as_champion}
+                      </p>
+
+                      <p className="mt-0.5 text-[11px] text-muted">
+                        matchs défendus
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
+                      <p className="eyebrow">
+                        Depuis
+                      </p>
+
+                      <p className="mt-1.5 font-display text-xl font-bold">
+                        {new Date(
+                          currentChampion.started_at
+                        ).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                          }
+                        )}
+                      </p>
+
+                      <p className="mt-0.5 text-[11px] text-muted">
+                        début du règne
+                      </p>
+                    </div>
+
+                    <div className="col-span-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
+                      <div className="h-1 w-1 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                      Champion en titre
+                    </div>
+                  </div>
+                )}
             </div>
           </section>
         ) : (
@@ -1217,214 +1313,6 @@ export default function RankingPage() {
             </div>
           ) : null}
         </section>
-
-        <section className="glass relative overflow-hidden rounded-[28px] p-5">
-          <div
-            className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-accent/10 blur-3xl"
-            aria-hidden="true"
-          />
-
-          <div className="relative">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="eyebrow">
-                  Champion actuel
-                </p>
-
-                <h2 className="mt-2 font-display text-xl font-bold tracking-tight">
-                  {currentChampionPlayer
-                    ? getPlayerName(
-                        currentChampionPlayer
-                      )
-                    : "Aucun champion"}
-                </h2>
-
-                {currentChampionPlayer && (
-                  <p className="mt-1 text-xs text-muted">
-                    {sportLabel}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
-                <CrownIcon className="h-5 w-5" />
-              </div>
-            </div>
-
-            {currentChampionPlayer &&
-            currentChampion ? (
-              <>
-                <div className="mt-5 grid grid-cols-2 gap-2.5">
-                  <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
-                    <p className="eyebrow">
-                      Règne
-                    </p>
-
-                    <p className="mt-1.5 font-display text-xl font-bold">
-                      {
-                        currentChampion.matches_as_champion
-                      }
-                    </p>
-
-                    <p className="mt-0.5 text-[11px] text-muted">
-                      matchs défendus
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
-                    <p className="eyebrow">
-                      Depuis
-                    </p>
-
-                    <p className="mt-1.5 font-display text-xl font-bold">
-                      {new Date(
-                        currentChampion.started_at
-                      ).toLocaleDateString(
-                        "fr-FR",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                        }
-                      )}
-                    </p>
-
-                    <p className="mt-0.5 text-[11px] text-muted">
-                      début du règne
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
-                  <div className="h-1 w-1 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
-                  Champion en titre
-                </div>
-              </>
-            ) : (
-              <p className="mt-4 max-w-sm text-sm leading-5 text-muted">
-                Le premier champion sera désigné après les prochains matchs.
-              </p>
-            )}
-          </div>
-        </section>
-
-        {topDivision && topPlayer && (
-          <section className="glass relative overflow-hidden rounded-[28px] p-5">
-            <div className="flex items-start justify-between gap-5">
-              <div className="min-w-0">
-                <p className="eyebrow">
-                  Progression de division
-                </p>
-
-                <div className="mt-2.5">
-                  <DivisionBadge
-                    division={topDivision}
-                  />
-                </div>
-
-                <p className="mt-2 max-w-xs text-sm leading-5 text-muted">
-                  {topDivision.description}
-                </p>
-              </div>
-
-              <div className="shrink-0 text-right">
-                <p className="eyebrow">
-                  Points
-                </p>
-
-                <p className="mt-1 font-display text-3xl font-bold tracking-tight">
-                  {topPoints}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
-                <span>
-                  {topDivision.name}
-                </span>
-
-                <span className="text-accent">
-                  {topDivision.max === null
-                    ? "Élite"
-                    : `${Math.round(
-                        getDivisionProgress(
-                          topPoints,
-                          topDivision
-                        )
-                      )}%`}
-                </span>
-              </div>
-
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
-                <div
-                  className="h-full rounded-full bg-accent shadow-[0_0_16px_var(--accent-glow)] transition-all duration-500"
-                  style={{
-                    width: `${getDivisionProgress(
-                      topPoints,
-                      topDivision
-                    )}%`,
-                  }}
-                />
-              </div>
-
-              <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.12em] text-muted-2">
-                <span>
-                  {topDivision.min} pts
-                </span>
-
-                <span>
-                  {topDivision.max === null
-                    ? "Niveau maximal"
-                    : getNextDivision(topPoints)
-                      ? `${getNextDivision(
-                          topPoints
-                        )} pts`
-                      : "Prochain niveau"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-5 gap-1">
-              {[
-                "Bronze",
-                "Argent",
-                "Or",
-                "Platine",
-                "Diamant",
-              ].map((divisionName) => {
-                const isCurrent =
-                  divisionName ===
-                  topDivision.name;
-
-                return (
-                  <div
-                    key={divisionName}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl py-2 ${
-                      isCurrent
-                        ? "bg-white/5 text-foreground"
-                        : "text-muted-2"
-                    }`}
-                  >
-                    <DivisionMark
-                      name={divisionName}
-                      className={`h-6 w-6 ${
-                        isCurrent
-                          ? getDivisionAccent(
-                              divisionName
-                            )
-                          : ""
-                      }`}
-                    />
-
-                    <span className="text-[8px] font-semibold uppercase tracking-[0.08em]">
-                      {divisionName}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
 
         <section>
           <div className="mb-3 flex items-end justify-between">
@@ -1655,6 +1543,129 @@ export default function RankingPage() {
           </div>
         </section>
 
+        {currentUserDivision && currentUserPlayer && (
+          <section className="glass relative overflow-hidden rounded-[28px] p-5">
+            <div className="flex items-start justify-between gap-5">
+              <div className="min-w-0">
+                <p className="eyebrow">
+                  Ta progression de division
+                </p>
+
+                <div className="mt-2.5">
+                  <DivisionBadge
+                    division={currentUserDivision}
+                  />
+                </div>
+
+                <p className="mt-2 max-w-xs text-sm leading-5 text-muted">
+                  {currentUserDivision.description}
+                </p>
+              </div>
+
+              <div className="shrink-0 text-right">
+                <p className="eyebrow">
+                  Tes points
+                </p>
+
+                <p className="mt-1 font-display text-3xl font-bold tracking-tight">
+                  {currentUserPoints}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
+                <span>
+                  {currentUserDivision.name}
+                </span>
+
+                <span className="text-accent">
+                  {currentUserDivision.max === null
+                    ? "Élite"
+                    : `${Math.round(
+                        getDivisionProgress(
+                          currentUserPoints,
+                          currentUserDivision
+                        )
+                      )}%`}
+                </span>
+              </div>
+
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
+                <div
+                  className="h-full rounded-full bg-accent shadow-[0_0_16px_var(--accent-glow)] transition-all duration-500"
+                  style={{
+                    width: `${getDivisionProgress(
+                      currentUserPoints,
+                      currentUserDivision
+                    )}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.12em] text-muted-2">
+                <span>
+                  {currentUserDivision.min} pts
+                </span>
+
+                <span>
+                  {currentUserDivision.max === null
+                    ? "Niveau maximal"
+                    : currentUserNextDivision !== null
+                      ? `${currentUserNextDivision} pts`
+                      : "Prochain niveau"}
+                </span>
+              </div>
+
+              {currentUserNextDivision !== null && (
+                <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent">
+                  Encore {currentUserPointsToNextDivision} pts pour atteindre la prochaine division
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 grid grid-cols-5 gap-1">
+              {[
+                "Bronze",
+                "Argent",
+                "Or",
+                "Platine",
+                "Diamant",
+              ].map((divisionName) => {
+                const isCurrent =
+                  divisionName ===
+                  currentUserDivision.name;
+
+                return (
+                  <div
+                    key={divisionName}
+                    className={`flex flex-col items-center gap-1.5 rounded-xl py-2 ${
+                      isCurrent
+                        ? "bg-white/5 text-foreground"
+                        : "text-muted-2"
+                    }`}
+                  >
+                    <DivisionMark
+                      name={divisionName}
+                      className={`h-6 w-6 ${
+                        isCurrent
+                          ? getDivisionAccent(
+                              divisionName
+                            )
+                          : ""
+                      }`}
+                    />
+
+                    <span className="text-[8px] font-semibold uppercase tracking-[0.08em]">
+                      {divisionName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <Link
           href="/ranking/history"
           className="group flex items-center gap-4 rounded-3xl border border-white/8 bg-white/3.5 px-4 py-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
@@ -1675,8 +1686,6 @@ export default function RankingPage() {
 
           <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
         </Link>
-
-        {/* RÈGLES DE NOTATION */}
 
         <section className="glass relative overflow-hidden rounded-[28px] p-5">
           <div

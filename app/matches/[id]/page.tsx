@@ -2,12 +2,18 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import {
+  useParams,
+  useRouter,
+} from "next/navigation";
 
 import { createClient } from "@/src/supabase/client";
 import SportIcon from "@/app/components/SportIcon";
 
-type Sport = "tennis" | "padel" | "super_tiebreak";
+type Sport =
+  | "tennis"
+  | "padel"
+  | "super_tiebreak";
 
 type Profile = {
   id: string;
@@ -68,7 +74,11 @@ type RankingHistory = {
   created_at: string;
 };
 
-type MatchResult = "win" | "loss" | "draw" | "unknown";
+type MatchResult =
+  | "win"
+  | "loss"
+  | "draw"
+  | "unknown";
 
 function ArrowLeftIcon({
   className = "h-5 w-5",
@@ -161,7 +171,65 @@ function AlertIcon({
   );
 }
 
-function getProfile(player: MatchPlayer): Profile | null {
+function TrashIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>
+  );
+}
+
+function LoaderIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={`${className} animate-spin`}
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeOpacity="0.25"
+      />
+
+      <path
+        d="M20 12a8 8 0 0 0-8-8"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function getProfile(
+  player: MatchPlayer
+): Profile | null {
   if (!player.profiles) return null;
 
   if (Array.isArray(player.profiles)) {
@@ -205,31 +273,44 @@ function getSportLabel(sport: Sport) {
   switch (sport) {
     case "tennis":
       return "Tennis";
+
     case "padel":
       return "Padel";
+
     case "super_tiebreak":
       return "Super Tie-Break";
   }
 }
 
-function getFormatLabel(format: Match["format"]) {
-  return format === "doubles" ? "Double" : "Simple";
+function getFormatLabel(
+  format: Match["format"]
+) {
+  return format === "doubles"
+    ? "Double"
+    : "Simple";
 }
 
-function getResultLabel(result: MatchResult) {
+function getResultLabel(
+  result: MatchResult
+) {
   switch (result) {
     case "win":
       return "Victoire";
+
     case "loss":
       return "Défaite";
+
     case "draw":
       return "Égalité";
+
     default:
       return "Résultat";
   }
 }
 
-function getResultClasses(result: MatchResult) {
+function getResultClasses(
+  result: MatchResult
+) {
   switch (result) {
     case "win":
       return {
@@ -278,7 +359,8 @@ function getWinnerTeam(
   );
 
   if (match.sport === "super_tiebreak") {
-    const lastSet = orderedSets[orderedSets.length - 1];
+    const lastSet =
+      orderedSets[orderedSets.length - 1];
 
     if (
       lastSet.team_1_score ===
@@ -466,11 +548,14 @@ function getPointDetails(
       label: "STB perfect",
       value: history.bonus_stb_perfect,
     },
-  ].filter((item) => item.value !== 0);
+  ].filter(
+    (item) => item.value !== 0
+  );
 }
 
 export default function MatchDetailPage() {
   const params = useParams();
+  const router = useRouter();
 
   const matchId =
     typeof params?.id === "string"
@@ -496,6 +581,9 @@ export default function MatchDetailPage() {
 
   const [loading, setLoading] =
     useState(true);
+
+  const [deleting, setDeleting] =
+    useState(false);
 
   const [error, setError] =
     useState("");
@@ -788,6 +876,120 @@ export default function MatchDetailPage() {
     );
   }, [currentUserHistory]);
 
+  const isUserInMatch = useMemo(() => {
+    if (!userId) {
+      return false;
+    }
+
+    return matchPlayers.some(
+      (player) =>
+        player.player_id === userId
+    );
+  }, [matchPlayers, userId]);
+
+  async function handleDeleteMatch() {
+    if (
+      !matchId ||
+      !userId ||
+      !match ||
+      deleting
+    ) {
+      return;
+    }
+
+    if (!isUserInMatch) {
+      setError(
+        "Tu ne peux pas supprimer ce match."
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Supprimer ce match ?\n\nCette action supprimera définitivement le match, ses scores et son impact sur le classement."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    const supabase = createClient();
+
+    try {
+      /*
+       * 1. Supprimer l'historique de classement
+       */
+      const {
+        error: rankingError,
+      } = await supabase
+        .from("ranking_history")
+        .delete()
+        .eq("match_id", matchId);
+
+      if (rankingError) {
+        throw rankingError;
+      }
+
+      /*
+       * 2. Supprimer les scores
+       */
+      const {
+        error: setsError,
+      } = await supabase
+        .from("sets")
+        .delete()
+        .eq("match_id", matchId);
+
+      if (setsError) {
+        throw setsError;
+      }
+
+      /*
+       * 3. Supprimer les joueurs liés au match
+       */
+      const {
+        error: playersError,
+      } = await supabase
+        .from("match_players")
+        .delete()
+        .eq("match_id", matchId);
+
+      if (playersError) {
+        throw playersError;
+      }
+
+      /*
+       * 4. Supprimer le match
+       */
+      const {
+        error: matchError,
+      } = await supabase
+        .from("matches")
+        .delete()
+        .eq("id", matchId);
+
+      if (matchError) {
+        throw matchError;
+      }
+
+      /*
+       * Retour à la liste des matchs
+       */
+      router.push("/matches");
+      router.refresh();
+    } catch (deleteError) {
+      setDeleting(false);
+
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Impossible de supprimer ce match."
+      );
+    }
+  }
+
   if (!matchId) {
     return (
       <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
@@ -796,6 +998,7 @@ export default function MatchDetailPage() {
           aria-hidden="true"
         >
           <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+
           <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
         </div>
 
@@ -842,6 +1045,7 @@ export default function MatchDetailPage() {
           aria-hidden="true"
         >
           <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+
           <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
         </div>
 
@@ -874,6 +1078,7 @@ export default function MatchDetailPage() {
           aria-hidden="true"
         >
           <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+
           <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
         </div>
 
@@ -920,6 +1125,7 @@ export default function MatchDetailPage() {
         aria-hidden="true"
       >
         <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+
         <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
       </div>
 
@@ -1408,7 +1614,48 @@ export default function MatchDetailPage() {
 
             <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
           </Link>
+
+          {/* DELETE MATCH */}
+
+          {isUserInMatch && (
+            <button
+              type="button"
+              onClick={handleDeleteMatch}
+              disabled={deleting}
+              className="group flex w-full items-center gap-4 rounded-3xl border border-danger/15 bg-danger/5 px-4 py-4 text-left transition-all duration-200 hover:border-danger/25 hover:bg-danger/8 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-danger/15 bg-danger/8 text-danger">
+                {deleting ? (
+                  <LoaderIcon className="h-4 w-4" />
+                ) : (
+                  <TrashIcon className="h-4 w-4" />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-danger">
+                  {deleting
+                    ? "Suppression..."
+                    : "Supprimer le match"}
+                </p>
+
+                <p className="mt-0.5 text-xs text-muted">
+                  {deleting
+                    ? "Suppression du match en cours..."
+                    : "Cette action supprimera définitivement ce match."}
+                </p>
+              </div>
+            </button>
+          )}
         </div>
+
+        {/* DELETE ERROR */}
+
+        {error && (
+          <div className="rounded-2xl border border-danger/15 bg-danger/5 px-4 py-3 text-xs leading-5 text-danger">
+            {error}
+          </div>
+        )}
       </div>
     </main>
   );
