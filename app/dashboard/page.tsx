@@ -1286,7 +1286,7 @@ export default function DashboardPage() {
 
           <Link
             href={newMatchHref}
-            className="group flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97]"
+            className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
           >
             <PlusIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
 

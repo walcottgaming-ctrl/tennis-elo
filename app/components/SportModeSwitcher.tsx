@@ -23,7 +23,7 @@ export default function SportModeSwitcher() {
   const { mode, setMode } = useSportMode();
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/4 p-1">
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-white/10 bg-white/4 p-1">
       {modes.map((item) => {
         const isActive = mode === item.id;
 
@@ -38,7 +38,7 @@ export default function SportModeSwitcher() {
               stiffness: 500,
               damping: 30,
             }}
-            className="relative flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium"
+            className="relative flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
           >
             {isActive && (
               <motion.div
@@ -53,21 +53,24 @@ export default function SportModeSwitcher() {
             )}
 
             <motion.span
-  className="relative z-10 flex items-center gap-2"
-  animate={{
-  scale: isActive ? 1 : 0.97,
-  opacity: isActive ? 1 : 0.65,
-  color: isActive ? "rgb(17, 17, 17)" : undefined,
-}}
-  transition={{
-    duration: 0.2,
-    ease: "easeOut",
-  }}
->
-  <SportIcon sport={item.id} className="h-3.75 w-3.75" />
+              className="relative z-10 flex items-center gap-1.5 sm:gap-2"
+              animate={{
+                scale: isActive ? 1 : 0.97,
+                opacity: isActive ? 1 : 0.65,
+                color: isActive ? "rgb(17, 17, 17)" : undefined,
+              }}
+              transition={{
+                duration: 0.2,
+                ease: "easeOut",
+              }}
+            >
+              <SportIcon
+                sport={item.id}
+                className="h-3.5 w-3.5 sm:h-3.75 sm:w-3.75"
+              />
 
-  <span>{item.label}</span>
-</motion.span>
+              <span>{item.label}</span>
+            </motion.span>
           </motion.button>
         );
       })}
