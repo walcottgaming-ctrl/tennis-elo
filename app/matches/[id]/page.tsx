@@ -1,32 +1,26 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+
 import { createClient } from "@/src/supabase/client";
 import SportIcon from "@/app/components/SportIcon";
-import { useSportMode } from "@/app/context/SportModeContext";
 
 type Sport = "tennis" | "padel" | "super_tiebreak";
 
-type Player = {
+type Profile = {
   id: string;
   first_name: string | null;
   last_name: string | null;
   username: string | null;
-  points_tennis: number | null;
-  points_padel: number | null;
-  points_super_tiebreak: number | null;
 };
 
 type Match = {
   id: string;
   sport: Sport;
   format: "singles" | "doubles";
+  result_type: "competitive" | "friendly";
   created_at: string;
 };
 
@@ -34,6 +28,17 @@ type MatchPlayer = {
   match_id: string;
   player_id: string | null;
   team: number;
+  guest_name: string | null;
+  profiles: Profile | Profile[] | null;
+};
+
+type SetRow = {
+  id: string;
+  match_id: string;
+  set_number: number;
+  team_1_score: number;
+  team_2_score: number;
+  is_match_tiebreak: boolean;
 };
 
 type RankingHistory = {
@@ -44,37 +49,69 @@ type RankingHistory = {
   old_points: number;
   new_points: number;
   points_change: number;
+
   base_points: number;
   bonus_bulle: number;
   bonus_double_bulle: number;
   bonus_victoire_propre: number;
   bonus_serie: number;
   bonus_performer: number;
+
   malus_fanny: number;
   malus_double_bulle: number;
   malus_contre_performance: number;
+
   amortisseur_tiebreak: number;
   bonus_stb_large: number;
   bonus_stb_perfect: number;
+
   created_at: string;
-  profiles: Player | Player[] | null;
 };
 
-type ChampionHistory = {
-  id: string;
-  player_id: string;
-  sport: Sport;
-  started_at: string;
-  ended_at: string | null;
-  matches_as_champion: number;
-};
+type MatchResult = "win" | "loss" | "draw" | "unknown";
 
-type Division = {
-  name: string;
-  min: number;
-  max: number | null;
-  description: string;
-};
+function ArrowLeftIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
 
 function TrophyIcon({
   className = "h-5 w-5",
@@ -101,98 +138,8 @@ function TrophyIcon({
   );
 }
 
-function ChevronRightIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m9 18 6-6-6-6" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon({
-  open,
-  className = "h-4 w-4",
-}: {
-  open: boolean;
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`${className} transition-transform duration-200 ${
-        open ? "rotate-180" : ""
-      }`}
-      aria-hidden="true"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function CrownIcon({
-  className = "h-5 w-5",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m3 7 4 4 5-7 5 7 4-4-2 12H5L3 7Z" />
-      <path d="M5 19h14" />
-    </svg>
-  );
-}
-
-function ArrowUpIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 19V5" />
-      <path d="m6 11 6-6 6 6" />
-    </svg>
-  );
-}
-
 function AlertIcon({
-  className = "h-4 w-4",
+  className = "h-5 w-5",
 }: {
   className?: string;
 }) {
@@ -214,635 +161,678 @@ function AlertIcon({
   );
 }
 
-function DivisionMark({
-  name,
-  className = "h-7 w-7",
-}: {
-  name: string;
-  className?: string;
-}) {
-  const common = {
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.5,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
+function getProfile(player: MatchPlayer): Profile | null {
+  if (!player.profiles) return null;
 
-  if (name === "Bronze") {
-    return (
-      <svg
-        viewBox="0 0 40 40"
-        className={className}
-        aria-hidden="true"
-      >
-        <circle {...common} cx="20" cy="20" r="10" />
-        <circle
-          {...common}
-          cx="20"
-          cy="20"
-          r="5"
-          opacity="0.5"
-        />
-      </svg>
-    );
+  if (Array.isArray(player.profiles)) {
+    return player.profiles[0] ?? null;
   }
 
-  if (name === "Argent") {
-    return (
-      <svg
-        viewBox="0 0 40 40"
-        className={className}
-        aria-hidden="true"
-      >
-        <circle {...common} cx="20" cy="20" r="11" />
-        <circle
-          {...common}
-          cx="20"
-          cy="20"
-          r="6"
-          opacity="0.5"
-        />
-        <path
-          {...common}
-          d="M20 5v4M20 31v4M5 20h4M31 20h4"
-          opacity="0.45"
-        />
-      </svg>
-    );
-  }
-
-  if (name === "Or") {
-    return (
-      <svg
-        viewBox="0 0 40 40"
-        className={className}
-        aria-hidden="true"
-      >
-        <path
-          {...common}
-          d="m20 6 11 7v14l-11 7-11-7V13l11-7Z"
-        />
-        <path
-          {...common}
-          d="m20 12 5 3v10l-5 3-5-3V15l5-3Z"
-          opacity="0.5"
-        />
-      </svg>
-    );
-  }
-
-  if (name === "Platine") {
-    return (
-      <svg
-        viewBox="0 0 40 40"
-        className={className}
-        aria-hidden="true"
-      >
-        <path
-          {...common}
-          d="m20 5 13 13-13 17L7 18 20 5Z"
-        />
-        <path
-          {...common}
-          d="m20 11 7 7-7 10-7-10 7-7Z"
-          opacity="0.5"
-        />
-      </svg>
-    );
-  }
-
-  return (
-    <svg
-      viewBox="0 0 40 40"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        {...common}
-        d="m20 4 14 14-14 18L6 18 20 4Z"
-        opacity="0.9"
-      />
-      <path
-        {...common}
-        d="m20 10 8 8-8 11-8-11 8-8Z"
-        opacity="0.6"
-      />
-      <path
-        {...common}
-        d="M20 4v6M6 18h8M34 18h-8M20 32v4"
-        opacity="0.35"
-      />
-    </svg>
-  );
+  return player.profiles;
 }
 
-function getDivisionAccent(name: string) {
-  switch (name) {
-    case "Bronze":
-      return "text-[#cd8b55]";
-    case "Argent":
-      return "text-[#cbd5e1]";
-    case "Or":
-      return "text-[#f5c451]";
-    case "Platine":
-      return "text-[#b7c8e8]";
-    case "Diamant":
-      return "text-accent";
+function getPlayerName(player: MatchPlayer) {
+  if (player.guest_name?.trim()) {
+    return player.guest_name.trim();
+  }
+
+  const profile = getProfile(player);
+
+  if (!profile) {
+    return "Joueur";
+  }
+
+  const fullName = [
+    profile.first_name,
+    profile.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  if (fullName) {
+    return fullName;
+  }
+
+  if (profile.username) {
+    return `@${profile.username}`;
+  }
+
+  return "Joueur";
+}
+
+function getSportLabel(sport: Sport) {
+  switch (sport) {
+    case "tennis":
+      return "Tennis";
+    case "padel":
+      return "Padel";
+    case "super_tiebreak":
+      return "Super Tie-Break";
+  }
+}
+
+function getFormatLabel(format: Match["format"]) {
+  return format === "doubles" ? "Double" : "Simple";
+}
+
+function getResultLabel(result: MatchResult) {
+  switch (result) {
+    case "win":
+      return "Victoire";
+    case "loss":
+      return "Défaite";
+    case "draw":
+      return "Égalité";
     default:
-      return "text-muted";
+      return "Résultat";
   }
 }
 
-function DivisionBadge({
-  division,
-  compact = false,
-}: {
-  division: Division;
-  compact?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center ${
-        compact ? "gap-1.5" : "gap-2.5"
-      } ${getDivisionAccent(division.name)}`}
-    >
-      <DivisionMark
-        name={division.name}
-        className={compact ? "h-5 w-5" : "h-7 w-7"}
-      />
+function getResultClasses(result: MatchResult) {
+  switch (result) {
+    case "win":
+      return {
+        text: "text-accent",
+        bg: "bg-accent/10",
+        border: "border-accent/20",
+        glow: "shadow-[0_0_35px_var(--accent-glow)]",
+      };
 
-      <span
-        className={`font-semibold uppercase tracking-[0.12em] ${
-          compact ? "text-[9px]" : "text-[10px]"
-        }`}
-      >
-        {division.name}
-      </span>
-    </div>
+    case "loss":
+      return {
+        text: "text-danger",
+        bg: "bg-danger/8",
+        border: "border-danger/20",
+        glow: "",
+      };
+
+    case "draw":
+      return {
+        text: "text-muted",
+        bg: "bg-white/5",
+        border: "border-white/10",
+        glow: "",
+      };
+
+    default:
+      return {
+        text: "text-muted",
+        bg: "bg-white/5",
+        border: "border-white/10",
+        glow: "",
+      };
+  }
+}
+
+function getWinnerTeam(
+  match: Match,
+  sets: SetRow[]
+): number | null {
+  if (!sets.length) {
+    return null;
+  }
+
+  const orderedSets = [...sets].sort(
+    (a, b) => a.set_number - b.set_number
+  );
+
+  if (match.sport === "super_tiebreak") {
+    const lastSet = orderedSets[orderedSets.length - 1];
+
+    if (
+      lastSet.team_1_score ===
+      lastSet.team_2_score
+    ) {
+      return null;
+    }
+
+    return lastSet.team_1_score >
+      lastSet.team_2_score
+      ? 1
+      : 2;
+  }
+
+  let team1Sets = 0;
+  let team2Sets = 0;
+
+  for (const set of orderedSets) {
+    if (set.is_match_tiebreak) {
+      continue;
+    }
+
+    if (
+      set.team_1_score >
+      set.team_2_score
+    ) {
+      team1Sets++;
+    } else if (
+      set.team_2_score >
+      set.team_1_score
+    ) {
+      team2Sets++;
+    }
+  }
+
+  if (team1Sets === team2Sets) {
+    return null;
+  }
+
+  return team1Sets > team2Sets ? 1 : 2;
+}
+
+function getPlayerInitials(name: string) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return "J";
+  }
+
+  if (parts.length === 1) {
+    return parts[0]
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
+  return `${parts[0][0]}${
+    parts[parts.length - 1][0]
+  }`.toUpperCase();
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString(
+    "fr-FR",
+    {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }
   );
 }
 
-export default function RankingPage() {
-  const { mode } = useSportMode();
+function getScoreLabel(
+  match: Match,
+  sets: SetRow[]
+) {
+  if (!sets.length) {
+    return "—";
+  }
 
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [matchPlayers, setMatchPlayers] = useState<MatchPlayer[]>(
-    []
+  const orderedSets = [...sets].sort(
+    (a, b) => a.set_number - b.set_number
   );
-  const [rankingHistory, setRankingHistory] = useState<
-    RankingHistory[]
-  >([]);
-  const [championHistory, setChampionHistory] = useState<
-    ChampionHistory[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
-  const [expandedPlayerId, setExpandedPlayerId] = useState<
-    string | null
-  >(null);
+
+  if (match.sport === "super_tiebreak") {
+    const set =
+      orderedSets[orderedSets.length - 1];
+
+    return `${set.team_1_score} - ${set.team_2_score}`;
+  }
+
+  return orderedSets
+    .map(
+      (set) =>
+        `${set.team_1_score}-${set.team_2_score}`
+    )
+    .join("   ");
+}
+
+function getPlayerRankingHistory(
+  history: RankingHistory[],
+  playerId: string,
+  matchId: string
+) {
+  return history.find(
+    (item) =>
+      item.player_id === playerId &&
+      item.match_id === matchId
+  );
+}
+
+function formatSignedPoints(value: number) {
+  if (value > 0) {
+    return `+${value}`;
+  }
+
+  return `${value}`;
+}
+
+function formatPointValue(value: number) {
+  if (value === 0) {
+    return "0";
+  }
+
+  return formatSignedPoints(value);
+}
+
+type PointDetail = {
+  label: string;
+  value: number;
+};
+
+function getPointDetails(
+  history: RankingHistory
+): PointDetail[] {
+  return [
+    {
+      label: "Base",
+      value: history.base_points,
+    },
+    {
+      label: "Bulle",
+      value: history.bonus_bulle,
+    },
+    {
+      label: "Double bulle",
+      value: history.bonus_double_bulle,
+    },
+    {
+      label: "Victoire propre",
+      value: history.bonus_victoire_propre,
+    },
+    {
+      label: "Série",
+      value: history.bonus_serie,
+    },
+    {
+      label: "Performer",
+      value: history.bonus_performer,
+    },
+    {
+      label: "Fanny",
+      value: history.malus_fanny,
+    },
+    {
+      label: "Double bulle",
+      value: history.malus_double_bulle,
+    },
+    {
+      label: "Contre-performance",
+      value: history.malus_contre_performance,
+    },
+    {
+      label: "Amortisseur tie-break",
+      value: history.amortisseur_tiebreak,
+    },
+    {
+      label: "STB large",
+      value: history.bonus_stb_large,
+    },
+    {
+      label: "STB perfect",
+      value: history.bonus_stb_perfect,
+    },
+  ].filter((item) => item.value !== 0);
+}
+
+export default function MatchDetailPage() {
+  const params = useParams();
+
+  const matchId =
+    typeof params?.id === "string"
+      ? params.id
+      : Array.isArray(params?.id)
+        ? params.id[0]
+        : null;
+
+  const [userId, setUserId] =
+    useState<string | null>(null);
+
+  const [match, setMatch] =
+    useState<Match | null>(null);
+
+  const [matchPlayers, setMatchPlayers] =
+    useState<MatchPlayer[]>([]);
+
+  const [sets, setSets] =
+    useState<SetRow[]>([]);
+
+  const [rankingHistory, setRankingHistory] =
+    useState<RankingHistory[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
-    async function loadRanking() {
+    if (!matchId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadMatch() {
       const supabase = createClient();
 
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
 
+      if (cancelled) return;
+
+      if (userError) {
+        setError(userError.message);
+        setLoading(false);
+        return;
+      }
+
       if (!user) {
-        setMessage("Tu dois être connecté.");
+        setError("Tu dois être connecté.");
         setLoading(false);
         return;
       }
 
-      const { data: playersData, error: playersError } =
-        await supabase
-          .from("profiles")
-          .select(
-            "id, first_name, last_name, username, points_tennis, points_padel, points_super_tiebreak"
-          );
+      setUserId(user.id);
 
-      if (playersError) {
-        setMessage(playersError.message);
+      const {
+        data: matchData,
+        error: matchError,
+      } = await supabase
+        .from("matches")
+        .select(
+          "id, sport, format, result_type, created_at"
+        )
+        .eq("id", matchId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (matchError) {
+        setError(matchError.message);
         setLoading(false);
         return;
       }
 
-      const { data: matchesData, error: matchesError } =
-        await supabase
-          .from("matches")
-          .select("id, sport, format, created_at")
-          .order("created_at", { ascending: false });
-
-      if (matchesError) {
-        setMessage(matchesError.message);
+      if (!matchData) {
+        setError("Ce match n'existe pas.");
         setLoading(false);
         return;
       }
 
       const {
-        data: matchPlayersData,
-        error: matchPlayersError,
+        data: playersData,
+        error: playersError,
       } = await supabase
         .from("match_players")
-        .select("match_id, player_id, team");
+        .select(
+          `
+            match_id,
+            player_id,
+            team,
+            guest_name,
+            profiles (
+              id,
+              first_name,
+              last_name,
+              username
+            )
+          `
+        )
+        .eq("match_id", matchId);
 
-      if (matchPlayersError) {
-        setMessage(matchPlayersError.message);
+      if (cancelled) return;
+
+      if (playersError) {
+        setError(playersError.message);
         setLoading(false);
         return;
       }
 
       const {
-        data: rankingHistoryData,
-        error: rankingHistoryError,
+        data: setsData,
+        error: setsError,
+      } = await supabase
+        .from("sets")
+        .select(
+          `
+            id,
+            match_id,
+            set_number,
+            team_1_score,
+            team_2_score,
+            is_match_tiebreak
+          `
+        )
+        .eq("match_id", matchId)
+        .order("set_number", {
+          ascending: true,
+        });
+
+      if (cancelled) return;
+
+      if (setsError) {
+        setError(setsError.message);
+        setLoading(false);
+        return;
+      }
+
+      const {
+        data: historyData,
+        error: historyError,
       } = await supabase
         .from("ranking_history")
-        .select(`
-          id,
-          match_id,
-          player_id,
-          sport,
-          old_points,
-          new_points,
-          points_change,
-          base_points,
-          bonus_bulle,
-          bonus_double_bulle,
-          bonus_victoire_propre,
-          bonus_serie,
-          bonus_performer,
-          malus_fanny,
-          malus_double_bulle,
-          malus_contre_performance,
-          amortisseur_tiebreak,
-          bonus_stb_large,
-          bonus_stb_perfect,
-          created_at,
-          profiles (
+        .select(
+          `
             id,
-            first_name,
-            last_name,
-            username,
-            points_tennis,
-            points_padel,
-            points_super_tiebreak
-          )
-        `)
-        .order("created_at", { ascending: true });
+            match_id,
+            player_id,
+            sport,
+            old_points,
+            new_points,
+            points_change,
+            base_points,
+            bonus_bulle,
+            bonus_double_bulle,
+            bonus_victoire_propre,
+            bonus_serie,
+            bonus_performer,
+            malus_fanny,
+            malus_double_bulle,
+            malus_contre_performance,
+            amortisseur_tiebreak,
+            bonus_stb_large,
+            bonus_stb_perfect,
+            created_at
+          `
+        )
+        .eq("match_id", matchId);
 
-      if (rankingHistoryError) {
-        setMessage(rankingHistoryError.message);
+      if (cancelled) return;
+
+      if (historyError) {
+        setError(historyError.message);
         setLoading(false);
         return;
       }
 
-      const { data: championData, error: championError } =
-        await supabase
-          .from("champion_history")
-          .select(
-            "id, player_id, sport, started_at, ended_at, matches_as_champion"
-          )
-          .order("started_at", { ascending: false });
+      setMatch(matchData as Match);
 
-      if (championError) {
-        setMessage(championError.message);
-        setLoading(false);
-        return;
-      }
-
-      setPlayers(playersData ?? []);
-      setMatches((matchesData ?? []) as Match[]);
-      setMatchPlayers(matchPlayersData ?? []);
-      setRankingHistory(
-        (rankingHistoryData ?? []) as RankingHistory[]
+      setMatchPlayers(
+        (playersData ?? []) as MatchPlayer[]
       );
-      setChampionHistory(championData ?? []);
+
+      setSets(
+        (setsData ?? []) as SetRow[]
+      );
+
+      setRankingHistory(
+        (historyData ?? []) as RankingHistory[]
+      );
+
       setLoading(false);
     }
 
-    loadRanking();
-  }, []);
+    loadMatch().catch((loadError) => {
+      if (cancelled) return;
 
-  function getPlayerName(player: Player) {
-    const fullName = [player.first_name, player.last_name]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    if (fullName) return fullName;
-    if (player.username) return `@${player.username}`;
-
-    return "Joueur";
-  }
-
-  /*
-   * SOURCE DE VÉRITÉ DU CLASSEMENT
-   *
-   * Les points actuels ne viennent PAS de profiles.points_*.
-   * Ils viennent de la dernière valeur new_points enregistrée
-   * dans ranking_history pour le joueur et le sport sélectionné.
-   *
-   * La date du match est utilisée pour déterminer l'ordre réel
-   * des matchs. match_id sert de départage si deux matchs ont
-   * exactement le même created_at.
-   */
-  const getPlayerPoints = useCallback(
-    (player: Player) => {
-      const playerHistory = rankingHistory
-        .filter(
-          (history) =>
-            history.player_id === player.id &&
-            history.sport === mode
-        )
-        .sort((a, b) => {
-          const matchA = matches.find(
-            (match) => match.id === a.match_id
-          );
-
-          const matchB = matches.find(
-            (match) => match.id === b.match_id
-          );
-
-          const timeA = matchA
-            ? new Date(matchA.created_at).getTime()
-            : new Date(a.created_at).getTime();
-
-          const timeB = matchB
-            ? new Date(matchB.created_at).getTime()
-            : new Date(b.created_at).getTime();
-
-          if (timeA !== timeB) {
-            return timeB - timeA;
-          }
-
-          return b.match_id.localeCompare(a.match_id);
-        });
-
-      if (playerHistory.length === 0) {
-        return null;
-      }
-
-      return playerHistory[0].new_points;
-    },
-    [rankingHistory, matches, mode]
-  );
-
-  function getSportLabel() {
-    if (mode === "tennis") return "Tennis";
-    if (mode === "padel") return "Padel";
-    return "Super Tie-Break";
-  }
-
-  function getDivision(points: number): Division {
-    if (points < 1000) {
-      return {
-        name: "Bronze",
-        min: 0,
-        max: 999,
-        description: "Tu construis ton niveau.",
-      };
-    }
-
-    if (points < 1100) {
-      return {
-        name: "Argent",
-        min: 1000,
-        max: 1099,
-        description: "Tu progresses et prends de la place.",
-      };
-    }
-
-    if (points < 1200) {
-      return {
-        name: "Or",
-        min: 1100,
-        max: 1199,
-        description: "Tu fais partie des joueurs solides.",
-      };
-    }
-
-    if (points < 1300) {
-      return {
-        name: "Platine",
-        min: 1200,
-        max: 1299,
-        description: "Tu fais partie des meilleurs.",
-      };
-    }
-
-    return {
-      name: "Diamant",
-      min: 1300,
-      max: null,
-      description: "Le niveau élite.",
-    };
-  }
-
-  function getChampion(sportValue: Sport) {
-    return championHistory.find(
-      (item) =>
-        item.sport === sportValue && item.ended_at === null
-    );
-  }
-
-  function isChampion(playerId: string) {
-    return championHistory.some(
-      (item) =>
-        item.sport === mode &&
-        item.ended_at === null &&
-        item.player_id === playerId
-    );
-  }
-
-  function getChampionStreak(playerId: string) {
-    return (
-      championHistory.find(
-        (item) =>
-          item.sport === mode &&
-          item.ended_at === null &&
-          item.player_id === playerId
-      )?.matches_as_champion ?? 0
-    );
-  }
-
-  function getPlayerMatches(playerId: string) {
-    const playerMatchIds = new Set(
-      matchPlayers
-        .filter((item) => item.player_id === playerId)
-        .map((item) => item.match_id)
-    );
-
-    return matches
-      .filter(
-        (match) =>
-          match.sport === mode &&
-          playerMatchIds.has(match.id)
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() -
-          new Date(a.created_at).getTime()
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Une erreur est survenue."
       );
-  }
 
-  function getOpponentNames(
-    playerId: string,
-    matchId: string
-  ) {
-    const currentPlayer = matchPlayers.find(
-      (item) =>
-        item.match_id === matchId &&
-        item.player_id === playerId
-    );
+      setLoading(false);
+    });
 
-    if (!currentPlayer) return "Adversaire";
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId]);
 
-    const opponentTeam =
-      currentPlayer.team === 1 ? 2 : 1;
+  const orderedPlayers = useMemo(
+    () =>
+      [...matchPlayers].sort(
+        (a, b) => a.team - b.team
+      ),
+    [matchPlayers]
+  );
 
-    const opponentIds = matchPlayers
-      .filter(
-        (item) =>
-          item.match_id === matchId &&
-          item.team === opponentTeam &&
-          item.player_id
-      )
-      .map((item) => item.player_id as string);
+  const team1Players = useMemo(
+    () =>
+      orderedPlayers.filter(
+        (player) => player.team === 1
+      ),
+    [orderedPlayers]
+  );
 
-    const opponentPlayers = players.filter((player) =>
-      opponentIds.includes(player.id)
-    );
+  const team2Players = useMemo(
+    () =>
+      orderedPlayers.filter(
+        (player) => player.team === 2
+      ),
+    [orderedPlayers]
+  );
 
-    if (!opponentPlayers.length) {
-      return "Adversaire";
+  const winnerTeam = useMemo(
+    () =>
+      match
+        ? getWinnerTeam(match, sets)
+        : null,
+    [match, sets]
+  );
+
+  const currentUserTeam = useMemo(() => {
+    if (!userId) {
+      return null;
     }
 
-    return opponentPlayers.map(getPlayerName).join(" & ");
-  }
-
-  function getFormatLabel(format: Match["format"]) {
-    return format === "doubles" ? "Double" : "Simple";
-  }
-
-  function getRecentConfrontations(playerId: string) {
-    return getPlayerMatches(playerId).slice(0, 3);
-  }
-
-  const sportLabel = getSportLabel();
-
-  const modeMatchIds = useMemo(
-    () =>
-      new Set(
-        matches
-          .filter((match) => match.sport === mode)
-          .map((match) => match.id)
-      ),
-    [matches, mode]
-  );
-
-  /*
-   * Un joueur apparaît dans le classement uniquement s'il :
-   *
-   * 1. a réellement participé à un match du sport sélectionné
-   * 2. possède au moins une entrée dans ranking_history
-   */
-  const activePlayerIds = useMemo(
-    () =>
-      new Set(
-        matchPlayers
-          .filter(
-            (item) =>
-              modeMatchIds.has(item.match_id) &&
-              item.player_id
-          )
-          .map((item) => item.player_id as string)
-      ),
-    [matchPlayers, modeMatchIds]
-  );
-
-  /*
-   * Classement :
-   * - uniquement les joueurs actifs
-   * - uniquement ceux qui ont un historique de points
-   * - tri décroissant par points
-   */
-  const rankedPlayers = useMemo(() => {
-    return players
-      .filter((player) => activePlayerIds.has(player.id))
-      .map((player) => ({
-        player,
-        points: getPlayerPoints(player),
-      }))
-      .filter(
-        (
-          item
-        ): item is {
-          player: Player;
-          points: number;
-        } => item.points !== null
-      )
-      .sort((a, b) => b.points - a.points)
-      .map((item) => item.player);
-  }, [players, activePlayerIds, getPlayerPoints]);
-
-  const podium = rankedPlayers.slice(0, 3);
-
-  const topPlayer = rankedPlayers[0] ?? null;
-
-  const currentChampion = getChampion(mode);
-
-  const currentChampionPlayer = currentChampion
-    ? players.find(
+    return (
+      matchPlayers.find(
         (player) =>
-          player.id === currentChampion.player_id
-      ) ?? null
-    : null;
+          player.player_id === userId
+      )?.team ?? null
+    );
+  }, [matchPlayers, userId]);
 
-  const topPoints = topPlayer
-    ? getPlayerPoints(topPlayer) ?? 1000
-    : 0;
+  const currentUserHistory = useMemo(() => {
+    if (!userId || !matchId) {
+      return null;
+    }
 
-  const topDivision = topPlayer
-    ? getDivision(topPoints)
-    : null;
+    return getPlayerRankingHistory(
+      rankingHistory,
+      userId,
+      matchId
+    );
+  }, [
+    rankingHistory,
+    userId,
+    matchId,
+  ]);
 
-  function getDivisionProgress(
-    points: number,
-    division: Division
-  ) {
-    if (division.max === null) return 100;
+  const matchResult = useMemo<MatchResult>(() => {
+    if (
+      !currentUserTeam ||
+      !winnerTeam
+    ) {
+      return "unknown";
+    }
 
-    const range =
-      division.max - division.min + 1;
+    if (
+      currentUserTeam === winnerTeam
+    ) {
+      return "win";
+    }
 
-    const current = points - division.min;
+    return "loss";
+  }, [
+    currentUserTeam,
+    winnerTeam,
+  ]);
 
-    return Math.min(
-      100,
-      Math.max(0, (current / range) * 100)
+  const resultClasses =
+    getResultClasses(matchResult);
+
+  const scoreLabel = useMemo(
+    () =>
+      match
+        ? getScoreLabel(match, sets)
+        : "—",
+    [match, sets]
+  );
+
+  const pointDetails = useMemo(() => {
+    if (!currentUserHistory) {
+      return [];
+    }
+
+    return getPointDetails(
+      currentUserHistory
+    );
+  }, [currentUserHistory]);
+
+  if (!matchId) {
+    return (
+      <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        >
+          <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+          <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
+        </div>
+
+        <div className="mx-auto max-w-lg">
+          <Link
+            href="/matches"
+            className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/4 px-3.5 py-2 text-xs font-semibold text-muted transition-all hover:border-white/15 hover:bg-white/7 hover:text-foreground"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            Mes matchs
+          </Link>
+
+          <section className="glass-strong mt-6 rounded-[30px] px-5 py-10 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-danger/20 bg-danger/8 text-danger">
+              <AlertIcon className="h-6 w-6" />
+            </div>
+
+            <h1 className="mt-5 font-display text-xl font-bold">
+              Match introuvable
+            </h1>
+
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted">
+              Aucun identifiant de match n&apos;a été fourni.
+            </p>
+
+            <Link
+              href="/matches"
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent transition-all hover:bg-accent/15 active:scale-[0.98]"
+            >
+              Retour aux matchs
+              <ChevronRightIcon className="h-4 w-4" />
+            </Link>
+          </section>
+        </div>
+      </main>
     );
   }
-
-  function getNextDivision(points: number) {
-    if (points < 1000) return 1000;
-    if (points < 1100) return 1100;
-    if (points < 1200) return 1200;
-    if (points < 1300) return 1300;
-
-    return null;
-  }
-
-  const topNextDivision = topPlayer
-    ? getNextDivision(topPoints)
-    : null;
-
-  const pointsToNextDivision =
-    topNextDivision !== null
-      ? Math.max(0, topNextDivision - topPoints)
-      : 0;
 
   if (loading) {
     return (
@@ -851,27 +841,73 @@ export default function RankingPage() {
           className="pointer-events-none absolute inset-0 -z-10"
           aria-hidden="true"
         >
-          <div className="absolute left-[-18%] top-[-10%] h-105 w-105 rounded-full bg-accent/5.5 blur-[110px]" />
-          <div className="absolute bottom-[-18%] right-[-12%] h-115 w-115 rounded-full bg-indigo-500/8 blur-[120px]" />
+          <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+          <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
         </div>
 
         <div className="mx-auto max-w-lg">
           <div className="mb-7 flex items-center justify-between">
-            <div className="space-y-2.5">
-              <div className="h-2.5 w-24 animate-pulse rounded-full bg-white/8" />
-              <div className="h-9 w-40 animate-pulse rounded-xl bg-white/8" />
-              <div className="h-3 w-56 animate-pulse rounded-full bg-white/5" />
-            </div>
+            <div className="h-10 w-32 animate-pulse rounded-xl bg-white/8" />
 
-            <div className="h-12 w-12 animate-pulse rounded-full bg-white/8" />
+            <div className="h-11 w-11 animate-pulse rounded-full bg-white/8" />
           </div>
 
           <div className="space-y-4">
+            <div className="h-28 animate-pulse rounded-[28px] bg-white/5" />
+
+            <div className="h-72 animate-pulse rounded-[30px] bg-white/5" />
+
             <div className="h-48 animate-pulse rounded-[28px] bg-white/5" />
-            <div className="h-32 animate-pulse rounded-[28px] bg-white/5" />
-            <div className="h-40 animate-pulse rounded-[28px] bg-white/5" />
-            <div className="h-80 animate-pulse rounded-[28px] bg-white/5" />
+
+            <div className="h-56 animate-pulse rounded-[28px] bg-white/5" />
           </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (error || !match) {
+    return (
+      <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        >
+          <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+          <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
+        </div>
+
+        <div className="mx-auto max-w-lg">
+          <Link
+            href="/matches"
+            className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/4 px-3.5 py-2 text-xs font-semibold text-muted transition-all hover:border-white/15 hover:bg-white/7 hover:text-foreground"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            Mes matchs
+          </Link>
+
+          <section className="glass-strong mt-6 rounded-[30px] px-5 py-10 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-danger/20 bg-danger/8 text-danger">
+              <AlertIcon className="h-6 w-6" />
+            </div>
+
+            <h1 className="mt-5 font-display text-xl font-bold">
+              Match introuvable
+            </h1>
+
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-5 text-muted">
+              {error ||
+                "Impossible de charger les informations de ce match."}
+            </p>
+
+            <Link
+              href="/matches"
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2.5 text-xs font-semibold text-accent transition-all hover:bg-accent/15 active:scale-[0.98]"
+            >
+              Retour aux matchs
+              <ChevronRightIcon className="h-4 w-4" />
+            </Link>
+          </section>
         </div>
       </main>
     );
@@ -890,59 +926,265 @@ export default function RankingPage() {
       <div className="mx-auto max-w-lg space-y-5 pb-8">
         {/* HEADER */}
 
-        <header className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="eyebrow">
-                Classement
-              </span>
+        <header className="flex items-center justify-between gap-3">
+          <Link
+            href="/matches"
+            className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/4 px-3.5 py-2 text-xs font-semibold text-muted transition-all hover:border-white/15 hover:bg-white/7 hover:text-foreground active:scale-[0.98]"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            <span>Mes matchs</span>
+          </Link>
 
-              <span className="h-1 w-1 rounded-full bg-white/20" />
-
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
-                {sportLabel}
-              </span>
-            </div>
-
-            <h1 className="mt-1 font-display text-3xl font-bold tracking-[-0.04em]">
-              Classement
-            </h1>
-
-            <p className="mt-2 max-w-sm text-sm leading-5 text-muted">
-              Ta position dans la hiérarchie SmashBreakPoint.
-            </p>
-          </div>
-
-          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent shadow-[0_0_30px_var(--accent-glow)]">
-            <div className="absolute inset-0 rounded-full bg-accent/6 blur-xl" />
-
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent shadow-[0_0_28px_var(--accent-glow)]">
             <SportIcon
-              sport={mode}
-              className="relative h-5 w-5"
+              sport={match.sport}
+              className="h-5 w-5"
             />
           </div>
         </header>
 
-        {/* ERROR */}
+        {/* MATCH META */}
 
-        {message && (
-          <div className="flex items-start gap-3 rounded-2xl border border-danger/20 bg-danger/5 px-4 py-3.5 text-sm text-danger">
-            <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{message}</span>
+        <section className="text-center">
+          <div className="flex items-center justify-center gap-2">
+            <span className="eyebrow">
+              {getSportLabel(match.sport)}
+            </span>
+
+            <span className="h-1 w-1 rounded-full bg-white/20" />
+
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
+              {getFormatLabel(match.format)}
+            </span>
           </div>
-        )}
 
-        {/* LEADER */}
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em]">
+            Détail du match
+          </h1>
 
-        {topPlayer && topDivision ? (
+          <p className="mt-2 text-xs capitalize text-muted">
+            {formatDate(match.created_at)}
+          </p>
+
+          <div className="mt-3 flex justify-center">
+            <span
+              className={`rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] ${
+                match.result_type === "competitive"
+                  ? "border-accent/15 bg-accent/6 text-accent"
+                  : "border-white/8 bg-white/4 text-muted"
+              }`}
+            >
+              {match.result_type === "competitive"
+                ? "Compétitif"
+                : "Amical"}
+            </span>
+          </div>
+        </section>
+
+        {/* RESULT */}
+
+        <section
+          className={`relative overflow-hidden rounded-[30px] border p-5 sm:p-6 ${resultClasses.border} ${resultClasses.bg} ${resultClasses.glow}`}
+        >
+          <div
+            className={`pointer-events-none absolute left-1/2 -top-17.5 h-48 w-48 -translate-x-1/2 rounded-full blur-3xl ${
+              matchResult === "win"
+                ? "bg-accent/10"
+                : matchResult === "loss"
+                  ? "bg-danger/8"
+                  : "bg-white/5"
+            }`}
+            aria-hidden="true"
+          />
+
+          <div className="relative text-center">
+            <p
+              className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${resultClasses.text}`}
+            >
+              {getResultLabel(matchResult)}
+            </p>
+
+            <div className="mt-4 font-display text-5xl font-bold tracking-[-0.06em] sm:text-6xl">
+              {scoreLabel}
+            </div>
+
+            {sets.length > 0 && (
+              <div className="mt-5 flex flex-wrap justify-center gap-2">
+                {[...sets]
+                  .sort(
+                    (a, b) =>
+                      a.set_number -
+                      b.set_number
+                  )
+                  .map((set) => (
+                    <div
+                      key={set.id}
+                      className={`rounded-xl border px-3 py-2 text-xs ${
+                        set.is_match_tiebreak
+                          ? "border-accent/15 bg-accent/6 text-accent"
+                          : "border-white/6 bg-white/4 text-muted"
+                      }`}
+                    >
+                      <span className="mr-1.5 text-[9px] uppercase tracking-wider text-muted-2">
+                        {set.is_match_tiebreak
+                          ? "STB"
+                          : `Set ${set.set_number}`}
+                      </span>
+
+                      <span className="font-display font-bold text-foreground">
+                        {set.team_1_score}
+                        {" - "}
+                        {set.team_2_score}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* TEAMS */}
+
+        <section>
+          <div className="mb-3">
+            <p className="eyebrow">
+              Composition du match
+            </p>
+
+            <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+              Les joueurs
+            </h2>
+          </div>
+
+          <div className="grid gap-2.5">
+            {[1, 2].map((team) => {
+              const teamPlayers =
+                team === 1
+                  ? team1Players
+                  : team2Players;
+
+              const isWinner =
+                winnerTeam === team;
+
+              const isCurrentUserTeam =
+                currentUserTeam === team;
+
+              return (
+                <div
+                  key={team}
+                  className={`relative overflow-hidden rounded-3xl border p-4 transition-all ${
+                    isWinner
+                      ? "border-accent/15 bg-accent/5"
+                      : "border-white/7 bg-white/3"
+                  }`}
+                >
+                  {isWinner && (
+                    <div
+                      className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-accent/8 blur-2xl"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <div className="relative flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border font-display text-xs font-bold ${
+                          isWinner
+                            ? "border-accent/20 bg-accent/10 text-accent"
+                            : "border-white/8 bg-white/5 text-muted"
+                        }`}
+                      >
+                        {team}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="eyebrow">
+                          Équipe {team}
+                        </p>
+
+                        <div className="mt-1 space-y-0.5">
+                          {teamPlayers.length > 0 ? (
+                            teamPlayers.map(
+                              (player) => {
+                                const playerName =
+                                  getPlayerName(
+                                    player
+                                  );
+
+                                const isUser =
+                                  player.player_id ===
+                                  userId;
+
+                                return (
+                                  <div
+                                    key={`${player.team}-${player.player_id ?? player.guest_name}`}
+                                    className="flex min-w-0 items-center gap-2"
+                                  >
+                                    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-white/8 bg-white/5 text-[9px] font-bold text-muted">
+                                      {getPlayerInitials(
+                                        playerName
+                                      )}
+                                    </div>
+
+                                    <span
+                                      className={`truncate text-sm font-semibold ${
+                                        isUser
+                                          ? "text-accent"
+                                          : "text-foreground"
+                                      }`}
+                                    >
+                                      {playerName}
+                                    </span>
+
+                                    {isUser && (
+                                      <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-accent">
+                                        Toi
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              }
+                            )
+                          ) : (
+                            <span className="text-sm text-muted">
+                              Joueur non renseigné
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {isWinner && (
+                      <div className="flex shrink-0 items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-accent">
+                        <TrophyIcon className="h-3.5 w-3.5" />
+                        Gagnant
+                      </div>
+                    )}
+
+                    {isCurrentUserTeam &&
+                      !isWinner &&
+                      winnerTeam !== null && (
+                        <span className="shrink-0 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted">
+                          Ton équipe
+                        </span>
+                      )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* RANKING IMPACT */}
+
+        {currentUserHistory && (
           <section className="glass-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
             <div
-              className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/10 blur-3xl"
-              aria-hidden="true"
-            />
-
-            <div
-              className="pointer-events-none absolute bottom-0 left-0 h-28 w-44 rounded-full bg-accent/5 blur-3xl"
+              className={`pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full blur-3xl ${
+                currentUserHistory.points_change >= 0
+                  ? "bg-accent/10"
+                  : "bg-danger/7"
+              }`}
               aria-hidden="true"
             />
 
@@ -950,738 +1192,223 @@ export default function RankingPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="eyebrow">
-                    Leader actuel
+                    Impact classement
                   </p>
 
-                  <div className="mt-4 flex items-center gap-3.5">
-                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-accent/25 bg-accent/10 font-display text-xl font-bold text-accent shadow-[0_0_28px_var(--accent-glow)]">
-                      01
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="truncate font-display text-xl font-bold tracking-tight">
-                        {getPlayerName(topPlayer)}
-                      </p>
-
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <DivisionBadge
-                          division={topDivision}
-                          compact
-                        />
-
-                        {isChampion(topPlayer.id) && (
-                          <>
-                            <span className="h-1 w-1 rounded-full bg-white/20" />
-
-                            <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-widest text-accent">
-                              <CrownIcon className="h-3 w-3" />
-                              Champion
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <h2 className="mt-1.5 font-display text-xl font-bold tracking-tight">
+                    Tes points
+                  </h2>
                 </div>
 
-                <Link
-                  href={`/ranking/player/${topPlayer.id}`}
-                  aria-label={`Voir le profil de ${getPlayerName(
-                    topPlayer
-                  )}`}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/8 bg-white/5 text-muted transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+                <div
+                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${
+                    currentUserHistory.points_change >= 0
+                      ? "bg-accent/10 text-accent"
+                      : "bg-danger/8 text-danger"
+                  }`}
                 >
-                  <ChevronRightIcon className="h-4 w-4" />
-                </Link>
+                  <span className="font-display text-lg font-bold">
+                    {currentUserHistory.points_change >= 0
+                      ? "↑"
+                      : "↓"}
+                  </span>
+                </div>
               </div>
 
-              <div className="mt-7 grid grid-cols-[1fr_auto] items-end gap-5">
+              <div className="mt-7 grid grid-cols-[1fr_auto_1fr] items-end gap-3">
                 <div>
                   <p className="eyebrow">
-                    Points
+                    Avant
                   </p>
 
-                  <p className="mt-1 font-display text-5xl font-bold tracking-tighter">
-                    {topPoints}
+                  <p className="mt-1 font-display text-3xl font-bold tracking-tight">
+                    {currentUserHistory.old_points}
                   </p>
+                </div>
+
+                <div className="pb-2 text-muted-2">
+                  →
                 </div>
 
                 <div className="text-right">
                   <p className="eyebrow">
-                    Joueurs actifs
+                    Après
                   </p>
 
-                  <p className="mt-1 font-display text-2xl font-bold">
-                    {rankedPlayers.length}
+                  <p className="mt-1 font-display text-3xl font-bold tracking-tight">
+                    {currentUserHistory.new_points}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
-                    {topDivision.name}
+              <div className="mt-6 flex items-center justify-center">
+                <div
+                  className={`rounded-full border px-4 py-2 ${
+                    currentUserHistory.points_change >= 0
+                      ? "border-accent/20 bg-accent/10 text-accent"
+                      : "border-danger/20 bg-danger/8 text-danger"
+                  }`}
+                >
+                  <span className="font-display text-2xl font-bold">
+                    {formatSignedPoints(
+                      currentUserHistory.points_change
+                    )}
                   </span>
 
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-accent">
-                    {topNextDivision !== null
-                      ? `${pointsToNextDivision} pts restantes`
-                      : "Niveau maximal"}
+                  <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-[0.14em]">
+                    points
                   </span>
-                </div>
-
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
-                  <div
-                    className="h-full rounded-full bg-accent shadow-[0_0_18px_var(--accent-glow)] transition-all duration-700"
-                    style={{
-                      width: `${getDivisionProgress(
-                        topPoints,
-                        topDivision
-                      )}%`,
-                    }}
-                  />
                 </div>
               </div>
             </div>
-          </section>
-        ) : (
-          <section className="glass-strong rounded-[30px] px-5 py-9 text-center">
-            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl border border-white/8 bg-white/5 text-muted">
-              <TrophyIcon className="h-6 w-6" />
-            </div>
-
-            <p className="mt-4 font-display text-lg font-semibold">
-              Aucun classement
-            </p>
-
-            <p className="mx-auto mt-1 max-w-xs text-sm leading-5 text-muted">
-              Joue un premier match pour apparaître dans le classement.
-            </p>
           </section>
         )}
 
-        {/* PODIUM */}
+        {/* POINT DETAILS */}
 
-        <section>
-          <div className="mb-3 flex items-end justify-between">
-            <div>
-              <p className="eyebrow">
-                Top joueurs
-              </p>
-
-              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
-                Podium
-              </h2>
-            </div>
-
-            <span className="text-xs text-muted">
-              {rankedPlayers.length} joueur
-              {rankedPlayers.length > 1 ? "s" : ""}
-            </span>
-          </div>
-
-          {podium.length > 0 ? (
-            <div className="grid grid-cols-3 items-end gap-2">
-              {[1, 0, 2].map((index) => {
-                const player = podium[index];
-
-                if (!player) {
-                  return <div key={index} />;
-                }
-
-                const rank = index + 1;
-
-                const points =
-                  getPlayerPoints(player) ?? 1000;
-
-                const division =
-                  getDivision(points);
-
-                const champion = isChampion(
-                  player.id
-                );
-
-                const isFirst = rank === 1;
-
-                return (
-                  <Link
-                    key={player.id}
-                    href={`/ranking/player/${player.id}`}
-                    className={`group relative overflow-hidden rounded-[26px] border p-3.5 text-center transition-all duration-200 hover:-translate-y-1 ${
-                      isFirst
-                        ? "border-accent/20 bg-accent/4.5 shadow-[0_18px_45px_var(--accent-glow)]"
-                        : "border-white/8 bg-white/3.5 hover:border-white/12 hover:bg-white/5"
-                    }`}
-                  >
-                    {isFirst && (
-                      <div
-                        className="pointer-events-none absolute inset-x-4 top-0 h-20 rounded-full bg-accent/10 blur-2xl"
-                        aria-hidden="true"
-                      />
-                    )}
-
-                    <div className="relative">
-                      <div
-                        className={`mx-auto grid place-items-center rounded-full border font-display font-bold ${
-                          isFirst
-                            ? "h-12 w-12 border-accent/25 bg-accent/10 text-lg text-accent"
-                            : "h-10 w-10 border-white/8 bg-white/5 text-sm text-muted"
-                        }`}
-                      >
-                        {rank}
-                      </div>
-
-                      <div className="mt-3 truncate text-xs font-semibold">
-                        {getPlayerName(player)}
-                      </div>
-
-                      <div className="mt-1 font-display text-lg font-bold">
-                        {points}
-                      </div>
-
-                      <div className="mt-1 flex justify-center">
-                        <DivisionBadge
-                          division={division}
-                          compact
-                        />
-                      </div>
-
-                      {champion && (
-                        <div className="mt-2 flex items-center justify-center gap-1 text-[8px] font-semibold uppercase tracking-widest text-accent">
-                          <CrownIcon className="h-3 w-3" />
-                          Champion
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : null}
-        </section>
-
-        {/* CHAMPION */}
-
-        <section className="glass relative overflow-hidden rounded-[28px] p-5">
-          <div
-            className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-accent/10 blur-3xl"
-            aria-hidden="true"
-          />
-
-          <div className="relative">
-            <div className="flex items-start justify-between gap-4">
+        {currentUserHistory &&
+          pointDetails.length > 0 && (
+            <section className="glass rounded-[28px] p-5">
               <div>
                 <p className="eyebrow">
-                  Champion actuel
+                  Détail des points
                 </p>
 
-                <h2 className="mt-2 font-display text-xl font-bold tracking-tight">
-                  {currentChampionPlayer
-                    ? getPlayerName(
-                        currentChampionPlayer
-                      )
-                    : "Aucun champion"}
+                <h2 className="mt-1.5 font-display text-xl font-bold tracking-tight">
+                  Calcul du match
                 </h2>
 
-                {currentChampionPlayer && (
-                  <p className="mt-1 text-xs text-muted">
-                    {sportLabel}
-                  </p>
+                <p className="mt-1.5 text-xs leading-5 text-muted">
+                  Seuls les éléments ayant réellement
+                  modifié ton score sont affichés.
+                </p>
+              </div>
+
+              <div className="mt-5 space-y-1.5">
+                {pointDetails.map(
+                  (detail, index) => {
+                    const positive =
+                      detail.value > 0;
+
+                    return (
+                      <div
+                        key={`${detail.label}-${index}`}
+                        className="flex items-center justify-between gap-4 rounded-2xl border border-white/5 bg-white/2.5 px-3.5 py-3"
+                      >
+                        <span className="text-xs font-medium text-muted">
+                          {detail.label}
+                        </span>
+
+                        <span
+                          className={`font-display text-sm font-bold ${
+                            positive
+                              ? "text-accent"
+                              : "text-danger"
+                          }`}
+                        >
+                          {formatPointValue(
+                            detail.value
+                          )}
+                        </span>
+                      </div>
+                    );
+                  }
                 )}
               </div>
 
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-accent/20 bg-accent/10 text-accent">
-                <CrownIcon className="h-5 w-5" />
+              <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/7 bg-white/4 px-3.5 py-3.5">
+                <span className="text-xs font-semibold">
+                  Variation totale
+                </span>
+
+                <span
+                  className={`font-display text-base font-bold ${
+                    currentUserHistory.points_change >= 0
+                      ? "text-accent"
+                      : "text-danger"
+                  }`}
+                >
+                  {formatSignedPoints(
+                    currentUserHistory.points_change
+                  )}
+                </span>
               </div>
-            </div>
+            </section>
+          )}
 
-            {currentChampionPlayer &&
-            currentChampion ? (
-              <>
-                <div className="mt-5 grid grid-cols-2 gap-2.5">
-                  <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
-                    <p className="eyebrow">
-                      Règne
-                    </p>
+        {/* NO RANKING DATA */}
 
-                    <p className="mt-1.5 font-display text-xl font-bold">
-                      {
-                        currentChampion.matches_as_champion
-                      }
-                    </p>
+        {!currentUserHistory && (
+          <section className="glass rounded-[28px] p-5">
+            <div className="flex items-start gap-3.5">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/8 bg-white/5 text-muted">
+                <TrophyIcon className="h-4 w-4" />
+              </div>
 
-                    <p className="mt-0.5 text-[11px] text-muted">
-                      matchs défendus
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-white/6 bg-white/2.5 p-3.5">
-                    <p className="eyebrow">
-                      Depuis
-                    </p>
-
-                    <p className="mt-1.5 font-display text-xl font-bold">
-                      {new Date(
-                        currentChampion.started_at
-                      ).toLocaleDateString(
-                        "fr-FR",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                        }
-                      )}
-                    </p>
-
-                    <p className="mt-0.5 text-[11px] text-muted">
-                      début du règne
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
-                  <div className="h-1 w-1 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
-                  Champion en titre
-                </div>
-              </>
-            ) : (
-              <p className="mt-4 max-w-sm text-sm leading-5 text-muted">
-                Le premier champion sera désigné après les prochains matchs.
-              </p>
-            )}
-          </div>
-        </section>
-
-        {/* DIVISION */}
-
-        {topDivision && topPlayer && (
-          <section className="glass relative overflow-hidden rounded-[28px] p-5">
-            <div className="flex items-start justify-between gap-5">
-              <div className="min-w-0">
+              <div>
                 <p className="eyebrow">
-                  Progression de division
+                  Classement
                 </p>
 
-                <div className="mt-2.5">
-                  <DivisionBadge
-                    division={topDivision}
-                  />
-                </div>
+                <h2 className="mt-1.5 font-display text-lg font-bold">
+                  Aucun impact enregistré
+                </h2>
 
-                <p className="mt-2 max-w-xs text-sm leading-5 text-muted">
-                  {topDivision.description}
+                <p className="mt-1.5 text-sm leading-5 text-muted">
+                  Ce match ne possède pas de variation
+                  de classement enregistrée pour ton
+                  profil.
                 </p>
               </div>
-
-              <div className="shrink-0 text-right">
-                <p className="eyebrow">
-                  Points
-                </p>
-
-                <p className="mt-1 font-display text-3xl font-bold tracking-tight">
-                  {topPoints}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
-                <span>
-                  {topDivision.name}
-                </span>
-
-                <span className="text-accent">
-                  {topDivision.max === null
-                    ? "Élite"
-                    : `${Math.round(
-                        getDivisionProgress(
-                          topPoints,
-                          topDivision
-                        )
-                      )}%`}
-                </span>
-              </div>
-
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/8">
-                <div
-                  className="h-full rounded-full bg-accent shadow-[0_0_16px_var(--accent-glow)] transition-all duration-500"
-                  style={{
-                    width: `${getDivisionProgress(
-                      topPoints,
-                      topDivision
-                    )}%`,
-                  }}
-                />
-              </div>
-
-              <div className="mt-2 flex items-center justify-between text-[9px] uppercase tracking-[0.12em] text-muted-2">
-                <span>
-                  {topDivision.min} pts
-                </span>
-
-                <span>
-                  {topDivision.max === null
-                    ? "Niveau maximal"
-                    : topNextDivision !== null
-                      ? `${topNextDivision} pts`
-                      : "Prochain niveau"}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-5 gap-1">
-              {[
-                "Bronze",
-                "Argent",
-                "Or",
-                "Platine",
-                "Diamant",
-              ].map((divisionName) => {
-                const isCurrent =
-                  divisionName ===
-                  topDivision.name;
-
-                return (
-                  <div
-                    key={divisionName}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl py-2 ${
-                      isCurrent
-                        ? "bg-white/5 text-foreground"
-                        : "text-muted-2"
-                    }`}
-                  >
-                    <DivisionMark
-                      name={divisionName}
-                      className={`h-6 w-6 ${
-                        isCurrent
-                          ? getDivisionAccent(
-                              divisionName
-                            )
-                          : ""
-                      }`}
-                    />
-
-                    <span className="text-[8px] font-semibold uppercase tracking-[0.08em]">
-                      {divisionName}
-                    </span>
-                  </div>
-                );
-              })}
             </div>
           </section>
         )}
 
-        {/* FULL RANKING */}
+        {/* ACTIONS */}
 
-        <section>
-          <div className="mb-3 flex items-end justify-between">
-            <div>
-              <p className="eyebrow">
-                Classement complet
+        <div className="space-y-2.5">
+          <Link
+            href="/ranking"
+            className="group flex items-center gap-4 rounded-3xl border border-accent/15 bg-accent/5 px-4 py-4 transition-all duration-200 hover:border-accent/25 hover:bg-accent/8 active:scale-[0.99]"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+              <TrophyIcon className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">
+                Voir le classement
               </p>
 
-              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
-                Tous les joueurs
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted">
-              <ArrowUpIcon className="h-3 w-3 text-accent" />
-              Points
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-[28px] border border-white/8 bg-white/2.5">
-            {rankedPlayers.map(
-              (player, index) => {
-                const points =
-                  getPlayerPoints(player) ?? 1000;
-
-                const division =
-                  getDivision(points);
-
-                const playerMatches =
-                  getRecentConfrontations(
-                    player.id
-                  );
-
-                const expanded =
-                  expandedPlayerId ===
-                  player.id;
-
-                const champion =
-                  isChampion(player.id);
-
-                const streak =
-                  getChampionStreak(
-                    player.id
-                  );
-
-                return (
-                  <div
-                    key={player.id}
-                    className="border-b border-white/5 last:border-b-0"
-                  >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedPlayerId(
-                          expanded
-                            ? null
-                            : player.id
-                        )
-                      }
-                      className="group flex w-full items-center gap-3 px-3.5 py-3.5 text-left transition-colors hover:bg-white/4.5"
-                    >
-                      <div
-                        className={`w-7 shrink-0 text-center font-display text-[11px] font-bold ${
-                          index === 0
-                            ? "text-accent"
-                            : "text-muted-2"
-                        }`}
-                      >
-                        {String(
-                          index + 1
-                        ).padStart(2, "0")}
-                      </div>
-
-                      <div
-                        className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border ${
-                          index === 0
-                            ? "border-accent/20 bg-accent/10 text-accent"
-                            : "border-white/8 bg-white/5 text-muted"
-                        }`}
-                      >
-                        <span className="text-[11px] font-semibold">
-                          {getPlayerName(
-                            player
-                          )
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </span>
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex min-w-0 items-center gap-1.5">
-                          <span className="truncate text-sm font-semibold">
-                            {getPlayerName(
-                              player
-                            )}
-                          </span>
-
-                          {champion && (
-                            <CrownIcon className="h-3.5 w-3.5 shrink-0 text-accent" />
-                          )}
-                        </div>
-
-                        <div className="mt-1 flex items-center gap-2">
-                          <DivisionBadge
-                            division={division}
-                            compact
-                          />
-
-                          {champion &&
-                            streak > 0 && (
-                              <>
-                                <span className="h-1 w-1 rounded-full bg-white/20" />
-
-                                <span className="text-[9px] uppercase tracking-[0.08em] text-accent">
-                                  {streak} défense
-                                  {streak > 1
-                                    ? "s"
-                                    : ""}
-                                </span>
-                              </>
-                            )}
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 text-right">
-                        <div className="font-display text-base font-bold">
-                          {points}
-                        </div>
-
-                        <div className="mt-0.5 text-[8px] uppercase tracking-[0.14em] text-muted">
-                          pts
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 text-muted-2">
-                        <ChevronDownIcon
-                          open={expanded}
-                          className="h-4 w-4"
-                        />
-                      </div>
-                    </button>
-
-                    {expanded && (
-                      <div className="border-t border-white/5 bg-black/10 px-3.5 pb-4 pt-3">
-                        <div className="mb-3 flex items-center justify-between">
-                          <p className="eyebrow">
-                            Confrontations récentes
-                          </p>
-
-                          <Link
-                            href={`/ranking/player/${player.id}`}
-                            onClick={(event) =>
-                              event.stopPropagation()
-                            }
-                            className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-accent transition-opacity hover:opacity-80"
-                          >
-                            Profil
-                            <ChevronRightIcon className="h-3 w-3" />
-                          </Link>
-                        </div>
-
-                        {playerMatches.length >
-                        0 ? (
-                          <div className="space-y-2">
-                            {playerMatches.map(
-                              (match) => (
-                                <Link
-                                  key={match.id}
-                                  href={`/matches/${match.id}`}
-                                  onClick={(
-                                    event
-                                  ) =>
-                                    event.stopPropagation()
-                                  }
-                                  className="group flex items-center gap-3 rounded-2xl border border-white/5 bg-white/2.5 px-3 py-2.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
-                                >
-                                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/5 text-muted">
-                                    <SportIcon
-                                      sport={
-                                        match.sport
-                                      }
-                                      className="h-3.5 w-3.5"
-                                    />
-                                  </div>
-
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate text-xs font-medium">
-                                      vs{" "}
-                                      {getOpponentNames(
-                                        player.id,
-                                        match.id
-                                      )}
-                                    </p>
-
-                                    <p className="mt-0.5 text-[10px] text-muted">
-                                      {getFormatLabel(
-                                        match.format
-                                      )}
-                                      {" · "}
-                                      {new Date(
-                                        match.created_at
-                                      ).toLocaleDateString(
-                                        "fr-FR",
-                                        {
-                                          day: "2-digit",
-                                          month:
-                                            "short",
-                                        }
-                                      )}
-                                    </p>
-                                  </div>
-
-                                  <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
-                                </Link>
-                              )
-                            )}
-                          </div>
-                        ) : (
-                          <div className="rounded-2xl border border-white/5 bg-white/2.5 px-3 py-4 text-center text-xs text-muted">
-                            Aucun match récent.
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-            )}
-          </div>
-        </section>
-
-        {/* HISTORY */}
-
-        <Link
-          href="/ranking/history"
-          className="group flex items-center gap-4 rounded-3xl border border-white/8 bg-white/3.5 px-4 py-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
-        >
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
-            <ArrowUpIcon className="h-4 w-4" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold">
-              Historique des points
-            </p>
-
-            <p className="mt-0.5 text-xs text-muted">
-              Consulte l’évolution de ton classement.
-            </p>
-          </div>
-
-          <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
-        </Link>
-
-        {/* EXPLANATION */}
-
-        <section className="glass rounded-[28px] p-5">
-          <div className="flex items-start gap-3.5">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">
-              <ArrowUpIcon className="h-4 w-4" />
-            </div>
-
-            <div>
-              <p className="eyebrow">
-                Comprendre le classement
-              </p>
-
-              <h2 className="mt-1.5 font-display text-lg font-bold tracking-tight">
-                Les points évoluent après chaque match
-              </h2>
-
-              <p className="mt-2 text-sm leading-5 text-muted">
-                Ton classement dépend de tes résultats et de la valeur
-                sportive de tes performances.
+              <p className="mt-0.5 text-xs text-muted">
+                Consulte ta position et celle des autres joueurs.
               </p>
             </div>
-          </div>
 
-          <div className="mt-5 space-y-2">
-            {[
-              {
-                title: "Victoire",
-                description:
-                  "Une victoire peut faire progresser ton total.",
-              },
-              {
-                title: "Défaite",
-                description:
-                  "Une défaite peut entraîner une variation de points.",
-              },
-              {
-                title: "Performance",
-                description:
-                  "Des bonus ou malus peuvent s’appliquer selon le résultat.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-white/5 bg-white/2.5 px-3.5 py-3"
-              >
-                <p className="text-xs font-semibold">
-                  {item.title}
-                </p>
+            <ChevronRightIcon className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" />
+          </Link>
 
-                <p className="mt-0.5 text-[11px] leading-4 text-muted">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+          <Link
+            href="/matches"
+            className="group flex items-center gap-4 rounded-3xl border border-white/8 bg-white/3.5 px-4 py-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.99]"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/8 bg-white/5 text-muted">
+              <ArrowLeftIcon className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">
+                Retour aux matchs
+              </p>
+
+              <p className="mt-0.5 text-xs text-muted">
+                Revenir à ton historique de matchs.
+              </p>
+            </div>
+
+            <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
     </main>
   );

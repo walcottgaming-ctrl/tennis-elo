@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+
 import { createClient } from "@/src/supabase/server";
-import MatchReactions from "./_components/MatchReactions";
+
+
 import SportIcon from "@/app/components/SportIcon";
 
 type Profile = {
@@ -28,7 +30,7 @@ type Match = {
   match_players: MatchPlayer[];
 };
 
-type Set = {
+type MatchSet = {
   id: string;
   team_1_score: number;
   team_2_score: number;
@@ -40,26 +42,31 @@ type RankingHistory = {
   old_points: number;
   new_points: number;
   points_change: number;
+
   base_points: number;
   bonus_bulle: number;
   bonus_double_bulle: number;
   bonus_victoire_propre: number;
   bonus_serie: number;
   bonus_performer: number;
+
   malus_fanny: number;
   malus_double_bulle: number;
   malus_contre_performance: number;
+
   amortisseur_tiebreak: number;
 };
 
-type MatchReaction = {
-  id: string;
-  user_id: string;
-  reaction: string;
-};
+
 
 function playerName(player: MatchPlayer | null) {
-  if (!player) return "Joueur";
+  if (!player) {
+    return "Joueur";
+  }
+
+  if (player.guest_name?.trim()) {
+    return player.guest_name.trim();
+  }
 
   if (player.profiles) {
     const fullName = [
@@ -70,19 +77,50 @@ function playerName(player: MatchPlayer | null) {
       .join(" ")
       .trim();
 
-    return fullName || player.profiles.username || "Joueur";
+    return (
+      fullName ||
+      (player.profiles.username
+        ? `@${player.profiles.username}`
+        : "Joueur")
+    );
   }
 
-  return player.guest_name || "Joueur";
+  return "Joueur";
+}
+
+function playerInitials(player: MatchPlayer | null) {
+  const name = playerName(player);
+
+  const parts = name
+    .replace(/^@/, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return "J";
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${parts[0][0]}${
+    parts[parts.length - 1][0]
+  }`.toUpperCase();
 }
 
 function formatPointsChange(points: number) {
-  if (points > 0) return `+${points}`;
+  if (points > 0) {
+    return `+${points}`;
+  }
+
   return `${points}`;
 }
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("fr-FR", {
+    weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -92,7 +130,7 @@ function formatDate(date: string) {
 }
 
 function ArrowLeftIcon({
-  className = "h-4 w-4",
+  className = "h-5 w-5",
 }: {
   className?: string;
 }) {
@@ -107,7 +145,29 @@ function ArrowLeftIcon({
       className={className}
       aria-hidden="true"
     >
-      <path d="M15 18 9 12l6-6" />
+      <path d="M19 12H5" />
+      <path d="m12 19-7-7 7-7" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon({
+  className = "h-4 w-4",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m9 18 6-6-6-6" />
     </svg>
   );
 }
@@ -161,6 +221,57 @@ function ChartIcon({
   );
 }
 
+
+
+function getPointDetails(history: RankingHistory) {
+  const details = [
+    {
+      label: "Base",
+      value: history.base_points,
+    },
+    {
+      label: "Bulle",
+      value: history.bonus_bulle,
+    },
+    {
+      label: "Double bulle",
+      value: history.bonus_double_bulle,
+    },
+    {
+      label: "Victoire propre",
+      value: history.bonus_victoire_propre,
+    },
+    {
+      label: "Série",
+      value: history.bonus_serie,
+    },
+    {
+      label: "Performer",
+      value: history.bonus_performer,
+    },
+    {
+      label: "Fanny",
+      value: history.malus_fanny,
+    },
+    {
+      label: "Double bulle",
+      value: history.malus_double_bulle,
+    },
+    {
+      label: "Contre-performance",
+      value: history.malus_contre_performance,
+    },
+    {
+      label: "Amortisseur tie-break",
+      value: history.amortisseur_tiebreak,
+    },
+  ];
+
+  return details.filter(
+    (detail) => detail.value !== 0
+  );
+}
+
 export default async function SuperTieBreakMatchPage({
   params,
 }: {
@@ -178,7 +289,14 @@ export default async function SuperTieBreakMatchPage({
     redirect("/login");
   }
 
-  const { data: matchData, error: matchError } = await supabase
+  /* --------------------------------
+     MATCH
+  -------------------------------- */
+
+  const {
+    data: matchData,
+    error: matchError,
+  } = await supabase
     .from("matches")
     .select(
       `
@@ -216,23 +334,30 @@ export default async function SuperTieBreakMatchPage({
     sport: matchData.sport,
     format: matchData.format,
     result_type: matchData.result_type,
-    match_players: (matchData.match_players ?? []).map(
-      (player) => ({
-        player_id: player.player_id,
-        team: player.team,
-        guest_name: player.guest_name,
-        profiles: Array.isArray(player.profiles)
-          ? player.profiles[0] ?? null
-          : player.profiles ?? null,
-      })
-    ),
+    match_players: (
+      matchData.match_players ?? []
+    ).map((player) => ({
+      player_id: player.player_id,
+      team: player.team,
+      guest_name: player.guest_name,
+      profiles: Array.isArray(player.profiles)
+        ? player.profiles[0] ?? null
+        : player.profiles ?? null,
+    })),
   };
 
   if (match.match_players.length !== 2) {
     notFound();
   }
 
-  const { data: setData, error: setError } = await supabase
+  /* --------------------------------
+     SET / SCORE
+  -------------------------------- */
+
+  const {
+    data: setData,
+    error: setError,
+  } = await supabase
     .from("sets")
     .select(
       `
@@ -247,40 +372,34 @@ export default async function SuperTieBreakMatchPage({
     .eq("is_match_tiebreak", true)
     .single();
 
+  /* --------------------------------
+     RESULT NOT YET RECORDED
+  -------------------------------- */
+
   if (setError || !setData) {
     return (
-      <main className="min-h-screen px-4 pb-32 pt-6 text-foreground sm:px-5">
-        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
-              backgroundAttachment: "fixed",
-            }}
-          />
+      <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10"
+          aria-hidden="true"
+        >
+          <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+          <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
         </div>
 
         <div className="mx-auto max-w-lg">
           <Link
             href="/supertiebreak"
             aria-label="Retour au Super Tie-Break"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/4 px-3.5 py-2 text-xs font-semibold text-muted transition-all hover:border-white/15 hover:bg-white/7 hover:text-foreground active:scale-[0.98]"
           >
             <ArrowLeftIcon className="h-4 w-4" />
+            Super Tie-Break
           </Link>
 
-          <div className="glass-strong relative mt-7 overflow-hidden rounded-[28px] p-5 sm:p-6">
-            <div
-              className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full blur-3xl"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--accent) 12%, transparent)",
-              }}
-            />
-
-            <div className="relative flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent shadow-[0_0_20px_var(--accent-glow)]">
+          <section className="glass-strong mt-6 overflow-hidden rounded-[30px] p-5 sm:p-6">
+            <div className="flex items-start gap-4">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-accent/15 bg-accent/10 text-accent shadow-[0_0_24px_var(--accent-glow)]">
                 <SportIcon
                   sport="super_tiebreak"
                   className="h-5 w-5"
@@ -288,15 +407,17 @@ export default async function SuperTieBreakMatchPage({
               </div>
 
               <div>
-                <p className="eyebrow">Résultat</p>
+                <p className="eyebrow">
+                  Super Tie-Break
+                </p>
 
-                <h1 className="mt-1 font-display text-xl font-semibold">
+                <h1 className="mt-1 font-display text-xl font-bold">
                   Résultat non enregistré
                 </h1>
 
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Le résultat de ce match n&apos;a pas encore été
-                  enregistré.
+                <p className="mt-2 text-sm leading-5 text-muted">
+                  Le score de ce Super Tie-Break
+                  n&apos;a pas encore été enregistré.
                 </p>
               </div>
             </div>
@@ -304,27 +425,36 @@ export default async function SuperTieBreakMatchPage({
             {match.created_by === user.id && (
               <Link
                 href={`/supertiebreak/${id}/result`}
-                className="relative mt-6 flex min-h-12 items-center justify-between rounded-2xl bg-accent px-4 font-semibold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.99]"
+                className="mt-6 flex items-center justify-between rounded-2xl bg-accent px-4 py-3.5 font-semibold text-[#0b0d13] shadow-[0_10px_30px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.99]"
               >
-                <span>Enregistrer le résultat</span>
+                <span>
+                  Enregistrer le résultat
+                </span>
 
-                <span className="text-lg">→</span>
+                <ChevronRightIcon className="h-5 w-5" />
               </Link>
             )}
-          </div>
+          </section>
         </div>
       </main>
     );
   }
 
-  const set: Set = {
+  const set: MatchSet = {
     id: setData.id,
     team_1_score: setData.team_1_score,
     team_2_score: setData.team_2_score,
-    is_match_tiebreak: setData.is_match_tiebreak,
+    is_match_tiebreak:
+      setData.is_match_tiebreak,
   };
 
-  const { data: historyData } = await supabase
+  /* --------------------------------
+     RANKING HISTORY
+  -------------------------------- */
+
+  const {
+    data: historyData,
+  } = await supabase
     .from("ranking_history")
     .select(
       `
@@ -347,18 +477,15 @@ export default async function SuperTieBreakMatchPage({
     .eq("match_id", id)
     .eq("sport", "super_tiebreak");
 
-  const { data: matchReactions } = await supabase
-    .from("match_reactions")
-    .select("id, user_id, reaction")
-    .eq("match_id", id)
-    .order("created_at", {
-      ascending: true,
-    });
 
-  const history: RankingHistory[] = historyData ?? [];
+  const history =
+    (historyData ?? []) as RankingHistory[];
 
-  const typedReactions =
-    (matchReactions ?? []) as MatchReaction[];
+  
+
+  /* --------------------------------
+     PLAYERS
+  -------------------------------- */
 
   const team1 = match.match_players.find(
     (player) => player.team === 1
@@ -378,124 +505,144 @@ export default async function SuperTieBreakMatchPage({
   const winner = team1Won ? team1 : team2;
   const loser = team1Won ? team2 : team1;
 
-  const winnerScore = Math.max(
-    set.team_1_score,
-    set.team_2_score
-  );
-
-  const loserScore = Math.min(
-    set.team_1_score,
-    set.team_2_score
-  );
+  
 
   const winnerHistory = history.find(
-    (entry) => entry.player_id === winner.player_id
+    (entry) =>
+      entry.player_id === winner.player_id
   );
 
   const loserHistory = history.find(
-    (entry) => entry.player_id === loser.player_id
+    (entry) =>
+      entry.player_id === loser.player_id
   );
 
+  const isCompetitive =
+    match.result_type === "competitive";
+
   return (
-    <main className="min-h-screen px-4 pb-32 pt-6 text-foreground sm:px-5">
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(circle at 10% 8%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 40%), radial-gradient(circle at 70% 85%, rgba(79,45,127,0.18) 0%, transparent 45%), #0c0f17",
-            backgroundAttachment: "fixed",
-          }}
-        />
+    <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-6 text-foreground sm:px-5">
+      {/* BACKGROUND */}
+
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        aria-hidden="true"
+      >
+        <div className="absolute left-[-20%] top-[-10%] h-125 w-125 rounded-full bg-accent/6 blur-[120px]" />
+
+        <div className="absolute bottom-[-15%] right-[-15%] h-135 w-135 rounded-full bg-indigo-500/8 blur-[135px]" />
       </div>
 
-      <div className="mx-auto max-w-lg pb-8">
+      <div className="mx-auto max-w-lg space-y-5 pb-8">
         {/* HEADER */}
-        <Link
-          href="/supertiebreak"
-          aria-label="Retour au Super Tie-Break"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/5 text-muted backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/10 hover:text-foreground active:scale-95"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-        </Link>
 
-        <header className="mt-7">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-accent/15 bg-accent/10 text-accent shadow-[0_0_20px_var(--accent-glow)]">
-              <div
-                className="pointer-events-none absolute inset-0 rounded-2xl opacity-60"
-                style={{
-                  boxShadow:
-                    "inset 0 1px 0 rgba(255,255,255,0.05)",
-                }}
-              />
+        <header className="flex items-center justify-between gap-3">
+          <Link
+            href="/supertiebreak"
+            className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/4 px-3.5 py-2 text-xs font-semibold text-muted transition-all hover:border-white/15 hover:bg-white/7 hover:text-foreground active:scale-[0.98]"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
 
-              <SportIcon
-                sport="super_tiebreak"
-                className="relative h-5 w-5"
-              />
-            </div>
+            <span>
+              Super Tie-Break
+            </span>
+          </Link>
 
-            <div className="min-w-0">
-              <p className="eyebrow">Match terminé</p>
-
-              <h1 className="mt-1 font-display text-3xl font-bold tracking-tight">
-                Super Tie-Break
-              </h1>
-            </div>
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-accent/20 bg-accent/10 text-accent shadow-[0_0_28px_var(--accent-glow)]">
+            <SportIcon
+              sport="super_tiebreak"
+              className="h-5 w-5"
+            />
           </div>
-
-          <p className="mt-3 text-sm text-muted">
-            {formatDate(match.created_at)}
-          </p>
         </header>
 
-        {/* SCORE HERO */}
-        <section className="glass-strong relative mt-7 overflow-hidden rounded-[30px]">
-          <div className="pointer-events-none absolute inset-0">
-            <div
-              className="absolute left-1/2 top-0 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-              style={{
-                background:
-                  "color-mix(in srgb, var(--accent) 14%, transparent)",
-              }}
-            />
+        {/* META */}
 
-            <div className="absolute inset-x-0 top-0 h-px bg-white/8" />
+        <section className="text-center">
+          <div className="flex items-center justify-center gap-2">
+            <span className="eyebrow">
+              Super Tie-Break
+            </span>
+
+            <span className="h-1 w-1 rounded-full bg-white/20" />
+
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-accent">
+              {match.format === "doubles"
+                ? "Double"
+                : "Simple"}
+            </span>
           </div>
 
-          <div className="relative p-5 sm:p-6">
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-[-0.04em]">
+            Détail du match
+          </h1>
+
+          <p className="mt-2 text-xs capitalize text-muted">
+            {formatDate(match.created_at)}
+          </p>
+
+          <div className="mt-3 flex justify-center">
+            <span
+              className={`rounded-full border px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] ${
+                isCompetitive
+                  ? "border-accent/15 bg-accent/6 text-accent"
+                  : "border-white/8 bg-white/4 text-muted"
+              }`}
+            >
+              {isCompetitive
+                ? "Compétitif"
+                : "Amical"}
+            </span>
+          </div>
+        </section>
+
+        {/* SCORE */}
+
+        <section className="relative overflow-hidden rounded-[30px] border border-accent/15 bg-accent/5 p-5 shadow-[0_0_40px_var(--accent-glow)] sm:p-6">
+          <div
+            className="pointer-events-none absolute left-1/2 -top-20 h-52 w-52 -translate-x-1/2 rounded-full bg-accent/10 blur-3xl"
+            aria-hidden="true"
+          />
+
+          <div className="relative">
             <div className="mb-6 flex items-center justify-center gap-2">
               <div className="h-px w-8 bg-white/8" />
 
               <p className="eyebrow text-accent">
-                Super Tie-Break
+                Résultat
               </p>
 
               <div className="h-px w-8 bg-white/8" />
             </div>
 
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-              {/* TEAM 1 */}
+              {/* PLAYER 1 */}
+
               <div className="min-w-0 text-center">
                 <div
-                  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border transition-colors ${
+                  className={`mx-auto grid h-12 w-12 place-items-center rounded-full border ${
                     team1Won
                       ? "border-accent/25 bg-accent/10 text-accent shadow-[0_0_18px_var(--accent-glow)]"
-                      : "border-white/8 bg-white/4.5 text-muted"
+                      : "border-white/8 bg-white/5 text-muted"
                   }`}
                 >
-                  <span className="text-sm font-bold">
-                    1
+                  <span className="text-xs font-bold">
+                    {playerInitials(team1)}
                   </span>
                 </div>
 
-                <p className="mt-3 truncate text-sm font-semibold">
+                <p
+                  className={`mt-3 truncate text-sm font-semibold ${
+                    team1Won
+                      ? "text-accent"
+                      : "text-foreground"
+                  }`}
+                >
                   {playerName(team1)}
                 </p>
 
                 <p
-                  className={`mt-3 font-display text-6xl font-bold leading-none tracking-tight ${
+                  className={`mt-3 font-display text-6xl font-bold leading-none tracking-[-0.06em] ${
                     team1Won
                       ? "text-accent"
                       : "text-foreground"
@@ -506,46 +653,54 @@ export default async function SuperTieBreakMatchPage({
 
                 {team1Won && (
                   <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                    <TrophyIcon className="h-3 w-3 text-accent" />
 
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-accent">
                       Victoire
                     </span>
                   </div>
                 )}
               </div>
 
-              {/* SEPARATOR */}
+              {/* VS */}
+
               <div className="flex flex-col items-center gap-2">
                 <div className="h-8 w-px bg-white/8" />
 
-                <span className="font-display text-sm font-semibold text-muted">
+                <span className="font-display text-xs font-semibold text-muted">
                   VS
                 </span>
 
                 <div className="h-8 w-px bg-white/8" />
               </div>
 
-              {/* TEAM 2 */}
+              {/* PLAYER 2 */}
+
               <div className="min-w-0 text-center">
                 <div
-                  className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border transition-colors ${
+                  className={`mx-auto grid h-12 w-12 place-items-center rounded-full border ${
                     !team1Won
                       ? "border-accent/25 bg-accent/10 text-accent shadow-[0_0_18px_var(--accent-glow)]"
-                      : "border-white/8 bg-white/4.5 text-muted"
+                      : "border-white/8 bg-white/5 text-muted"
                   }`}
                 >
-                  <span className="text-sm font-bold">
-                    2
+                  <span className="text-xs font-bold">
+                    {playerInitials(team2)}
                   </span>
                 </div>
 
-                <p className="mt-3 truncate text-sm font-semibold">
+                <p
+                  className={`mt-3 truncate text-sm font-semibold ${
+                    !team1Won
+                      ? "text-accent"
+                      : "text-foreground"
+                  }`}
+                >
                   {playerName(team2)}
                 </p>
 
                 <p
-                  className={`mt-3 font-display text-6xl font-bold leading-none tracking-tight ${
+                  className={`mt-3 font-display text-6xl font-bold leading-none tracking-[-0.06em] ${
                     !team1Won
                       ? "text-accent"
                       : "text-foreground"
@@ -556,9 +711,9 @@ export default async function SuperTieBreakMatchPage({
 
                 {!team1Won && (
                   <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/10 px-2.5 py-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                    <TrophyIcon className="h-3 w-3 text-accent" />
 
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-accent">
                       Victoire
                     </span>
                   </div>
@@ -566,310 +721,348 @@ export default async function SuperTieBreakMatchPage({
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted">
-              <span className="h-1 w-1 rounded-full bg-accent" />
-
-              Premier à 10 points avec 2 points d&apos;écart
+            <div className="mt-6 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+                Premier à 10 points avec 2 points
+                d&apos;écart
+              </p>
             </div>
           </div>
         </section>
 
-        {/* REACTIONS */}
-        <MatchReactions
-          matchId={match.id}
-          currentUserId={user.id}
-          initialReactions={typedReactions}
-        />
+        {/* PLAYERS */}
 
-        {/* POINTS */}
-        {winnerHistory && loserHistory && (
-          <section className="mt-8">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Classement</p>
+        <section>
+          <div className="mb-3">
+            <p className="eyebrow">
+              Composition du match
+            </p>
 
-                <h2 className="mt-1 font-display text-xl font-semibold">
-                  Impact du match
-                </h2>
-              </div>
+            <h2 className="mt-1 font-display text-xl font-bold tracking-tight">
+              Les joueurs
+            </h2>
+          </div>
 
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
-                <TrophyIcon className="h-4 w-4" />
-              </div>
-            </div>
+          <div className="grid gap-2.5">
+            {[team1, team2].map(
+              (player, index) => {
+                const isWinner =
+                  (index === 0 && team1Won) ||
+                  (index === 1 && !team1Won);
 
-            <div className="mt-4 space-y-3">
-              {/* VAINQUEUR */}
-              <div className="glass-strong rounded-3xl p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                const isCurrentUser =
+                  player.player_id === user.id;
 
-                      <p className="truncate font-semibold">
-                        {playerName(winner)}
-                      </p>
-                    </div>
-
-                    <p className="mt-1 text-sm text-muted">
-                      {winnerScore}-{loserScore}
-                    </p>
-                  </div>
-
-                  <p className="shrink-0 font-display text-xl font-bold text-accent">
-                    {formatPointsChange(
-                      winnerHistory.points_change
-                    )}
-                  </p>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
-                  <p className="text-sm text-muted">
-                    Nouveau classement
-                  </p>
-
-                  <p className="font-display font-semibold">
-                    {winnerHistory.new_points.toLocaleString(
-                      "fr-FR"
-                    )}{" "}
-                    <span className="text-xs font-medium text-muted">
-                      pts
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              {/* PERDANT */}
-              <div className="glass rounded-3xl p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted-2" />
-
-                      <p className="truncate font-semibold">
-                        {playerName(loser)}
-                      </p>
-                    </div>
-
-                    <p className="mt-1 text-sm text-muted">
-                      {winnerScore}-{loserScore}
-                    </p>
-                  </div>
-
-                  <p
-                    className={`shrink-0 font-display text-xl font-bold ${
-                      loserHistory.points_change >= 0
-                        ? "text-accent"
-                        : "text-danger"
+                return (
+                  <div
+                    key={`${player.player_id ?? player.guest_name}-${index}`}
+                    className={`relative overflow-hidden rounded-3xl border p-4 transition-all ${
+                      isWinner
+                        ? "border-accent/15 bg-accent/5"
+                        : "border-white/7 bg-white/3"
                     }`}
                   >
-                    {formatPointsChange(
-                      loserHistory.points_change
+                    {isWinner && (
+                      <div
+                        className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-accent/8 blur-2xl"
+                        aria-hidden="true"
+                      />
                     )}
-                  </p>
-                </div>
 
-                <div className="mt-4 flex items-center justify-between border-t border-white/8 pt-4">
-                  <p className="text-sm text-muted">
-                    Nouveau classement
-                  </p>
+                    <div className="relative flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div
+                          className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl border font-display text-xs font-bold ${
+                            isWinner
+                              ? "border-accent/20 bg-accent/10 text-accent"
+                              : "border-white/8 bg-white/5 text-muted"
+                          }`}
+                        >
+                          {playerInitials(player)}
+                        </div>
 
-                  <p className="font-display font-semibold">
-                    {loserHistory.new_points.toLocaleString(
-                      "fr-FR"
-                    )}{" "}
-                    <span className="text-xs font-medium text-muted">
-                      pts
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+                        <div className="min-w-0">
+                          <p className="eyebrow">
+                            Joueur {index + 1}
+                          </p>
 
-        {/* CALCUL */}
+                          <p
+                            className={`mt-1 truncate text-sm font-semibold ${
+                              isCurrentUser
+                                ? "text-accent"
+                                : "text-foreground"
+                            }`}
+                          >
+                            {playerName(player)}
+                          </p>
+                        </div>
+
+                        {isCurrentUser && (
+                          <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-accent">
+                            Toi
+                          </span>
+                        )}
+                      </div>
+
+                      {isWinner && (
+                        <div className="flex shrink-0 items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-accent">
+                          <TrophyIcon className="h-3.5 w-3.5" />
+
+                          Gagnant
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        </section>
+
+        
+
+        {/* RANKING IMPACT */}
+
         {winnerHistory && loserHistory && (
-          <section className="mt-8">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="eyebrow">Calcul des points</p>
+          <section className="glass-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
+            <div
+              className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/10 blur-3xl"
+              aria-hidden="true"
+            />
 
-                <h2 className="mt-1 font-display text-xl font-semibold">
-                  Détail du calcul
-                </h2>
-              </div>
-
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/8 bg-white/4.5 text-muted">
-                <ChartIcon className="h-4 w-4" />
-              </div>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {/* VAINQUEUR */}
-              <div className="glass rounded-3xl p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="truncate font-semibold">
-                    {playerName(winner)}
+            <div className="relative">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="eyebrow">
+                    Impact classement
                   </p>
 
-                  <p className="shrink-0 text-sm font-bold text-accent">
-                    {formatPointsChange(
-                      winnerHistory.points_change
-                    )}
-                  </p>
+                  <h2 className="mt-1.5 font-display text-xl font-bold tracking-tight">
+                    Tes points
+                  </h2>
                 </div>
 
-                <div className="mt-5 space-y-3 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-muted">
-                      Base victoire
-                    </span>
-
-                    <span className="font-semibold">
-                      +{winnerHistory.base_points}
-                    </span>
-                  </div>
-
-                  {winnerHistory.bonus_bulle > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Victoire propre
-                      </span>
-
-                      <span className="font-semibold">
-                        +{winnerHistory.bonus_bulle}
-                      </span>
-                    </div>
-                  )}
-
-                  {winnerHistory.bonus_double_bulle > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        10-0
-                      </span>
-
-                      <span className="font-semibold">
-                        +{winnerHistory.bonus_double_bulle}
-                      </span>
-                    </div>
-                  )}
-
-                  {winnerHistory.bonus_serie > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Série
-                      </span>
-
-                      <span className="font-semibold">
-                        +{winnerHistory.bonus_serie}
-                      </span>
-                    </div>
-                  )}
-
-                  {winnerHistory.bonus_performer > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Performance
-                      </span>
-
-                      <span className="font-semibold">
-                        +{winnerHistory.bonus_performer}
-                      </span>
-                    </div>
-                  )}
-
-                  {winnerHistory.amortisseur_tiebreak > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Amortisseur
-                      </span>
-
-                      <span className="font-semibold">
-                        +{winnerHistory.amortisseur_tiebreak}
-                      </span>
-                    </div>
-                  )}
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-accent/10 text-accent">
+                  <TrophyIcon className="h-5 w-5" />
                 </div>
               </div>
 
-              {/* PERDANT */}
-              <div className="glass rounded-3xl p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="truncate font-semibold">
-                    {playerName(loser)}
-                  </p>
+              {(() => {
+                const userHistory =
+                  history.find(
+                    (entry) =>
+                      entry.player_id ===
+                      user.id
+                  );
 
-                  <p className="shrink-0 text-sm font-bold text-danger">
-                    {formatPointsChange(
-                      loserHistory.points_change
-                    )}
-                  </p>
-                </div>
-
-                <div className="mt-5 space-y-3 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-muted">
-                      Base défaite
-                    </span>
-
-                    <span className="font-semibold">
-                      {loserHistory.base_points}
-                    </span>
-                  </div>
-
-                  {loserHistory.malus_fanny > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Fanny
-                      </span>
-
-                      <span className="font-semibold">
-                        -{loserHistory.malus_fanny}
-                      </span>
+                if (!userHistory) {
+                  return (
+                    <div className="mt-5 rounded-2xl border border-white/7 bg-white/3 px-4 py-4 text-sm text-muted">
+                      Aucun impact de classement
+                      enregistré pour ton profil.
                     </div>
-                  )}
+                  );
+                }
 
-                  {loserHistory.malus_double_bulle > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Double bulle
-                      </span>
+                const positive =
+                  userHistory.points_change >= 0;
 
-                      <span className="font-semibold">
-                        -{loserHistory.malus_double_bulle}
-                      </span>
+                return (
+                  <>
+                    <div className="mt-7 grid grid-cols-[1fr_auto_1fr] items-end gap-3">
+                      <div>
+                        <p className="eyebrow">
+                          Avant
+                        </p>
+
+                        <p className="mt-1 font-display text-3xl font-bold tracking-tight">
+                          {userHistory.old_points}
+                        </p>
+                      </div>
+
+                      <div className="pb-2 text-muted-2">
+                        →
+                      </div>
+
+                      <div className="text-right">
+                        <p className="eyebrow">
+                          Après
+                        </p>
+
+                        <p className="mt-1 font-display text-3xl font-bold tracking-tight">
+                          {userHistory.new_points}
+                        </p>
+                      </div>
                     </div>
-                  )}
 
-                  {loserHistory.malus_contre_performance > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Contre-performance
-                      </span>
+                    <div className="mt-6 flex justify-center">
+                      <div
+                        className={`rounded-full border px-4 py-2 ${
+                          positive
+                            ? "border-accent/20 bg-accent/10 text-accent"
+                            : "border-danger/20 bg-danger/8 text-danger"
+                        }`}
+                      >
+                        <span className="font-display text-2xl font-bold">
+                          {formatPointsChange(
+                            userHistory.points_change
+                          )}
+                        </span>
 
-                      <span className="font-semibold">
-                        -{loserHistory.malus_contre_performance}
-                      </span>
+                        <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-[0.14em]">
+                          points
+                        </span>
+                      </div>
                     </div>
-                  )}
-
-                  {loserHistory.amortisseur_tiebreak > 0 && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted">
-                        Défaite serrée
-                      </span>
-
-                      <span className="font-semibold">
-                        +{loserHistory.amortisseur_tiebreak}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
+                  </>
+                );
+              })()}
             </div>
           </section>
         )}
+
+        {/* POINT CALCULATION */}
+
+        {(() => {
+          const userHistory =
+            history.find(
+              (entry) =>
+                entry.player_id === user.id
+            );
+
+          if (!userHistory) {
+            return null;
+          }
+
+          const pointDetails =
+            getPointDetails(userHistory);
+
+          if (!pointDetails.length) {
+            return null;
+          }
+
+          return (
+            <section className="glass rounded-[28px] p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="eyebrow">
+                    Détail des points
+                  </p>
+
+                  <h2 className="mt-1.5 font-display text-xl font-bold tracking-tight">
+                    Calcul du match
+                  </h2>
+
+                  <p className="mt-1.5 text-xs leading-5 text-muted">
+                    Seuls les éléments ayant réellement
+                    modifié ton score sont affichés.
+                  </p>
+                </div>
+
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/8 bg-white/4 text-muted">
+                  <ChartIcon className="h-4 w-4" />
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-1.5">
+                {pointDetails.map(
+                  (detail, index) => {
+                    const positive =
+                      detail.value > 0;
+
+                    return (
+                      <div
+                        key={`${detail.label}-${index}`}
+                        className="flex items-center justify-between gap-4 rounded-2xl border border-white/5 bg-white/2.5 px-3.5 py-3"
+                      >
+                        <span className="text-xs font-medium text-muted">
+                          {detail.label}
+                        </span>
+
+                        <span
+                          className={`font-display text-sm font-bold ${
+                            positive
+                              ? "text-accent"
+                              : "text-danger"
+                          }`}
+                        >
+                          {formatPointsChange(
+                            detail.value
+                          )}
+                        </span>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/7 bg-white/4 px-3.5 py-3.5">
+                <span className="text-xs font-semibold">
+                  Variation totale
+                </span>
+
+                <span
+                  className={`font-display text-base font-bold ${
+                    userHistory.points_change >=
+                    0
+                      ? "text-accent"
+                      : "text-danger"
+                  }`}
+                >
+                  {formatPointsChange(
+                    userHistory.points_change
+                  )}
+                </span>
+              </div>
+            </section>
+          );
+        })()}
+
+        {/* ACTIONS */}
+
+        <div className="space-y-2.5">
+          <Link
+            href="/ranking"
+            className="group flex items-center gap-4 rounded-3xl border border-accent/15 bg-accent/5 px-4 py-4 transition-all duration-200 hover:border-accent/25 hover:bg-accent/8 active:scale-[0.99]"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-accent/15 bg-accent/10 text-accent">
+              <TrophyIcon className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">
+                Voir le classement
+              </p>
+
+              <p className="mt-0.5 text-xs text-muted">
+                Consulte ta position et ta progression.
+              </p>
+            </div>
+
+            <ChevronRightIcon className="h-4 w-4 shrink-0 text-accent transition-transform group-hover:translate-x-0.5" />
+          </Link>
+
+          <Link
+            href="/supertiebreak"
+            className="group flex items-center gap-4 rounded-3xl border border-white/8 bg-white/3.5 px-4 py-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.99]"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/8 bg-white/5 text-muted">
+              <ArrowLeftIcon className="h-4 w-4" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">
+                Retour aux Super Tie-Break
+              </p>
+
+              <p className="mt-0.5 text-xs text-muted">
+                Revenir à ton historique.
+              </p>
+            </div>
+
+            <ChevronRightIcon className="h-4 w-4 shrink-0 text-muted-2 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </div>
       </div>
     </main>
   );

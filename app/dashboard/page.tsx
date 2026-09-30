@@ -1280,7 +1280,7 @@ export default function DashboardPage() {
             duration: 0.4,
             delay: 0.05,
           }}
-          className="mb-5 flex items-center justify-between gap-3"
+          className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
           <SportModeSwitcher />
 
@@ -2002,7 +2002,7 @@ transition={{
 >
   <Link
   href={newMatchHref}
-  className="group flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97]"
+  className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:w-auto"
 >
     <motion.span
       whileHover={{
