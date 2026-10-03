@@ -1775,42 +1775,68 @@ function DashboardContent() {
                 </div>
 
                 <div className="mt-5 grid grid-cols-3 divide-x divide-white/6 rounded-2xl border border-white/5 bg-white/3">
-                  <WeeklyStat
-                    label="Cette semaine"
-                    value={
-                      weeklyPoints > 0
-                        ? `+${weeklyPoints}`
-                        : weeklyPoints.toString()
-                    }
-                    positive={weeklyPoints > 0}
-                    negative={weeklyPoints < 0}
-                  />
-
-                  <WeeklyStat
+                  <MiniStat
+                    value={totalMatchesForMode}
                     label="Matchs"
-                    value={weeklyMatches}
                   />
 
-                  <WeeklyStat
-                    label="Évolution"
-                    value={
-                      totalProgression > 0
-                        ? `+${totalProgression}`
-                        : totalProgression.toString()
-                    }
-                    positive={totalProgression > 0}
-                    negative={totalProgression < 0}
+                  <MiniStat
+                    value={totalRankedPlayers}
+                    label="Joueurs"
                   />
-                </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] font-medium uppercase tracking-[0.1em] text-muted">
-                  <span>{totalMatchesForMode} matchs</span>
-                  <span className="text-white/15">•</span>
-                  <span>{totalRankedPlayers} joueurs</span>
-                  <span className="text-white/15">•</span>
-                  <span>{friends.length} amis</span>
+                  <MiniStat
+                    value={friends.length}
+                    label="Amis"
+                  />
                 </div>
               </div>
+            </motion.section>
+
+            {/* WEEKLY STATS */}
+
+            <motion.section
+              variants={sectionVariantsDelayed(
+                0.05
+              )}
+              initial="hidden"
+              animate="visible"
+              className="mt-3 grid grid-cols-3 gap-2.5"
+            >
+              <WeeklyStat
+                label="Cette semaine"
+                value={
+                  weeklyPoints > 0
+                    ? `+${weeklyPoints}`
+                    : weeklyPoints.toString()
+                }
+                positive={
+                  weeklyPoints > 0
+                }
+                negative={
+                  weeklyPoints < 0
+                }
+              />
+
+              <WeeklyStat
+                label="Matchs"
+                value={weeklyMatches}
+              />
+
+              <WeeklyStat
+                label="Évolution"
+                value={
+                  totalProgression > 0
+                    ? `+${totalProgression}`
+                    : totalProgression.toString()
+                }
+                positive={
+                  totalProgression > 0
+                }
+                negative={
+                  totalProgression < 0
+                }
+              />
             </motion.section>
 
             {/* PROGRESSION */}
@@ -1838,7 +1864,7 @@ function DashboardContent() {
               )}
               initial="hidden"
               animate="visible"
-              className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2"
+              className="mt-3 grid grid-cols-2 gap-3"
             >
               {/* FORME RÉCENTE */}
 
