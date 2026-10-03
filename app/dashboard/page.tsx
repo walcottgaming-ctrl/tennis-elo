@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   AnimatePresence,
@@ -529,6 +530,12 @@ function ProfileIcon({
 export default function DashboardPage() {
   const { mode } = useSportMode();
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const isDemoMode =
+    searchParams.get("demo") === "true";
+
   const [matches, setMatches] =
     useState<Match[]>([]);
 
@@ -575,250 +582,287 @@ export default function DashboardPage() {
    */
 
   useEffect(() => {
-    async function loadDashboard() {
-      const supabase = createClient();
+  async function loadDashboard() {
+    const supabase = createClient();
 
-      const {
-  data: { user },
-} = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-if (!user) {
-  setCurrentUserId(DEMO_USER_ID);
-
-  setProfile({
-    username: "alex",
-    first_name: "Alex",
-  });
-
-  setRankingPlayers(DEMO_PLAYERS);
-
-  setRankingHistory(DEMO_HISTORY);
-
-  setRankingMatches(DEMO_MATCHES);
-
-  setMatches(DEMO_MATCHES);
-
-  setUserMatchIds(
-    DEMO_MATCHES.map((match) => match.id)
-  );
-
-  setFriendships([
-    {
-      id: "demo-friendship-1",
-      requester_id: DEMO_USER_ID,
-      addressee_id: "demo-lucas",
-      status: "accepted",
-    },
-    {
-      id: "demo-friendship-2",
-      requester_id: DEMO_USER_ID,
-      addressee_id: "demo-thomas",
-      status: "accepted",
-    },
-  ]);
-
-  return;
-}
-
-setCurrentUserId(user.id);
-
-      /*
-       * PROFIL
-       */
-      const {
-        data: profileData,
-        error: profileError,
-      } = await supabase
-        .from("profiles")
-        .select("username, first_name")
-        .eq("id", user.id)
-        .single();
-
-      if (profileError) {
-        console.error(
-          "Erreur récupération du profil :",
-          profileError
-        );
-      } else {
-        setProfile({
-          username:
-            profileData.username ?? null,
-          first_name:
-            profileData.first_name ?? null,
-        });
-      }
-
-      /*
-       * TOUS LES JOUEURS
-       */
-      const {
-        data: rankingData,
-        error: rankingError,
-      } = await supabase
-        .from("profiles")
-        .select(
-          "id, username, first_name, last_name"
-        );
-
-      if (rankingError) {
-        console.error(
-          "Erreur récupération du classement :",
-          rankingError
-        );
-      } else {
-        setRankingPlayers(
-          (rankingData ??
-            []) as RankingPlayer[]
-        );
-      }
-
-      /*
-       * HISTORIQUE DU CLASSEMENT
-       */
-      const {
-        data: rankingHistoryData,
-        error: rankingHistoryError,
-      } = await supabase
-        .from("ranking_history")
-        .select(
-          "id, match_id, player_id, sport, old_points, new_points, points_change, created_at"
-        )
-        .order("created_at", {
-          ascending: true,
-        });
-
-      if (rankingHistoryError) {
-        console.error(
-          "Erreur récupération de ranking_history :",
-          rankingHistoryError
-        );
-      } else {
-        setRankingHistory(
-          (rankingHistoryData ??
-            []) as RankingHistory[]
-        );
-      }
-
-      /*
-       * MATCHS UTILISÉS POUR LA CHRONOLOGIE
-       */
-      const {
-        data: rankingMatchesData,
-        error: rankingMatchesError,
-      } = await supabase
-        .from("matches")
-        .select(
-          "id, sport, format, created_at"
-        )
-        .order("created_at", {
-          ascending: true,
-        });
-
-      if (rankingMatchesError) {
-        console.error(
-          "Erreur récupération des matchs pour le classement :",
-          rankingMatchesError
-        );
-      } else {
-        setRankingMatches(
-          (rankingMatchesData ??
-            []) as Match[]
-        );
-      }
-
-      /*
-       * AMIS
-       */
-      const {
-        data: friendshipsData,
-        error: friendshipsError,
-      } = await supabase
-        .from("friendships")
-        .select(
-          "id, requester_id, addressee_id, status"
-        )
-        .or(
-          `requester_id.eq.${user.id},addressee_id.eq.${user.id}`
-        )
-        .eq("status", "accepted");
-
-      if (friendshipsError) {
-        console.error(
-          "Erreur récupération des amis :",
-          friendshipsError
-        );
-      } else {
-        setFriendships(
-          (friendshipsData ??
-            []) as Friendship[]
-        );
-      }
-
-      /*
-       * MATCHS DU JOUEUR
-       */
-      const {
-        data: playerMatches,
-        error: playerMatchesError,
-      } = await supabase
-        .from("match_players")
-        .select("match_id")
-        .eq("player_id", user.id);
-
-      if (playerMatchesError) {
-        console.error(
-          "Erreur récupération des matchs du joueur :",
-          playerMatchesError
-        );
-        return;
-      }
-
-      const playerMatchIds =
-        (playerMatches ?? []).map(
-          (row) => row.match_id
-        );
-
-      /*
-       * On conserve TOUS les IDs pour les statistiques.
-       */
-      setUserMatchIds(playerMatchIds);
-
-      if (playerMatchIds.length === 0) {
-        setMatches([]);
-        return;
-      }
-
-      /*
-       * On ne charge que les 20 derniers matchs
-       * pour la liste du dashboard.
-       */
-      const {
-        data,
-        error,
-      } = await supabase
-        .from("matches")
-        .select(
-          "id, sport, format, created_at"
-        )
-        .in("id", playerMatchIds)
-        .order("created_at", {
-          ascending: false,
-        })
-        .limit(20);
-
-      if (error) {
-        console.error(
-          "Erreur Dashboard matches :",
-          error
-        );
-        return;
-      }
-
-      setMatches((data ?? []) as Match[]);
+    /*
+     * ==========================================================
+     * MODE RÉEL
+     * ==========================================================
+     *
+     * Si aucun utilisateur n'est connecté et que le paramètre
+     * ?demo=true n'est pas présent, on retourne à la landing.
+     */
+    if (!user && !isDemoMode) {
+      router.replace("/");
+      return;
     }
 
-    void loadDashboard();
-  }, []);
+    /*
+     * ==========================================================
+     * MODE DÉMO
+     * ==========================================================
+     *
+     * La démo est volontairement explicite.
+     *
+     * Elle ne fait aucune écriture Supabase et utilise uniquement
+     * les données fictives définies plus haut dans le fichier.
+     */
+    if (!user && isDemoMode) {
+      setCurrentUserId(DEMO_USER_ID);
+
+      setProfile({
+        username: "alex",
+        first_name: "Alex",
+      });
+
+      setRankingPlayers(DEMO_PLAYERS);
+
+      setRankingHistory(DEMO_HISTORY);
+
+      setRankingMatches(DEMO_MATCHES);
+
+      setMatches(DEMO_MATCHES);
+
+      setUserMatchIds(
+        DEMO_MATCHES.map(
+          (match) => match.id
+        )
+      );
+
+      setFriendships([
+        {
+          id: "demo-friendship-1",
+          requester_id: DEMO_USER_ID,
+          addressee_id: "demo-lucas",
+          status: "accepted",
+        },
+        {
+          id: "demo-friendship-2",
+          requester_id: DEMO_USER_ID,
+          addressee_id: "demo-thomas",
+          status: "accepted",
+        },
+      ]);
+
+      return;
+    }
+
+    /*
+     * ==========================================================
+     * MODE UTILISATEUR CONNECTÉ
+     * ==========================================================
+     *
+     * Même si ?demo=true est présent, un utilisateur réellement
+     * connecté utilise toujours ses données réelles.
+     */
+    if (!user) {
+      return;
+    }
+
+    setCurrentUserId(user.id);
+
+    /*
+     * PROFIL
+     */
+    const {
+      data: profileData,
+      error: profileError,
+    } = await supabase
+      .from("profiles")
+      .select("username, first_name")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.error(
+        "Erreur récupération du profil :",
+        profileError
+      );
+    } else {
+      setProfile({
+        username:
+          profileData.username ?? null,
+        first_name:
+          profileData.first_name ?? null,
+      });
+    }
+
+    /*
+     * TOUS LES JOUEURS
+     */
+    const {
+      data: rankingData,
+      error: rankingError,
+    } = await supabase
+      .from("profiles")
+      .select(
+        "id, username, first_name, last_name"
+      );
+
+    if (rankingError) {
+      console.error(
+        "Erreur récupération du classement :",
+        rankingError
+      );
+    } else {
+      setRankingPlayers(
+        (rankingData ??
+          []) as RankingPlayer[]
+      );
+    }
+
+    /*
+     * HISTORIQUE DU CLASSEMENT
+     */
+    const {
+      data: rankingHistoryData,
+      error: rankingHistoryError,
+    } = await supabase
+      .from("ranking_history")
+      .select(
+        "id, match_id, player_id, sport, old_points, new_points, points_change, created_at"
+      )
+      .order("created_at", {
+        ascending: true,
+      });
+
+    if (rankingHistoryError) {
+      console.error(
+        "Erreur récupération de ranking_history :",
+        rankingHistoryError
+      );
+    } else {
+      setRankingHistory(
+        (rankingHistoryData ??
+          []) as RankingHistory[]
+      );
+    }
+
+    /*
+     * MATCHS UTILISÉS POUR LA CHRONOLOGIE
+     */
+    const {
+      data: rankingMatchesData,
+      error: rankingMatchesError,
+    } = await supabase
+      .from("matches")
+      .select(
+        "id, sport, format, created_at"
+      )
+      .order("created_at", {
+        ascending: true,
+      });
+
+    if (rankingMatchesError) {
+      console.error(
+        "Erreur récupération des matchs pour le classement :",
+        rankingMatchesError
+      );
+    } else {
+      setRankingMatches(
+        (rankingMatchesData ??
+          []) as Match[]
+      );
+    }
+
+    /*
+     * AMIS
+     */
+    const {
+      data: friendshipsData,
+      error: friendshipsError,
+    } = await supabase
+      .from("friendships")
+      .select(
+        "id, requester_id, addressee_id, status"
+      )
+      .or(
+        `requester_id.eq.${user.id},addressee_id.eq.${user.id}`
+      )
+      .eq("status", "accepted");
+
+    if (friendshipsError) {
+      console.error(
+        "Erreur récupération des amis :",
+        friendshipsError
+      );
+    } else {
+      setFriendships(
+        (friendshipsData ??
+          []) as Friendship[]
+      );
+    }
+
+    /*
+     * MATCHS DU JOUEUR
+     */
+    const {
+      data: playerMatches,
+      error: playerMatchesError,
+    } = await supabase
+      .from("match_players")
+      .select("match_id")
+      .eq("player_id", user.id);
+
+    if (playerMatchesError) {
+      console.error(
+        "Erreur récupération des matchs du joueur :",
+        playerMatchesError
+      );
+      return;
+    }
+
+    const playerMatchIds =
+      (playerMatches ?? []).map(
+        (row) => row.match_id
+      );
+
+    /*
+     * Tous les IDs servent aux statistiques.
+     */
+    setUserMatchIds(playerMatchIds);
+
+    if (playerMatchIds.length === 0) {
+      setMatches([]);
+      return;
+    }
+
+    /*
+     * On ne charge que les 20 derniers matchs
+     * pour la liste affichée.
+     */
+    const {
+      data,
+      error,
+    } = await supabase
+      .from("matches")
+      .select(
+        "id, sport, format, created_at"
+      )
+      .in("id", playerMatchIds)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(20);
+
+    if (error) {
+      console.error(
+        "Erreur Dashboard matches :",
+        error
+      );
+      return;
+    }
+
+    setMatches((data ?? []) as Match[]);
+  }
+
+  void loadDashboard();
+}, [isDemoMode, router]);
 
   /*
    * ============================================================
@@ -1196,6 +1240,10 @@ setCurrentUserId(user.id);
       ? "/supertiebreak/new"
       : "/matches/new";
 
+  const actionHref = isDemoMode
+  ? "/signup"
+  : newMatchHref;
+
   const displayName =
     profile?.first_name ||
     profile?.username ||
@@ -1525,11 +1573,17 @@ setCurrentUserId(user.id);
               <h1 className="mt-1 truncate font-display text-lg font-semibold tracking-tight">
                 Bonjour, {displayName}
               </h1>
+              {isDemoMode && (
+  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-accent/15 bg-accent/8 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-accent">
+    <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+    Mode démo
+  </div>
+)}
             </div>
           </div>
 
           <Link
-            href="/profile"
+  href={isDemoMode ? "/signup" : "/profile"}
             aria-label="Mon profil"
             className="group grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/8 bg-white/4 backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/7 active:scale-95"
           >
@@ -1565,9 +1619,11 @@ setCurrentUserId(user.id);
             <PlusIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
 
             <span>
-              {mode === "super_tiebreak"
-                ? "Nouveau duel"
-                : "Nouveau match"}
+              {isDemoMode
+  ? "Créer un compte"
+  : mode === "super_tiebreak"
+    ? "Nouveau duel"
+    : "Nouveau match"}
             </span>
           </Link>
         </motion.div>
@@ -2029,7 +2085,7 @@ transition={{
 
               {/* AMIS */}
               <Link
-                href="/friends"
+  href={isDemoMode ? "/signup" : "/friends"}
                 className="group relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl transition-all duration-300 hover:border-accent/15 hover:bg-white/5 active:scale-[0.99]"
               >
                 <div className="flex items-center justify-between">
@@ -2109,7 +2165,7 @@ transition={{
         </p>
 
         <Link
-          href="/friends"
+  href={isDemoMode ? "/signup" : "/friends"}
           className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-xs font-bold text-[#0b0d13] shadow-[0_8px_25px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.98]"
         >
           <PlusIcon className="h-3.5 w-3.5" />
@@ -2234,7 +2290,7 @@ transition={{
                 </div>
 
                 <Link
-                  href="/matches"
+  href={isDemoMode ? "/signup" : "/matches"}
                   className="group flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
                 >
                   Tout voir
@@ -2275,7 +2331,7 @@ transition={{
   }}
 >
   <Link
-  href={newMatchHref}
+  href={actionHref}
   className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:w-auto"
 >
     <motion.span
@@ -2325,9 +2381,13 @@ transition={{
   }}
 >
                           <Link
-                            href={`/matches/${match.id}`}
-                            className="group flex items-center gap-3 rounded-[20px] border border-white/5 bg-white/3 px-3.5 py-3.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
-                          >
+  href={
+    isDemoMode
+      ? "/signup"
+      : `/matches/${match.id}`
+  }
+  className="group flex items-center gap-3 rounded-[20px] border border-white/5 bg-white/3 px-3.5 py-3.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
+>
                             <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/8 text-accent">
                               <SportIcon
                                 sport={
