@@ -60,6 +60,244 @@ type Friendship = {
   status: "pending" | "accepted" | "rejected";
 };
 
+const DEMO_USER_ID = "demo-user";
+
+const DEMO_PLAYERS: RankingPlayer[] = [
+  {
+    id: DEMO_USER_ID,
+    username: "alex",
+    first_name: "Alex",
+    last_name: null,
+  },
+  {
+    id: "demo-lucas",
+    username: "lucas",
+    first_name: "Lucas",
+    last_name: null,
+  },
+  {
+    id: "demo-thomas",
+    username: "thomas",
+    first_name: "Thomas",
+    last_name: null,
+  },
+  {
+    id: "demo-hugo",
+    username: "hugo",
+    first_name: "Hugo",
+    last_name: null,
+  },
+  {
+    id: "demo-maxime",
+    username: "maxime",
+    first_name: "Maxime",
+    last_name: null,
+  },
+];
+
+const DEMO_MATCHES: Match[] = [
+  {
+    id: "demo-match-1",
+    sport: "tennis",
+    format: "singles",
+    created_at: "2026-09-08T18:00:00Z",
+  },
+  {
+    id: "demo-match-2",
+    sport: "tennis",
+    format: "singles",
+    created_at: "2026-09-12T18:00:00Z",
+  },
+  {
+    id: "demo-match-3",
+    sport: "tennis",
+    format: "singles",
+    created_at: "2026-09-17T18:00:00Z",
+  },
+  {
+    id: "demo-match-4",
+    sport: "tennis",
+    format: "singles",
+    created_at: "2026-09-22T18:00:00Z",
+  },
+  {
+    id: "demo-match-5",
+    sport: "tennis",
+    format: "singles",
+    created_at: "2026-09-28T18:00:00Z",
+  },
+
+  {
+    id: "demo-padel-1",
+    sport: "padel",
+    format: "doubles",
+    created_at: "2026-09-09T18:00:00Z",
+  },
+  {
+    id: "demo-padel-2",
+    sport: "padel",
+    format: "doubles",
+    created_at: "2026-09-15T18:00:00Z",
+  },
+  {
+    id: "demo-padel-3",
+    sport: "padel",
+    format: "doubles",
+    created_at: "2026-09-21T18:00:00Z",
+  },
+  {
+    id: "demo-padel-4",
+    sport: "padel",
+    format: "doubles",
+    created_at: "2026-09-29T18:00:00Z",
+  },
+
+  {
+    id: "demo-stb-1",
+    sport: "super_tiebreak",
+    format: "singles",
+    created_at: "2026-09-10T18:00:00Z",
+  },
+  {
+    id: "demo-stb-2",
+    sport: "super_tiebreak",
+    format: "singles",
+    created_at: "2026-09-18T18:00:00Z",
+  },
+  {
+    id: "demo-stb-3",
+    sport: "super_tiebreak",
+    format: "singles",
+    created_at: "2026-09-27T18:00:00Z",
+  },
+];
+
+const DEMO_HISTORY: RankingHistory[] = [
+  {
+    id: "demo-history-1",
+    match_id: "demo-match-1",
+    player_id: DEMO_USER_ID,
+    sport: "tennis",
+    old_points: 1000,
+    new_points: 1018,
+    points_change: 18,
+    created_at: "2026-09-08T18:00:00Z",
+  },
+  {
+    id: "demo-history-2",
+    match_id: "demo-match-2",
+    player_id: DEMO_USER_ID,
+    sport: "tennis",
+    old_points: 1018,
+    new_points: 1009,
+    points_change: -9,
+    created_at: "2026-09-12T18:00:00Z",
+  },
+  {
+    id: "demo-history-3",
+    match_id: "demo-match-3",
+    player_id: DEMO_USER_ID,
+    sport: "tennis",
+    old_points: 1009,
+    new_points: 1031,
+    points_change: 22,
+    created_at: "2026-09-17T18:00:00Z",
+  },
+  {
+    id: "demo-history-4",
+    match_id: "demo-match-4",
+    player_id: DEMO_USER_ID,
+    sport: "tennis",
+    old_points: 1031,
+    new_points: 1044,
+    points_change: 13,
+    created_at: "2026-09-22T18:00:00Z",
+  },
+  {
+    id: "demo-history-5",
+    match_id: "demo-match-5",
+    player_id: DEMO_USER_ID,
+    sport: "tennis",
+    old_points: 1044,
+    new_points: 1061,
+    points_change: 17,
+    created_at: "2026-09-28T18:00:00Z",
+  },
+
+  {
+    id: "demo-padel-history-1",
+    match_id: "demo-padel-1",
+    player_id: DEMO_USER_ID,
+    sport: "padel",
+    old_points: 1000,
+    new_points: 1014,
+    points_change: 14,
+    created_at: "2026-09-09T18:00:00Z",
+  },
+  {
+    id: "demo-padel-history-2",
+    match_id: "demo-padel-2",
+    player_id: DEMO_USER_ID,
+    sport: "padel",
+    old_points: 1014,
+    new_points: 1028,
+    points_change: 14,
+    created_at: "2026-09-15T18:00:00Z",
+  },
+  {
+    id: "demo-padel-history-3",
+    match_id: "demo-padel-3",
+    player_id: DEMO_USER_ID,
+    sport: "padel",
+    old_points: 1028,
+    new_points: 1021,
+    points_change: -7,
+    created_at: "2026-09-21T18:00:00Z",
+  },
+  {
+    id: "demo-padel-history-4",
+    match_id: "demo-padel-4",
+    player_id: DEMO_USER_ID,
+    sport: "padel",
+    old_points: 1021,
+    new_points: 1062,
+    points_change: 41,
+    created_at: "2026-09-29T18:00:00Z",
+  },
+
+  {
+    id: "demo-stb-history-1",
+    match_id: "demo-stb-1",
+    player_id: DEMO_USER_ID,
+    sport: "super_tiebreak",
+    old_points: 1000,
+    new_points: 1032,
+    points_change: 32,
+    created_at: "2026-09-10T18:00:00Z",
+  },
+  {
+    id: "demo-stb-history-2",
+    match_id: "demo-stb-2",
+    player_id: DEMO_USER_ID,
+    sport: "super_tiebreak",
+    old_points: 1032,
+    new_points: 1057,
+    points_change: 25,
+    created_at: "2026-09-18T18:00:00Z",
+  },
+  {
+    id: "demo-stb-history-3",
+    match_id: "demo-stb-3",
+    player_id: DEMO_USER_ID,
+    sport: "super_tiebreak",
+    old_points: 1057,
+    new_points: 1112,
+    points_change: 55,
+    created_at: "2026-09-27T18:00:00Z",
+  },
+];
+
+
 /*
  * ============================================================
  * ANIMATIONS
@@ -341,12 +579,48 @@ export default function DashboardPage() {
       const supabase = createClient();
 
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  data: { user },
+} = await supabase.auth.getUser();
 
-      if (!user) return;
+if (!user) {
+  setCurrentUserId(DEMO_USER_ID);
 
-      setCurrentUserId(user.id);
+  setProfile({
+    username: "alex",
+    first_name: "Alex",
+  });
+
+  setRankingPlayers(DEMO_PLAYERS);
+
+  setRankingHistory(DEMO_HISTORY);
+
+  setRankingMatches(DEMO_MATCHES);
+
+  setMatches(DEMO_MATCHES);
+
+  setUserMatchIds(
+    DEMO_MATCHES.map((match) => match.id)
+  );
+
+  setFriendships([
+    {
+      id: "demo-friendship-1",
+      requester_id: DEMO_USER_ID,
+      addressee_id: "demo-lucas",
+      status: "accepted",
+    },
+    {
+      id: "demo-friendship-2",
+      requester_id: DEMO_USER_ID,
+      addressee_id: "demo-thomas",
+      status: "accepted",
+    },
+  ]);
+
+  return;
+}
+
+setCurrentUserId(user.id);
 
       /*
        * PROFIL
