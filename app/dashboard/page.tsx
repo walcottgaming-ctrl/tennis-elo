@@ -1514,26 +1514,11 @@ function DashboardContent() {
 
           <Link
             href={actionHref}
-            aria-label={
-              isDemoMode
-                ? "Créer un compte"
-                : mode === "super_tiebreak"
-                  ? "Nouveau duel"
-                  : "Nouveau match"
-            }
-            className="group flex h-9 w-fit shrink-0 self-end items-center gap-1.5 rounded-full bg-accent px-3 text-[10px] font-bold text-[#0b0d13] shadow-[0_6px_22px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_8px_30px_var(--accent-glow)] active:scale-[0.97] sm:h-10 sm:self-auto sm:gap-2 sm:px-4 sm:text-[12px]"
+            className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
           >
             <PlusIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
 
-            <span className="sm:hidden">
-              {isDemoMode
-                ? "Compte"
-                : mode === "super_tiebreak"
-                  ? "Duel"
-                  : "Match"}
-            </span>
-
-            <span className="hidden sm:inline">
+            <span>
               {isDemoMode
                 ? "Créer un compte"
                 : mode === "super_tiebreak"
