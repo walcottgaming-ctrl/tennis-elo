@@ -2,8 +2,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 
 import {
   AnimatePresence,
@@ -58,7 +67,10 @@ type Friendship = {
   id: string;
   requester_id: string;
   addressee_id: string;
-  status: "pending" | "accepted" | "rejected";
+  status:
+    | "pending"
+    | "accepted"
+    | "rejected";
 };
 
 const DEMO_USER_ID = "demo-user";
@@ -127,7 +139,6 @@ const DEMO_MATCHES: Match[] = [
     format: "singles",
     created_at: "2026-09-28T18:00:00Z",
   },
-
   {
     id: "demo-padel-1",
     sport: "padel",
@@ -152,7 +163,6 @@ const DEMO_MATCHES: Match[] = [
     format: "doubles",
     created_at: "2026-09-29T18:00:00Z",
   },
-
   {
     id: "demo-stb-1",
     sport: "super_tiebreak",
@@ -224,7 +234,6 @@ const DEMO_HISTORY: RankingHistory[] = [
     points_change: 17,
     created_at: "2026-09-28T18:00:00Z",
   },
-
   {
     id: "demo-padel-history-1",
     match_id: "demo-padel-1",
@@ -265,7 +274,6 @@ const DEMO_HISTORY: RankingHistory[] = [
     points_change: 41,
     created_at: "2026-09-29T18:00:00Z",
   },
-
   {
     id: "demo-stb-history-1",
     match_id: "demo-stb-1",
@@ -298,7 +306,6 @@ const DEMO_HISTORY: RankingHistory[] = [
   },
 ];
 
-
 /*
  * ============================================================
  * ANIMATIONS
@@ -310,7 +317,6 @@ const sectionVariants: Variants = {
     opacity: 0,
     y: 18,
   },
-
   visible: {
     opacity: 1,
     y: 0,
@@ -328,7 +334,6 @@ const sectionVariantsDelayed = (
     opacity: 0,
     y: 18,
   },
-
   visible: {
     opacity: 1,
     y: 0,
@@ -523,11 +528,11 @@ function ProfileIcon({
 
 /*
  * ============================================================
- * PAGE
+ * PAGE CONTENT
  * ============================================================
  */
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { mode } = useSportMode();
 
   const router = useRouter();
@@ -557,16 +562,6 @@ export default function DashboardPage() {
   const [currentUserId, setCurrentUserId] =
     useState<string | null>(null);
 
-  /*
-   * IDs de tous les matchs du joueur.
-   *
-   * Important :
-   * matches contient uniquement les 20 derniers matchs
-   * affichables sur le dashboard.
-   *
-   * userMatchIds permet donc de calculer les vrais totaux
-   * indépendamment de cette limite de 20.
-   */
   const [userMatchIds, setUserMatchIds] =
     useState<string[]>([]);
 
@@ -582,287 +577,278 @@ export default function DashboardPage() {
    */
 
   useEffect(() => {
-  async function loadDashboard() {
-    const supabase = createClient();
+    async function loadDashboard() {
+      const supabase = createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    /*
-     * ==========================================================
-     * MODE RÉEL
-     * ==========================================================
-     *
-     * Si aucun utilisateur n'est connecté et que le paramètre
-     * ?demo=true n'est pas présent, on retourne à la landing.
-     */
-    if (!user && !isDemoMode) {
-      router.replace("/");
-      return;
-    }
+      /*
+       * MODE RÉEL
+       */
 
-    /*
-     * ==========================================================
-     * MODE DÉMO
-     * ==========================================================
-     *
-     * La démo est volontairement explicite.
-     *
-     * Elle ne fait aucune écriture Supabase et utilise uniquement
-     * les données fictives définies plus haut dans le fichier.
-     */
-    if (!user && isDemoMode) {
-      setCurrentUserId(DEMO_USER_ID);
+      if (!user && !isDemoMode) {
+        router.replace("/");
+        return;
+      }
 
-      setProfile({
-        username: "alex",
-        first_name: "Alex",
-      });
+      /*
+       * MODE DÉMO
+       */
 
-      setRankingPlayers(DEMO_PLAYERS);
+      if (!user && isDemoMode) {
+        setCurrentUserId(DEMO_USER_ID);
 
-      setRankingHistory(DEMO_HISTORY);
+        setProfile({
+          username: "alex",
+          first_name: "Alex",
+        });
 
-      setRankingMatches(DEMO_MATCHES);
+        setRankingPlayers(DEMO_PLAYERS);
+        setRankingHistory(DEMO_HISTORY);
+        setRankingMatches(DEMO_MATCHES);
+        setMatches(DEMO_MATCHES);
 
-      setMatches(DEMO_MATCHES);
+        setUserMatchIds(
+          DEMO_MATCHES.map(
+            (match) => match.id
+          )
+        );
 
-      setUserMatchIds(
-        DEMO_MATCHES.map(
-          (match) => match.id
+        setFriendships([
+          {
+            id: "demo-friendship-1",
+            requester_id: DEMO_USER_ID,
+            addressee_id: "demo-lucas",
+            status: "accepted",
+          },
+          {
+            id: "demo-friendship-2",
+            requester_id: DEMO_USER_ID,
+            addressee_id: "demo-thomas",
+            status: "accepted",
+          },
+        ]);
+
+        return;
+      }
+
+      /*
+       * MODE UTILISATEUR CONNECTÉ
+       */
+
+      if (!user) {
+        return;
+      }
+
+      setCurrentUserId(user.id);
+
+      /*
+       * PROFIL
+       */
+
+      const {
+        data: profileData,
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .select(
+          "username, first_name"
         )
+        .eq("id", user.id)
+        .single();
+
+      if (profileError) {
+        console.error(
+          "Erreur récupération du profil :",
+          profileError
+        );
+      } else {
+        setProfile({
+          username:
+            profileData.username ?? null,
+          first_name:
+            profileData.first_name ?? null,
+        });
+      }
+
+      /*
+       * TOUS LES JOUEURS
+       */
+
+      const {
+        data: rankingData,
+        error: rankingError,
+      } = await supabase
+        .from("profiles")
+        .select(
+          "id, username, first_name, last_name"
+        );
+
+      if (rankingError) {
+        console.error(
+          "Erreur récupération du classement :",
+          rankingError
+        );
+      } else {
+        setRankingPlayers(
+          (rankingData ??
+            []) as RankingPlayer[]
+        );
+      }
+
+      /*
+       * HISTORIQUE DU CLASSEMENT
+       */
+
+      const {
+        data: rankingHistoryData,
+        error: rankingHistoryError,
+      } = await supabase
+        .from("ranking_history")
+        .select(
+          "id, match_id, player_id, sport, old_points, new_points, points_change, created_at"
+        )
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (rankingHistoryError) {
+        console.error(
+          "Erreur récupération de ranking_history :",
+          rankingHistoryError
+        );
+      } else {
+        setRankingHistory(
+          (rankingHistoryData ??
+            []) as RankingHistory[]
+        );
+      }
+
+      /*
+       * MATCHS UTILISÉS POUR LA CHRONOLOGIE
+       */
+
+      const {
+        data: rankingMatchesData,
+        error: rankingMatchesError,
+      } = await supabase
+        .from("matches")
+        .select(
+          "id, sport, format, created_at"
+        )
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (rankingMatchesError) {
+        console.error(
+          "Erreur récupération des matchs pour le classement :",
+          rankingMatchesError
+        );
+      } else {
+        setRankingMatches(
+          (rankingMatchesData ??
+            []) as Match[]
+        );
+      }
+
+      /*
+       * AMIS
+       */
+
+      const {
+        data: friendshipsData,
+        error: friendshipsError,
+      } = await supabase
+        .from("friendships")
+        .select(
+          "id, requester_id, addressee_id, status"
+        )
+        .or(
+          `requester_id.eq.${user.id},addressee_id.eq.${user.id}`
+        )
+        .eq("status", "accepted");
+
+      if (friendshipsError) {
+        console.error(
+          "Erreur récupération des amis :",
+          friendshipsError
+        );
+      } else {
+        setFriendships(
+          (friendshipsData ??
+            []) as Friendship[]
+        );
+      }
+
+      /*
+       * MATCHS DU JOUEUR
+       */
+
+      const {
+        data: playerMatches,
+        error: playerMatchesError,
+      } = await supabase
+        .from("match_players")
+        .select("match_id")
+        .eq("player_id", user.id);
+
+      if (playerMatchesError) {
+        console.error(
+          "Erreur récupération des matchs du joueur :",
+          playerMatchesError
+        );
+        return;
+      }
+
+      const playerMatchIds =
+        (playerMatches ?? []).map(
+          (row) => row.match_id
+        );
+
+      setUserMatchIds(playerMatchIds);
+
+      if (playerMatchIds.length === 0) {
+        setMatches([]);
+        return;
+      }
+
+      /*
+       * On ne charge que les 20 derniers matchs
+       * pour la liste affichée.
+       */
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("matches")
+        .select(
+          "id, sport, format, created_at"
+        )
+        .in("id", playerMatchIds)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(20);
+
+      if (error) {
+        console.error(
+          "Erreur Dashboard matches :",
+          error
+        );
+        return;
+      }
+
+      setMatches(
+        (data ?? []) as Match[]
       );
-
-      setFriendships([
-        {
-          id: "demo-friendship-1",
-          requester_id: DEMO_USER_ID,
-          addressee_id: "demo-lucas",
-          status: "accepted",
-        },
-        {
-          id: "demo-friendship-2",
-          requester_id: DEMO_USER_ID,
-          addressee_id: "demo-thomas",
-          status: "accepted",
-        },
-      ]);
-
-      return;
     }
 
-    /*
-     * ==========================================================
-     * MODE UTILISATEUR CONNECTÉ
-     * ==========================================================
-     *
-     * Même si ?demo=true est présent, un utilisateur réellement
-     * connecté utilise toujours ses données réelles.
-     */
-    if (!user) {
-      return;
-    }
-
-    setCurrentUserId(user.id);
-
-    /*
-     * PROFIL
-     */
-    const {
-      data: profileData,
-      error: profileError,
-    } = await supabase
-      .from("profiles")
-      .select("username, first_name")
-      .eq("id", user.id)
-      .single();
-
-    if (profileError) {
-      console.error(
-        "Erreur récupération du profil :",
-        profileError
-      );
-    } else {
-      setProfile({
-        username:
-          profileData.username ?? null,
-        first_name:
-          profileData.first_name ?? null,
-      });
-    }
-
-    /*
-     * TOUS LES JOUEURS
-     */
-    const {
-      data: rankingData,
-      error: rankingError,
-    } = await supabase
-      .from("profiles")
-      .select(
-        "id, username, first_name, last_name"
-      );
-
-    if (rankingError) {
-      console.error(
-        "Erreur récupération du classement :",
-        rankingError
-      );
-    } else {
-      setRankingPlayers(
-        (rankingData ??
-          []) as RankingPlayer[]
-      );
-    }
-
-    /*
-     * HISTORIQUE DU CLASSEMENT
-     */
-    const {
-      data: rankingHistoryData,
-      error: rankingHistoryError,
-    } = await supabase
-      .from("ranking_history")
-      .select(
-        "id, match_id, player_id, sport, old_points, new_points, points_change, created_at"
-      )
-      .order("created_at", {
-        ascending: true,
-      });
-
-    if (rankingHistoryError) {
-      console.error(
-        "Erreur récupération de ranking_history :",
-        rankingHistoryError
-      );
-    } else {
-      setRankingHistory(
-        (rankingHistoryData ??
-          []) as RankingHistory[]
-      );
-    }
-
-    /*
-     * MATCHS UTILISÉS POUR LA CHRONOLOGIE
-     */
-    const {
-      data: rankingMatchesData,
-      error: rankingMatchesError,
-    } = await supabase
-      .from("matches")
-      .select(
-        "id, sport, format, created_at"
-      )
-      .order("created_at", {
-        ascending: true,
-      });
-
-    if (rankingMatchesError) {
-      console.error(
-        "Erreur récupération des matchs pour le classement :",
-        rankingMatchesError
-      );
-    } else {
-      setRankingMatches(
-        (rankingMatchesData ??
-          []) as Match[]
-      );
-    }
-
-    /*
-     * AMIS
-     */
-    const {
-      data: friendshipsData,
-      error: friendshipsError,
-    } = await supabase
-      .from("friendships")
-      .select(
-        "id, requester_id, addressee_id, status"
-      )
-      .or(
-        `requester_id.eq.${user.id},addressee_id.eq.${user.id}`
-      )
-      .eq("status", "accepted");
-
-    if (friendshipsError) {
-      console.error(
-        "Erreur récupération des amis :",
-        friendshipsError
-      );
-    } else {
-      setFriendships(
-        (friendshipsData ??
-          []) as Friendship[]
-      );
-    }
-
-    /*
-     * MATCHS DU JOUEUR
-     */
-    const {
-      data: playerMatches,
-      error: playerMatchesError,
-    } = await supabase
-      .from("match_players")
-      .select("match_id")
-      .eq("player_id", user.id);
-
-    if (playerMatchesError) {
-      console.error(
-        "Erreur récupération des matchs du joueur :",
-        playerMatchesError
-      );
-      return;
-    }
-
-    const playerMatchIds =
-      (playerMatches ?? []).map(
-        (row) => row.match_id
-      );
-
-    /*
-     * Tous les IDs servent aux statistiques.
-     */
-    setUserMatchIds(playerMatchIds);
-
-    if (playerMatchIds.length === 0) {
-      setMatches([]);
-      return;
-    }
-
-    /*
-     * On ne charge que les 20 derniers matchs
-     * pour la liste affichée.
-     */
-    const {
-      data,
-      error,
-    } = await supabase
-      .from("matches")
-      .select(
-        "id, sport, format, created_at"
-      )
-      .in("id", playerMatchIds)
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(20);
-
-    if (error) {
-      console.error(
-        "Erreur Dashboard matches :",
-        error
-      );
-      return;
-    }
-
-    setMatches((data ?? []) as Match[]);
-  }
-
-  void loadDashboard();
-}, [isDemoMode, router]);
+    void loadDashboard();
+  }, [isDemoMode, router]);
 
   /*
    * ============================================================
@@ -999,9 +985,6 @@ export default function DashboardPage() {
    * ============================================================
    * MATCHS TOTAUX DU SPORT ACTIF
    * ============================================================
-   *
-   * Contrairement à filteredMatches, cette valeur ne dépend
-   * PAS de la limite des 20 matchs chargés pour l'affichage.
    */
 
   const totalMatchesForMode = useMemo(() => {
@@ -1241,8 +1224,8 @@ export default function DashboardPage() {
       : "/matches/new";
 
   const actionHref = isDemoMode
-  ? "/signup"
-  : newMatchHref;
+    ? "/signup"
+    : newMatchHref;
 
   const displayName =
     profile?.first_name ||
@@ -1264,9 +1247,6 @@ export default function DashboardPage() {
     );
   }, [rankingMatches]);
 
-  /*
-   * Historique utilisateur du mode actif.
-   */
   const userHistory = useMemo(() => {
     if (!currentUserId) return [];
 
@@ -1312,12 +1292,6 @@ export default function DashboardPage() {
     matchById,
   ]);
 
-  /*
-   * ============================================================
-   * GRAPHIQUE
-   * ============================================================
-   */
-
   const progressionPoints = useMemo(() => {
     return userHistory.map(
       (item, index) => {
@@ -1352,10 +1326,6 @@ export default function DashboardPage() {
   const firstHistory =
     userHistory[0] ?? null;
 
-  /*
-   * Progression totale depuis le premier
-   * mouvement de classement.
-   */
   const totalProgression =
     latestHistory && firstHistory
       ? latestHistory.new_points -
@@ -1364,14 +1334,8 @@ export default function DashboardPage() {
 
   /*
    * ============================================================
-   * FORME RÉCENTE — VRAIES DONNÉES
+   * FORME RÉCENTE
    * ============================================================
-   *
-   * Les 5 dernières évolutions de points.
-   *
-   * On garde l'ordre chronologique :
-   * gauche = plus ancien
-   * droite = plus récent
    */
 
   const recentForm = useMemo(() => {
@@ -1489,10 +1453,6 @@ export default function DashboardPage() {
           0
         );
 
-  /*
-   * Progression entre le joueur derrière
-   * et le joueur devant.
-   */
   const rankRange = Math.max(
     nextRankPoints - pointsBelow,
     1
@@ -1521,10 +1481,6 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
-      {/* ====================================================== */}
-      {/* BACKGROUND */}
-      {/* ====================================================== */}
-
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
@@ -1537,9 +1493,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mx-auto max-w-xl">
-        {/* ==================================================== */}
         {/* HEADER */}
-        {/* ==================================================== */}
 
         <motion.header
           initial={{
@@ -1573,17 +1527,22 @@ export default function DashboardPage() {
               <h1 className="mt-1 truncate font-display text-lg font-semibold tracking-tight">
                 Bonjour, {displayName}
               </h1>
+
               {isDemoMode && (
-  <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-accent/15 bg-accent/8 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-accent">
-    <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
-    Mode démo
-  </div>
-)}
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-accent/15 bg-accent/8 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-accent">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
+                  Mode démo
+                </div>
+              )}
             </div>
           </div>
 
           <Link
-  href={isDemoMode ? "/signup" : "/profile"}
+            href={
+              isDemoMode
+                ? "/signup"
+                : "/profile"
+            }
             aria-label="Mon profil"
             className="group grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/8 bg-white/4 backdrop-blur-xl transition-all duration-200 hover:border-white/15 hover:bg-white/7 active:scale-95"
           >
@@ -1591,9 +1550,7 @@ export default function DashboardPage() {
           </Link>
         </motion.header>
 
-        {/* ==================================================== */}
         {/* MODE + NOUVEAU MATCH */}
-        {/* ==================================================== */}
 
         <motion.div
           initial={{
@@ -1613,54 +1570,50 @@ export default function DashboardPage() {
           <SportModeSwitcher />
 
           <Link
-            href={newMatchHref}
+            href={actionHref}
             className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
           >
             <PlusIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
 
             <span>
               {isDemoMode
-  ? "Créer un compte"
-  : mode === "super_tiebreak"
-    ? "Nouveau duel"
-    : "Nouveau match"}
+                ? "Créer un compte"
+                : mode === "super_tiebreak"
+                  ? "Nouveau duel"
+                  : "Nouveau match"}
             </span>
           </Link>
         </motion.div>
 
-        {/* ==================================================== */}
-        {/* CONTENU DYNAMIQUE DU MODE */}
-        {/* ==================================================== */}
+        {/* CONTENU DYNAMIQUE */}
 
         <AnimatePresence
           mode="wait"
           initial={false}
         >
           <motion.div
-  key={mode}
-  initial={{
-    opacity: 0,
-    y: 6,
-    filter: "blur(4px)",
-  }}
-  animate={{
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-  }}
-  exit={{
-    opacity: 0,
-    y: -4,
-    filter: "blur(2px)",
-  }}
-  transition={{
-    duration: 0.28,
-    ease: "easeOut",
-  }}
->
-            {/* ================================================ */}
+            key={mode}
+            initial={{
+              opacity: 0,
+              y: 6,
+              filter: "blur(4px)",
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+            }}
+            exit={{
+              opacity: 0,
+              y: -4,
+              filter: "blur(2px)",
+            }}
+            transition={{
+              duration: 0.28,
+              ease: "easeOut",
+            }}
+          >
             {/* RANKING HERO */}
-            {/* ================================================ */}
 
             <motion.section
               variants={sectionVariants}
@@ -1710,19 +1663,19 @@ export default function DashboardPage() {
                       <motion.span
                         key={`rank-${mode}-${currentRank}`}
                         initial={{
-  opacity: 0,
-  y: 10,
-  scale: 0.94,
-}}
-animate={{
-  opacity: 1,
-  y: 0,
-  scale: 1,
-}}
-transition={{
-  duration: 0.35,
-  ease: "easeOut",
-}}
+                          opacity: 0,
+                          y: 10,
+                          scale: 0.94,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          scale: 1,
+                        }}
+                        transition={{
+                          duration: 0.35,
+                          ease: "easeOut",
+                        }}
                         className="font-display text-[68px] font-bold leading-[0.82] tracking-[-0.06em]"
                       >
                         {currentRank ?? "—"}
@@ -1734,25 +1687,32 @@ transition={{
                     </div>
 
                     <p className="mt-4 text-xs text-muted">
-  {currentRank === 1 ? (
-    "Tu occupes la première place"
-  ) : nextRankPlayer ? (
-    <>
-      Encore{" "}
-      <span className="font-semibold text-accent">
-        {pointsToNextRank.toLocaleString("fr-FR")} pts
-      </span>{" "}
-      pour atteindre le{" "}
-      <span className="font-semibold text-white">
-        #{currentRank ? currentRank - 1 : "—"}
-      </span>
-    </>
-  ) : userHistory.length === 0 ? (
-    "Ton classement apparaîtra après ton premier match"
-  ) : (
-    "Position dans le classement"
-  )}
-</p>
+                      {currentRank === 1 ? (
+                        "Tu occupes la première place"
+                      ) : nextRankPlayer ? (
+                        <>
+                          Encore{" "}
+                          <span className="font-semibold text-accent">
+                            {pointsToNextRank.toLocaleString(
+                              "fr-FR"
+                            )}{" "}
+                            pts
+                          </span>{" "}
+                          pour atteindre le{" "}
+                          <span className="font-semibold text-white">
+                            #
+                            {currentRank
+                              ? currentRank - 1
+                              : "—"}
+                          </span>
+                        </>
+                      ) : userHistory.length ===
+                        0 ? (
+                        "Ton classement apparaîtra après ton premier match"
+                      ) : (
+                        "Position dans le classement"
+                      )}
+                    </p>
                   </div>
 
                   <div className="text-right">
@@ -1761,17 +1721,25 @@ transition={{
                     </p>
 
                     <motion.p
-  key={points}
-  initial={{ opacity: 0.7, scale: 0.96 }}
-  animate={{ opacity: 1, scale: 1 }}
-  transition={{
-    duration: 0.3,
-    ease: "easeOut",
-  }}
-  className="mt-2 font-display text-[32px] font-bold leading-none tracking-tight text-accent"
->
-  <AnimatedNumber value={points} />
-</motion.p>
+                      key={points}
+                      initial={{
+                        opacity: 0.7,
+                        scale: 0.96,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        ease: "easeOut",
+                      }}
+                      className="mt-2 font-display text-[32px] font-bold leading-none tracking-tight text-accent"
+                    >
+                      <AnimatedNumber
+                        value={points}
+                      />
+                    </motion.p>
 
                     <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent/8 px-2 py-1 text-[10px] font-semibold text-accent">
                       <ArrowUpIcon />
@@ -1780,7 +1748,8 @@ transition={{
                   </div>
                 </div>
 
-                {/* Progression vers le prochain rang */}
+                {/* PROGRESSION VERS LE PROCHAIN RANG */}
+
                 <div className="mt-8">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[10px] font-medium text-muted">
@@ -1804,32 +1773,40 @@ transition={{
                   </div>
 
                   <div className="relative h-1.5 overflow-hidden rounded-full bg-white/6">
-  <motion.div
-    initial={{ width: 0 }}
-    animate={{ width: `${rankProgress}%` }}
-    transition={{
-      duration: 0.8,
-      ease: "easeOut",
-    }}
-    className="relative h-full"
-  >
-    {/* Barre */}
-    <div className="absolute inset-0 rounded-full bg-accent" />
+                    <motion.div
+                      initial={{
+                        width: 0,
+                      }}
+                      animate={{
+                        width: `${rankProgress}%`,
+                      }}
+                      transition={{
+                        duration: 0.8,
+                        ease: "easeOut",
+                      }}
+                      className="relative h-full"
+                    >
+                      <div className="absolute inset-0 rounded-full bg-accent" />
 
-    {/* Point de progression */}
-    <motion.div
-      initial={{ scale: 0, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{
-        delay: 0.55,
-        type: "spring",
-        stiffness: 400,
-        damping: 20,
-      }}
-      className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent"
-    />
-  </motion.div>
-</div>
+                      <motion.div
+                        initial={{
+                          scale: 0,
+                          opacity: 0,
+                        }}
+                        animate={{
+                          scale: 1,
+                          opacity: 1,
+                        }}
+                        transition={{
+                          delay: 0.55,
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 20,
+                        }}
+                        className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent"
+                      />
+                    </motion.div>
+                  </div>
 
                   {nextRankPlayer ? (
                     <div className="mt-2 flex items-center justify-between text-[9px] text-muted">
@@ -1856,16 +1833,12 @@ transition={{
 
                 <div className="mt-5 grid grid-cols-3 divide-x divide-white/6 rounded-2xl border border-white/5 bg-white/3">
                   <MiniStat
-                    value={
-                      totalMatchesForMode
-                    }
+                    value={totalMatchesForMode}
                     label="Matchs"
                   />
 
                   <MiniStat
-                    value={
-                      totalRankedPlayers
-                    }
+                    value={totalRankedPlayers}
                     label="Joueurs"
                   />
 
@@ -1877,9 +1850,7 @@ transition={{
               </div>
             </motion.section>
 
-            {/* ================================================ */}
             {/* WEEKLY STATS */}
-            {/* ================================================ */}
 
             <motion.section
               variants={sectionVariantsDelayed(
@@ -1925,9 +1896,7 @@ transition={{
               />
             </motion.section>
 
-            {/* ================================================ */}
             {/* PROGRESSION */}
-            {/* ================================================ */}
 
             <motion.div
               variants={sectionVariantsDelayed(
@@ -1944,9 +1913,7 @@ transition={{
               />
             </motion.div>
 
-            {/* ================================================ */}
             {/* PERFORMANCE GRID */}
-            {/* ================================================ */}
 
             <motion.section
               variants={sectionVariantsDelayed(
@@ -1957,6 +1924,7 @@ transition={{
               className="mt-3 grid grid-cols-2 gap-3"
             >
               {/* FORME RÉCENTE */}
+
               <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <p className="eyebrow">
@@ -1975,10 +1943,6 @@ transition={{
                     const item =
                       recentForm[index];
 
-                    /*
-                     * Match inexistant :
-                     * barre neutre.
-                     */
                     if (!item) {
                       return (
                         <motion.div
@@ -2004,12 +1968,6 @@ transition={{
                     const change =
                       item.points_change;
 
-                    /*
-                     * Hauteur proportionnelle à
-                     * l'amplitude réelle du changement.
-                     *
-                     * Minimum visuel de 20%.
-                     */
                     const intensity =
                       Math.abs(change) /
                       recentFormMaxChange;
@@ -2084,8 +2042,13 @@ transition={{
               </div>
 
               {/* AMIS */}
+
               <Link
-  href={isDemoMode ? "/signup" : "/friends"}
+                href={
+                  isDemoMode
+                    ? "/signup"
+                    : "/friends"
+                }
                 className="group relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl transition-all duration-300 hover:border-accent/15 hover:bg-white/5 active:scale-[0.99]"
               >
                 <div className="flex items-center justify-between">
@@ -2118,157 +2081,188 @@ transition={{
               </Link>
             </motion.section>
 
-            {/* ================================================ */}
-{/* HEAD TO HEAD */}
-{/* ================================================ */}
+            {/* HEAD TO HEAD */}
 
-<motion.section
-  variants={sectionVariantsDelayed(0.15)}
-  initial="hidden"
-  animate="visible"
-  className="relative mt-3 overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 backdrop-blur-2xl sm:p-6"
->
-  <div
-    aria-hidden="true"
-    className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/7 blur-[70px]"
-  />
-
-  <div className="relative">
-    <div className="flex items-start justify-between">
-      <div>
-        <p className="eyebrow">
-          Face à face
-        </p>
-
-        <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-          Ton duel
-        </h2>
-      </div>
-
-      <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/7 bg-white/4 text-muted">
-        <UsersIcon className="h-4 w-4" />
-      </div>
-    </div>
-
-    {friends.length === 0 ? (
-      <div className="mt-6 overflow-hidden rounded-[22px] border border-white/6 bg-white/3 p-5">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent">
-          <UsersIcon className="h-5 w-5" />
-        </div>
-
-        <p className="mt-5 text-sm font-semibold">
-          Aucun duel disponible
-        </p>
-
-        <p className="mt-1 max-w-sm text-xs leading-5 text-muted">
-          Ajoute des amis pour comparer vos points et vos positions.
-        </p>
-
-        <Link
-  href={isDemoMode ? "/signup" : "/friends"}
-          className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-xs font-bold text-[#0b0d13] shadow-[0_8px_25px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.98]"
-        >
-          <PlusIcon className="h-3.5 w-3.5" />
-          Ajouter un ami
-        </Link>
-      </div>
-    ) : (
-      <>
-        <div className="relative mt-6">
-          <select
-            value={effectiveSelectedFriendId}
-            onChange={(event) =>
-              setSelectedFriendId(event.target.value)
-            }
-            className="min-h-12 w-full appearance-none rounded-2xl border border-white/8 bg-white/4 px-4 pr-11 text-sm font-medium text-foreground outline-none transition-all duration-200 hover:bg-white/6 focus:border-accent/40 focus:bg-white/6"
-          >
-            {friends.map((friend) => (
-              <option
-                key={friend.id}
-                value={friend.id}
-                className="bg-[#151820] text-foreground"
-              >
-                {getPlayerName(friend)}
-              </option>
-            ))}
-          </select>
-
-          <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-        </div>
-
-        <AnimatePresence mode="wait">
-          {selectedFriend && (
-            <motion.div
-              key={selectedFriend.id}
-              initial={{
-                opacity: 0,
-                y: 6,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                y: -4,
-              }}
-              transition={{
-                duration: 0.22,
-                ease: "easeOut",
-              }}
+            <motion.section
+              variants={sectionVariantsDelayed(
+                0.15
+              )}
+              initial="hidden"
+              animate="visible"
+              className="relative mt-3 overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 backdrop-blur-2xl sm:p-6"
             >
-              <div className="relative mt-4 grid grid-cols-2 gap-2.5">
-                <ComparisonCard
-                  label="Toi"
-                  name={displayName}
-                  points={points}
-                  rank={currentRank}
-                  accent
-                />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/7 blur-[70px]"
+              />
 
-                <ComparisonCard
-                  label="Adversaire"
-                  name={getPlayerName(selectedFriend)}
-                  points={selectedFriendPoints}
-                  rank={selectedFriendRank}
-                />
-              </div>
+              <div className="relative">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="eyebrow">
+                      Face à face
+                    </p>
 
-              <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/6 bg-white/3 px-4 py-3.5">
-                <div>
-                  <p className="eyebrow">
-                    Différence
-                  </p>
+                    <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
+                      Ton duel
+                    </h2>
+                  </div>
 
-                  <p className="mt-1 text-xs text-muted">
-                    {pointDifference >= 0
-                      ? "Tu as plus de points"
-                      : "Ton ami a plus de points"}
-                  </p>
+                  <div className="grid h-9 w-9 place-items-center rounded-xl border border-white/7 bg-white/4 text-muted">
+                    <UsersIcon className="h-4 w-4" />
+                  </div>
                 </div>
 
-                <span
-                  className={`font-display text-lg font-bold tabular-nums ${
-                    pointDifference >= 0
-                      ? "text-accent"
-                      : "text-danger"
-                  }`}
-                >
-                  {pointDifference >= 0 ? "+" : ""}
-                  {pointDifference.toLocaleString("fr-FR")}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </>
-    )}
-  </div>
-</motion.section>
+                {friends.length === 0 ? (
+                  <div className="mt-6 overflow-hidden rounded-[22px] border border-white/6 bg-white/3 p-5">
+                    <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/10 text-accent">
+                      <UsersIcon className="h-5 w-5" />
+                    </div>
 
-            {/* ================================================ */}
+                    <p className="mt-5 text-sm font-semibold">
+                      Aucun duel disponible
+                    </p>
+
+                    <p className="mt-1 max-w-sm text-xs leading-5 text-muted">
+                      Ajoute des amis pour comparer vos points et vos positions.
+                    </p>
+
+                    <Link
+                      href={
+                        isDemoMode
+                          ? "/signup"
+                          : "/friends"
+                      }
+                      className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-xs font-bold text-[#0b0d13] shadow-[0_8px_25px_var(--accent-glow)] transition-all hover:brightness-105 active:scale-[0.98]"
+                    >
+                      <PlusIcon className="h-3.5 w-3.5" />
+                      Ajouter un ami
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative mt-6">
+                      <select
+                        value={
+                          effectiveSelectedFriendId
+                        }
+                        onChange={(event) =>
+                          setSelectedFriendId(
+                            event.target.value
+                          )
+                        }
+                        className="min-h-12 w-full appearance-none rounded-2xl border border-white/8 bg-white/4 px-4 pr-11 text-sm font-medium text-foreground outline-none transition-all duration-200 hover:bg-white/6 focus:border-accent/40 focus:bg-white/6"
+                      >
+                        {friends.map(
+                          (friend) => (
+                            <option
+                              key={friend.id}
+                              value={
+                                friend.id
+                              }
+                              className="bg-[#151820] text-foreground"
+                            >
+                              {getPlayerName(
+                                friend
+                              )}
+                            </option>
+                          )
+                        )}
+                      </select>
+
+                      <ChevronDownIcon className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {selectedFriend && (
+                        <motion.div
+                          key={
+                            selectedFriend.id
+                          }
+                          initial={{
+                            opacity: 0,
+                            y: 6,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            y: 0,
+                          }}
+                          exit={{
+                            opacity: 0,
+                            y: -4,
+                          }}
+                          transition={{
+                            duration: 0.22,
+                            ease: "easeOut",
+                          }}
+                        >
+                          <div className="relative mt-4 grid grid-cols-2 gap-2.5">
+                            <ComparisonCard
+                              label="Toi"
+                              name={
+                                displayName
+                              }
+                              points={points}
+                              rank={
+                                currentRank
+                              }
+                              accent
+                            />
+
+                            <ComparisonCard
+                              label="Adversaire"
+                              name={getPlayerName(
+                                selectedFriend
+                              )}
+                              points={
+                                selectedFriendPoints
+                              }
+                              rank={
+                                selectedFriendRank
+                              }
+                            />
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between rounded-2xl border border-white/6 bg-white/3 px-4 py-3.5">
+                            <div>
+                              <p className="eyebrow">
+                                Différence
+                              </p>
+
+                              <p className="mt-1 text-xs text-muted">
+                                {pointDifference >=
+                                0
+                                  ? "Tu as plus de points"
+                                  : "Ton ami a plus de points"}
+                              </p>
+                            </div>
+
+                            <span
+                              className={`font-display text-lg font-bold tabular-nums ${
+                                pointDifference >=
+                                0
+                                  ? "text-accent"
+                                  : "text-danger"
+                              }`}
+                            >
+                              {pointDifference >=
+                              0
+                                ? "+"
+                                : ""}
+                              {pointDifference.toLocaleString(
+                                "fr-FR"
+                              )}
+                            </span>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                )}
+              </div>
+            </motion.section>
+
             {/* RECENT MATCHES */}
-            {/* ================================================ */}
 
             <motion.section
               variants={sectionVariantsDelayed(
@@ -2290,7 +2284,11 @@ transition={{
                 </div>
 
                 <Link
-  href={isDemoMode ? "/signup" : "/matches"}
+                  href={
+                    isDemoMode
+                      ? "/signup"
+                      : "/matches"
+                  }
                   className="group flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-accent"
                 >
                   Tout voir
@@ -2303,7 +2301,9 @@ transition={{
               0 ? (
                 <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-3xl border border-dashed border-white/8 bg-white/2 px-6 text-center">
                   <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/7 bg-white/4 text-muted">
-                    <SportIcon sport={mode} />
+                    <SportIcon
+                      sport={mode}
+                    />
                   </div>
 
                   <p className="mt-4 text-sm font-semibold">
@@ -2311,44 +2311,44 @@ transition={{
                   </p>
 
                   <p className="mt-1 max-w-xs text-xs leading-5 text-muted">
-                    Ton historique apparaîtra
-                    ici après ton premier
-                    match.
+                    Ton historique apparaîtra ici après ton premier match.
                   </p>
 
                   <motion.div
-  whileHover={{
-    y: -1,
-    scale: 1.015,
-  }}
-  whileTap={{
-    scale: 0.96,
-  }}
-  transition={{
-    type: "spring",
-    stiffness: 400,
-    damping: 25,
-  }}
->
-  <Link
-  href={actionHref}
-  className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:w-auto"
->
-    <motion.span
-      whileHover={{
-        rotate: 45,
-      }}
-      transition={{
-        duration: 0.2,
-        ease: "easeOut",
-      }}
-    >
-      <PlusIcon />
-    </motion.span>
+                    whileHover={{
+                      y: -1,
+                      scale: 1.015,
+                    }}
+                    whileTap={{
+                      scale: 0.96,
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25,
+                    }}
+                  >
+                    <Link
+                      href={actionHref}
+                      className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:w-auto"
+                    >
+                      <motion.span
+                        whileHover={{
+                          rotate: 45,
+                        }}
+                        transition={{
+                          duration: 0.2,
+                          ease: "easeOut",
+                        }}
+                      >
+                        <PlusIcon />
+                      </motion.span>
 
-    Nouveau match
-  </Link>
-</motion.div>
+                      {isDemoMode
+                        ? "Créer un compte"
+                        : "Nouveau match"}
+                    </Link>
+                  </motion.div>
                 </div>
               ) : (
                 <div className="mt-5 space-y-2">
@@ -2360,34 +2360,35 @@ transition={{
                         index
                       ) => (
                         <motion.div
-  key={match.id}
-  initial={{
-    opacity: 0,
-    x: -10,
-  }}
-  animate={{
-    opacity: 1,
-    x: 0,
-  }}
-  transition={{
-    duration: 0.3,
-    delay: index * 0.06,
-  }}
-  whileHover={{
-    y: -1,
-  }}
-  whileTap={{
-    scale: 0.985,
-  }}
->
+                          key={match.id}
+                          initial={{
+                            opacity: 0,
+                            x: -10,
+                          }}
+                          animate={{
+                            opacity: 1,
+                            x: 0,
+                          }}
+                          transition={{
+                            duration: 0.3,
+                            delay:
+                              index * 0.06,
+                          }}
+                          whileHover={{
+                            y: -1,
+                          }}
+                          whileTap={{
+                            scale: 0.985,
+                          }}
+                        >
                           <Link
-  href={
-    isDemoMode
-      ? "/signup"
-      : `/matches/${match.id}`
-  }
-  className="group flex items-center gap-3 rounded-[20px] border border-white/5 bg-white/3 px-3.5 py-3.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
->
+                            href={
+                              isDemoMode
+                                ? "/signup"
+                                : `/matches/${match.id}`
+                            }
+                            className="group flex items-center gap-3 rounded-[20px] border border-white/5 bg-white/3 px-3.5 py-3.5 transition-all duration-200 hover:border-white/10 hover:bg-white/5"
+                          >
                             <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent/8 text-accent">
                               <SportIcon
                                 sport={
@@ -2396,7 +2397,8 @@ transition={{
                                 className="h-4 w-4"
                               />
 
-                              {index === 0 && (
+                              {index ===
+                                0 && (
                                 <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-accent shadow-[0_0_8px_var(--accent)]" />
                               )}
                             </div>
@@ -2443,9 +2445,7 @@ transition={{
               )}
             </motion.section>
 
-            {/* ================================================ */}
             {/* SPORT RANKINGS */}
-            {/* ================================================ */}
 
             <motion.section
               variants={sectionVariantsDelayed(
@@ -2496,25 +2496,27 @@ transition={{
 
                   return (
                     <motion.div
-  key={item.sport}
-  layout
-  animate={{
-    scale: isActive ? 1.01 : 1,
-  }}
-  whileHover={{
-    y: -1,
-  }}
-  transition={{
-    type: "spring",
-    stiffness: 400,
-    damping: 28,
-  }}
-  className={`group relative overflow-hidden rounded-[22px] border p-4 transition-all duration-300 ${
-    isActive
-      ? "border-accent/20 bg-accent/6 shadow-[0_10px_35px_-20px_var(--accent-glow)]"
-      : "border-white/6 bg-white/3 hover:border-white/10 hover:bg-white/4"
-  }`}
->
+                      key={item.sport}
+                      layout
+                      animate={{
+                        scale: isActive
+                          ? 1.01
+                          : 1,
+                      }}
+                      whileHover={{
+                        y: -1,
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 28,
+                      }}
+                      className={`group relative overflow-hidden rounded-[22px] border p-4 transition-all duration-300 ${
+                        isActive
+                          ? "border-accent/20 bg-accent/6 shadow-[0_10px_35px_-20px_var(--accent-glow)]"
+                          : "border-white/6 bg-white/3 hover:border-white/10 hover:bg-white/4"
+                      }`}
+                    >
                       {isActive && (
                         <div
                           aria-hidden="true"
@@ -2659,8 +2661,6 @@ function WeeklyStat({
   );
 }
 
-
-
 function AnimatedNumber({
   value,
   duration = 0.6,
@@ -2668,52 +2668,78 @@ function AnimatedNumber({
   value: number;
   duration?: number;
 }) {
-  const [displayValue, setDisplayValue] = useState(value);
+  const [displayValue, setDisplayValue] =
+    useState(value);
+
   const previousValue = useRef(value);
 
   useEffect(() => {
-    const startValue = previousValue.current;
-    const difference = value - startValue;
+    const startValue =
+      previousValue.current;
+
+    const difference =
+      value - startValue;
 
     if (difference === 0) return;
 
     const startTime = performance.now();
+
     let frameId: number;
 
-    const animate = (currentTime: number) => {
+    const animate = (
+      currentTime: number
+    ) => {
       const progress = Math.min(
-        (currentTime - startTime) / (duration * 1000),
+        (currentTime - startTime) /
+          (duration * 1000),
         1
       );
 
       const easedProgress =
-        1 - Math.pow(1 - progress, 3);
+        1 -
+        Math.pow(
+          1 - progress,
+          3
+        );
 
       setDisplayValue(
         Math.round(
-          startValue + difference * easedProgress
+          startValue +
+            difference *
+              easedProgress
         )
       );
 
       if (progress < 1) {
-        frameId = requestAnimationFrame(animate);
+        frameId =
+          requestAnimationFrame(
+            animate
+          );
       } else {
-        previousValue.current = value;
+        previousValue.current =
+          value;
       }
     };
 
-    frameId = requestAnimationFrame(animate);
+    frameId =
+      requestAnimationFrame(
+        animate
+      );
 
-    return () => cancelAnimationFrame(frameId);
+    return () =>
+      cancelAnimationFrame(
+        frameId
+      );
   }, [value, duration]);
 
   return (
     <span>
-      {displayValue.toLocaleString("fr-FR")}
+      {displayValue.toLocaleString(
+        "fr-FR"
+      )}
     </span>
   );
 }
-
 
 function ComparisonCard({
   label,
@@ -2759,7 +2785,9 @@ function ComparisonCard({
               : "text-foreground"
           }`}
         >
-          {points.toLocaleString("fr-FR")}
+          {points.toLocaleString(
+            "fr-FR"
+          )}
         </p>
 
         <div className="mt-2 flex items-center gap-1.5">
@@ -2773,5 +2801,23 @@ function ComparisonCard({
         </div>
       </div>
     </div>
+  );
+}
+
+/*
+ * ============================================================
+ * SUSPENSE WRAPPER
+ * ============================================================
+ *
+ * useSearchParams() est utilisé dans DashboardContent.
+ * Le Suspense permet à Next.js de construire correctement
+ * la route /dashboard.
+ */
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
   );
 }
