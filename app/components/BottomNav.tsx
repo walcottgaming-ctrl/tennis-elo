@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import { usePathname } from "next/navigation";
 
 const items = [
@@ -162,17 +163,31 @@ export default function BottomNav() {
                   }
                   className="group flex min-w-0 flex-col items-center justify-center rounded-2xl px-0.5 py-1.5"
                 >
-                  <span
+                  <motion.span
+                    whileTap={{ scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                     className={`relative grid h-9 w-9 place-items-center rounded-xl transition-all duration-200 ${
                       active
                         ? "bg-accent text-[#0b0d13] shadow-[0_0_22px_var(--accent-glow)]"
                         : "text-muted group-hover:bg-white/5 group-hover:text-foreground"
                     }`}
                   >
-                    {item.icon}
-                  </span>
+                    {active && (
+                      <motion.span
+                        layoutId="bottom-nav-active"
+                        className="absolute inset-0 rounded-xl bg-accent shadow-[0_0_22px_var(--accent-glow)]"
+                        transition={{ type: "spring", stiffness: 520, damping: 34 }}
+                      />
+                    )}
 
-                  <span
+                    <span className="relative z-10">
+                      {item.icon}
+                    </span>
+                  </motion.span>
+
+                  <motion.span
+                    animate={{ opacity: active ? 1 : 0.72 }}
+                    transition={{ duration: 0.18 }}
                     className={`mt-1.5 max-w-full truncate px-0.5 text-[9px] font-semibold tracking-tight transition-colors duration-200 ${
                       active
                         ? "text-accent"
@@ -180,7 +195,7 @@ export default function BottomNav() {
                     }`}
                   >
                     {item.label}
-                  </span>
+                  </motion.span>
                 </Link>
               );
             })}
