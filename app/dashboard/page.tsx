@@ -351,25 +351,6 @@ const sectionVariantsDelayed = (
  * ============================================================
  */
 
-function getPlayerName(
-  player: RankingPlayer | null
-) {
-  if (!player) return "Joueur";
-
-  const fullName = [
-    player.first_name,
-    player.last_name,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-
-  return (
-    fullName ||
-    player.username ||
-    "Joueur"
-  );
-}
 
 function getPlayerPoints(
   pointsByPlayerAndSport: Map<
@@ -439,26 +420,6 @@ function UsersIcon({
   );
 }
 
-function ChevronDownIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
 
 function ArrowUpIcon({
   className = "h-3.5 w-3.5",
