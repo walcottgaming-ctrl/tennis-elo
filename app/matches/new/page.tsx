@@ -173,12 +173,21 @@ export default function NewMatchPage() {
 
     setMessage("");
 
-    if (!currentUserId) {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
       setMessage(
-        "Impossible de récupérer ton compte."
+        "Session utilisateur introuvable. Reconnecte-toi."
       );
       return;
     }
+
+    const creatorId = user.id;
 
     if (
       format === "singles" &&
@@ -238,15 +247,13 @@ export default function NewMatchPage() {
 
     setSaving(true);
 
-    const supabase = createClient();
-
     const {
       data: match,
       error: matchError,
     } = await supabase
       .from("matches")
       .insert({
-        created_by: currentUserId,
+        created_by: creatorId,
         sport,
         format,
         match_type: "quick_1v1",
@@ -276,7 +283,7 @@ export default function NewMatchPage() {
 
     matchPlayers.push({
       match_id: match.id,
-      player_id: currentUserId,
+      player_id: creatorId,
       team: 1,
     });
 
