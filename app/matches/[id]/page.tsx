@@ -888,24 +888,17 @@ export default function MatchDetailPage() {
   }, [matchPlayers, userId]);
 
   async function handleDeleteMatch() {
-    if (
-      !matchId ||
-      !userId ||
-      !match ||
-      deleting
-    ) {
+    if (!matchId || !userId || !match || deleting) {
       return;
     }
 
     if (!isUserInMatch) {
-      setError(
-        "Tu ne peux pas supprimer ce match."
-      );
+      setError("Tu ne peux pas supprimer ce match.");
       return;
     }
 
     const confirmed = window.confirm(
-      "Supprimer ce match ?\n\nCette action supprimera définitivement le match, ses scores et son impact sur le classement."
+      "Supprimer ce match ?\n\nCette action supprimera définitivement le match, ses scores et son impact sur le classement. Le classement sera recalculé à partir des matchs restants."
     );
 
     if (!confirmed) {
@@ -915,73 +908,39 @@ export default function MatchDetailPage() {
     setDeleting(true);
     setError("");
 
-    const supabase = createClient();
-
     try {
-      /*
-       * 1. Supprimer l'historique de classement
-       */
-      const {
-        error: rankingError,
-      } = await supabase
-        .from("ranking_history")
-        .delete()
-        .eq("match_id", matchId);
+      const response = await fetch(
+        `/api/matches/${matchId}/delete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      if (rankingError) {
-        throw rankingError;
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        const details = [
+          result.message ? `Message : ${result.message}` : "",
+          result.code ? `Code : ${result.code}` : "",
+          result.details ? `Détails : ${result.details}` : "",
+          result.hint ? `Indice : ${result.hint}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+
+        throw new Error(
+          details || "Impossible de supprimer ce match."
+        );
       }
 
-      /*
-       * 2. Supprimer les scores
-       */
-      const {
-        error: setsError,
-      } = await supabase
-        .from("sets")
-        .delete()
-        .eq("match_id", matchId);
-
-      if (setsError) {
-        throw setsError;
-      }
-
-      /*
-       * 3. Supprimer les joueurs liés au match
-       */
-      const {
-        error: playersError,
-      } = await supabase
-        .from("match_players")
-        .delete()
-        .eq("match_id", matchId);
-
-      if (playersError) {
-        throw playersError;
-      }
-
-      /*
-       * 4. Supprimer le match
-       */
-      const {
-        error: matchError,
-      } = await supabase
-        .from("matches")
-        .delete()
-        .eq("id", matchId);
-
-      if (matchError) {
-        throw matchError;
-      }
-
-      /*
-       * Retour à la liste des matchs
-       */
-      router.push("/matches");
+      router.replace("/matches");
       router.refresh();
     } catch (deleteError) {
+      console.error("Erreur suppression match :", deleteError);
       setDeleting(false);
-
       setError(
         deleteError instanceof Error
           ? deleteError.message
