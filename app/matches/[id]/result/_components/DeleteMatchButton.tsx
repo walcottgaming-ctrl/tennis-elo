@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { createClient } from "@/src/supabase/client";
-
 type DeleteMatchButtonProps = {
   matchId: string;
 };
@@ -24,7 +22,7 @@ function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
       <path d="M4 7h16" />
       <path d="M10 11v6" />
       <path d="M14 11v6" />
-      <path d="M6 7l1 13h10l1-13" />
+      <path d="M6 7l1 13h10l-1-13" />
       <path d="M9 7V4h6v3" />
     </svg>
   );
@@ -32,7 +30,6 @@ function TrashIcon({ className = "h-4 w-4" }: { className?: string }) {
 
 export default function DeleteMatchButton({ matchId }: DeleteMatchButtonProps) {
   const router = useRouter();
-
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [message, setMessage] = useState("");
@@ -42,59 +39,39 @@ export default function DeleteMatchButton({ matchId }: DeleteMatchButtonProps) {
     setMessage("");
 
     try {
-      const supabase = createClient();
-
-      const { data, error } = await supabase.rpc("delete_match", {
-        p_match_id: matchId,
+      const response = await fetch(`/api/matches/${matchId}/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
-      if (error) {
-        console.error("Erreur Supabase lors de la suppression :", error);
+      const result = await response.json();
 
-        const errorMessage = [
-          error.message ? `Message : ${error.message}` : "",
-          error.code ? `Code : ${error.code}` : "",
-          error.details ? `Détails : ${error.details}` : "",
-          error.hint ? `Indice : ${error.hint}` : "",
+      if (!response.ok || !result.success) {
+        const details = [
+          result.message ? `Message : ${result.message}` : "",
+          result.code ? `Code : ${result.code}` : "",
+          result.details ? `Détails : ${result.details}` : "",
+          result.hint ? `Indice : ${result.hint}` : "",
         ]
           .filter(Boolean)
           .join("\n");
 
-        setMessage(
-          `Impossible de supprimer le match.\n\n${errorMessage}`
+        throw new Error(
+          details || "Impossible de supprimer le match."
         );
-        setDeleting(false);
-        return;
-      }
-
-      if (
-        data &&
-        typeof data === "object" &&
-        "success" in data &&
-        data.success === false
-      ) {
-        const rpcMessage =
-          "message" in data && typeof data.message === "string"
-            ? data.message
-            : "La suppression du match n'a pas été confirmée.";
-
-        setMessage(`Impossible de supprimer le match.\n\n${rpcMessage}`);
-        setDeleting(false);
-        return;
       }
 
       router.replace("/matches");
       router.refresh();
-    } catch (error: unknown) {
+    } catch (error) {
       console.error("Erreur suppression match :", error);
 
-      const caughtError =
-        error && typeof error === "object" && "message" in error
-          ? (error as { message?: string })
-          : null;
-
       setMessage(
-        `Impossible de supprimer le match.\n\n${caughtError?.message ?? "Erreur inconnue."}`
+        `Impossible de supprimer le match.\n\n${
+          error instanceof Error ? error.message : "Erreur inconnue."
+        }`
       );
       setDeleting(false);
     }
@@ -106,8 +83,9 @@ export default function DeleteMatchButton({ matchId }: DeleteMatchButtonProps) {
         <p className="text-sm font-semibold text-foreground">
           Supprimer définitivement ce match ?
         </p>
+
         <p className="mt-1 text-xs leading-5 text-muted">
-          Le match, son résultat et son impact sur le classement seront supprimés.
+          Le match et son impact sur le classement seront supprimés.
           Le classement sera ensuite recalculé à partir des matchs restants.
         </p>
 
