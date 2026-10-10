@@ -374,28 +374,6 @@ function getPlayerPoints(
  * ============================================================
  */
 
-function PlusIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
 function UsersIcon({
   className = "h-5 w-5",
 }: {
@@ -1121,15 +1099,6 @@ function DashboardContent() {
     mode,
     pointsByPlayerAndSport,
   ]);
-
-  const newMatchHref =
-    mode === "super_tiebreak"
-      ? "/supertiebreak/new"
-      : "/matches/new";
-
-  const actionHref = isDemoMode
-    ? "/signup"
-    : newMatchHref;
 
   const displayName =
     profile?.first_name ||
