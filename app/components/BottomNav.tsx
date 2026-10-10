@@ -192,8 +192,8 @@ export default function BottomNav() {
                   className="group flex min-w-0 flex-col items-center justify-center rounded-2xl px-1 py-1.5"
                 >
                   <motion.span
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 30 }}
                     className={`relative grid h-10 w-10 place-items-center rounded-xl transition-colors duration-200 ${
                       active
                         ? "bg-accent text-[#0b0d13] shadow-[0_0_22px_var(--accent-glow)]"
@@ -204,14 +204,14 @@ export default function BottomNav() {
                       <motion.span
                         layoutId="bottom-nav-active"
                         className="absolute inset-0 rounded-xl bg-accent shadow-[0_0_22px_var(--accent-glow)]"
-                        transition={{ type: "spring", stiffness: 520, damping: 34 }}
+                        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 34 }}
                       />
                     )}
                     <span className="relative z-10">{item.icon}</span>
                   </motion.span>
                   <motion.span
                     animate={{ opacity: active ? 1 : 0.78 }}
-                    transition={{ duration: 0.18 }}
+                    transition={reduceMotion ? { duration: 0 } : { duration: 0.18 }}
                     className={`mt-1.5 max-w-full truncate text-[10px] font-semibold tracking-tight ${
                       active ? "text-accent" : "text-muted"
                     }`}
