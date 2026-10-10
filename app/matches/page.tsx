@@ -1117,17 +1117,15 @@ export default function MatchesPage() {
           </p>
         </motion.div>
 
-        {/* SPORT + NEW MATCH */}
+        {/* SPORT MODE */}
 
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
-          className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          className="mb-5"
         >
           <SportModeSwitcher />
-
-{/* L'ajout d'un match est centralisé dans la navigation du bas. */}
         </motion.div>
 
         {/* CONTENT */}
