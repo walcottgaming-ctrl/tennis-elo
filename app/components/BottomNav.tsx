@@ -89,7 +89,8 @@ export default function BottomNav() {
 
               const active =
                 pathname === item.href ||
-                (item.href === "/matches" && isMatchDetailRoute);
+                (item.href === "/matches" &&
+                  (pathname === "/supertiebreak" || isMatchDetailRoute));
 
               return (
                 <Link
@@ -167,7 +168,8 @@ export default function BottomNav() {
 
               const active =
                 pathname === item.href ||
-                (item.href === "/matches" && isMatchDetailRoute);
+                (item.href === "/matches" &&
+                  (pathname === "/supertiebreak" || isMatchDetailRoute));
 
               return (
                 <Link
