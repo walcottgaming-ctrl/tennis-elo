@@ -90,7 +90,13 @@ export default function BottomNav() {
               const active =
                 pathname === item.href ||
                 (item.href === "/matches" &&
-                  (pathname === "/supertiebreak" || isMatchDetailRoute));
+                  (pathname === "/supertiebreak" || isMatchDetailRoute)) ||
+                (item.href === "/ranking" &&
+                  pathname.startsWith("/ranking/")) ||
+                (item.href === "/profile" &&
+                  pathname.startsWith("/profile/")) ||
+                (item.href === "/dashboard" &&
+                  pathname.startsWith("/dashboard/"));
 
               return (
                 <Link
@@ -169,7 +175,13 @@ export default function BottomNav() {
               const active =
                 pathname === item.href ||
                 (item.href === "/matches" &&
-                  (pathname === "/supertiebreak" || isMatchDetailRoute));
+                  (pathname === "/supertiebreak" || isMatchDetailRoute)) ||
+                (item.href === "/ranking" &&
+                  pathname.startsWith("/ranking/")) ||
+                (item.href === "/profile" &&
+                  pathname.startsWith("/profile/")) ||
+                (item.href === "/dashboard" &&
+                  pathname.startsWith("/dashboard/"));
 
               return (
                 <Link
