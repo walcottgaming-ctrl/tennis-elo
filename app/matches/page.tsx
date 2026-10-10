@@ -516,7 +516,7 @@ function MatchCard({
     >
       <Link
         href={matchHref}
-        className="group relative block overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-4 backdrop-blur-xl transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.995]"
+        className="group relative block overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-4 shadow-[0_16px_42px_-34px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform] duration-200 hover:border-white/15 hover:bg-white/5 hover:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.98)] active:scale-[0.995]"
       >
         {/* subtle top line */}
         <div
