@@ -505,6 +505,7 @@ function DashboardContent() {
     useState<string[]>([]);
   const [now] = useState(() => Date.now());
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   /*
    * ============================================================
@@ -782,6 +783,9 @@ function DashboardContent() {
       setMatches(
         (data ?? []) as Match[]
       );
+      } catch (error) {
+        console.error("Erreur inattendue au chargement du dashboard :", error);
+        setLoadError(true);
       } finally {
         setIsLoading(false);
       }
@@ -1385,6 +1389,27 @@ function DashboardContent() {
           </div>
           <p className="mt-5 text-center text-xs text-muted">Préparation de ton classement…</p>
         </div>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4 pb-32 pt-5 text-foreground sm:px-5">
+        <section className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#151820]/90 p-6 text-center shadow-2xl">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-danger/20 bg-danger/10 text-danger" aria-hidden="true">
+            <span className="text-xl font-semibold">!</span>
+          </div>
+          <h1 className="mt-4 font-display text-xl font-semibold">Impossible de charger le dashboard</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">Une erreur inattendue est survenue pendant la récupération de tes données. Réessaie dans un instant.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-5 text-sm font-bold text-[#0b0d13] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#151820]"
+          >
+            Réessayer
+          </button>
+        </section>
       </main>
     );
   }
