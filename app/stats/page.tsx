@@ -617,10 +617,14 @@ export default async function StatsPage() {
 
       if (myScore > opponentScore) {
         mySets++;
-        setsWon++;
+        if (match.sport !== "super_tiebreak") {
+          setsWon++;
+        }
       } else {
         opponentSets++;
-        setsLost++;
+        if (match.sport !== "super_tiebreak") {
+          setsLost++;
+        }
       }
     }
 
@@ -632,10 +636,12 @@ export default async function StatsPage() {
       superTiebreakMatches++;
     }
 
-    if (match.format === "singles") {
-      singlesMatches++;
-    } else {
-      doublesMatches++;
+    if (match.sport !== "super_tiebreak") {
+      if (match.format === "singles") {
+        singlesMatches++;
+      } else {
+        doublesMatches++;
+      }
     }
 
     let matchWon = false;
