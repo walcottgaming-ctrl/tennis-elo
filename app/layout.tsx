@@ -27,16 +27,15 @@ export default function RootLayout({
 }>) {
   return (
     <html
-  lang="fr"
-  className={`${inter.variable} ${spaceGrotesk.variable}`}
->
-  <body className="min-h-screen pb-28 text-foreground antialiased">
-    <SportModeProvider>
-      {children}
-    </SportModeProvider>
-
-    <BottomNav />
-  </body>
-</html>
+      lang="fr"
+      className={`${inter.variable} ${spaceGrotesk.variable}`}
+    >
+      <body className="min-h-screen pb-28 text-foreground antialiased">
+        <SportModeProvider>
+          {children}
+          <BottomNav />
+        </SportModeProvider>
+      </body>
+    </html>
   );
 }
