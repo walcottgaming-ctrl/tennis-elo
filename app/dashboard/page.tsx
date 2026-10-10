@@ -504,6 +504,7 @@ function DashboardContent() {
   const [userMatchIds, setUserMatchIds] =
     useState<string[]>([]);
   const [now] = useState(() => Date.now());
+  const [isLoading, setIsLoading] = useState(true);
 
   /*
    * ============================================================
@@ -513,7 +514,8 @@ function DashboardContent() {
 
   useEffect(() => {
     async function loadDashboard() {
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
       const {
         data: { user },
@@ -780,6 +782,9 @@ function DashboardContent() {
       setMatches(
         (data ?? []) as Match[]
       );
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     void loadDashboard();
@@ -1351,6 +1356,38 @@ function DashboardContent() {
    * RENDER
    * ============================================================
    */
+
+  if (isLoading) {
+    return (
+      <main
+        className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <div className="mx-auto max-w-xl">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="h-11 w-11 animate-pulse rounded-[15px] bg-white/8" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-32 animate-pulse rounded bg-white/8" />
+              <div className="h-5 w-44 animate-pulse rounded bg-white/8" />
+            </div>
+          </div>
+          <div className="rounded-[30px] border border-white/8 bg-white/3.5 p-5 sm:p-6">
+            <div className="h-4 w-36 animate-pulse rounded bg-white/8" />
+            <div className="mt-8 h-16 w-28 animate-pulse rounded bg-white/8" />
+            <div className="mt-5 h-3 w-48 animate-pulse rounded bg-white/8" />
+            <div className="mt-8 h-2 w-full animate-pulse rounded-full bg-white/8" />
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              <div className="h-16 animate-pulse rounded-2xl bg-white/5" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/5" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/5" />
+            </div>
+          </div>
+          <p className="mt-5 text-center text-xs text-muted">Préparation de ton classement…</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
