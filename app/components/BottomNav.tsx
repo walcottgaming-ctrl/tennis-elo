@@ -76,9 +76,15 @@ export default function BottomNav() {
         <div className="rounded-[25px] border border-white/10 bg-[#11141c]/92 p-1.5 shadow-[0_-18px_50px_-24px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
           <div className="grid grid-cols-5 items-end">
             {items.slice(0, 2).map((item) => {
+              const isCreateMatchRoute =
+                pathname === "/matches/new" ||
+                pathname.startsWith("/matches/new/");
+
               const active =
                 pathname === item.href ||
-                pathname.startsWith(`${item.href}/`);
+                (item.href === "/matches" &&
+                  !isCreateMatchRoute &&
+                  pathname.startsWith("/matches/"));
 
               return (
                 <Link
@@ -143,9 +149,15 @@ export default function BottomNav() {
             </Link>
 
             {items.slice(2).map((item) => {
+              const isCreateMatchRoute =
+                pathname === "/matches/new" ||
+                pathname.startsWith("/matches/new/");
+
               const active =
                 pathname === item.href ||
-                pathname.startsWith(`${item.href}/`);
+                (item.href === "/matches" &&
+                  !isCreateMatchRoute &&
+                  pathname.startsWith("/matches/"));
 
               return (
                 <Link
