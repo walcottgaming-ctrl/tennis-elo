@@ -1548,7 +1548,7 @@ function DashboardContent() {
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
-              className="group relative overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl sm:p-6"
+              className="group relative overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/85 p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl transition-[border-color,box-shadow,background-color] duration-300 hover:border-white/15 hover:shadow-[0_34px_90px_-40px_rgba(0,0,0,0.98)] sm:p-6"
             >
               <div
                 aria-hidden="true"
@@ -1854,7 +1854,7 @@ function DashboardContent() {
             >
               {/* FORME RÉCENTE */}
 
-              <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl">
+              <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 shadow-[0_18px_45px_-32px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 hover:border-white/12 hover:bg-white/4">
                 <div className="flex items-center justify-between">
                   <p className="eyebrow">
                     Forme récente
@@ -2019,7 +2019,7 @@ function DashboardContent() {
               )}
               initial="hidden"
               animate="visible"
-              className="mt-3 overflow-hidden rounded-[30px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl sm:p-6"
+              className="relative mt-3 overflow-hidden rounded-[30px] border border-white/8 bg-white/3.5 p-5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 hover:border-white/12 hover:bg-white/4 sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <div>
