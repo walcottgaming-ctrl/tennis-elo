@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useSportMode } from "@/app/context/SportModeContext";
 
@@ -52,6 +52,7 @@ const items = [
 export default function BottomNav() {
   const pathname = usePathname();
   const { mode } = useSportMode();
+  const reduceMotion = useReducedMotion();
 
   const addMatchHref =
     mode === "super_tiebreak" ? "/supertiebreak/new" : "/matches/new";
@@ -106,8 +107,8 @@ export default function BottomNav() {
                   className="group flex min-w-0 flex-col items-center justify-center rounded-2xl px-1 py-1.5"
                 >
                   <motion.span
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+                    transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 30 }}
                     className={`relative grid h-10 w-10 place-items-center rounded-xl transition-colors duration-200 ${
                       active
                         ? "bg-accent text-[#0b0d13] shadow-[0_0_22px_var(--accent-glow)]"
@@ -118,14 +119,14 @@ export default function BottomNav() {
                       <motion.span
                         layoutId="bottom-nav-active"
                         className="absolute inset-0 rounded-xl bg-accent shadow-[0_0_22px_var(--accent-glow)]"
-                        transition={{ type: "spring", stiffness: 520, damping: 34 }}
+                        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 34 }}
                       />
                     )}
                     <span className="relative z-10">{item.icon}</span>
                   </motion.span>
                   <motion.span
                     animate={{ opacity: active ? 1 : 0.78 }}
-                    transition={{ duration: 0.18 }}
+                    transition={reduceMotion ? { duration: 0 } : { duration: 0.18 }}
                     className={`mt-1.5 max-w-full truncate text-[10px] font-semibold tracking-tight ${
                       active ? "text-accent" : "text-muted"
                     }`}
@@ -146,9 +147,9 @@ export default function BottomNav() {
               className="group -mt-5 flex min-w-0 flex-col items-center justify-center rounded-2xl px-1 py-1.5"
             >
               <motion.span
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ y: -2 }}
-                transition={{ type: "spring", stiffness: 500, damping: 28 }}
+                whileTap={reduceMotion ? undefined : { scale: 0.92 }}
+                whileHover={reduceMotion ? undefined : { y: -2 }}
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 500, damping: 28 }}
                 className="grid h-14 w-14 place-items-center rounded-[20px] border border-white/20 bg-accent text-[#0b0d13] shadow-[0_0_28px_var(--accent-glow)] transition-shadow duration-200 group-hover:shadow-[0_0_36px_var(--accent-glow)]"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="h-7 w-7" aria-hidden="true">
