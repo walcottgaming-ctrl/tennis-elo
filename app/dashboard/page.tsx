@@ -2002,13 +2002,13 @@ function DashboardContent() {
                   </p>
 
 {isDemoMode && (
-                  <Link
-                    href="/signup"
-                    className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.97]"
-                  >
-                    Créer un compte
-                  </Link>
-                )}
+                    <Link
+                      href="/signup"
+                      className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.97]"
+                    >
+                      Créer un compte
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div className="mt-5 space-y-2">
