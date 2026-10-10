@@ -946,7 +946,7 @@ export default async function StatsPage() {
         </header>
 
         {/* BILAN */}
-        <section className="glass-strong relative mt-8 overflow-hidden rounded-[30px]">
+        <section className="glass-strong relative mt-8 overflow-hidden rounded-[30px] border border-white/8 shadow-[0_28px_70px_-42px_rgba(0,0,0,0.95)]">
           <div
             className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full blur-[80px]"
             style={{
