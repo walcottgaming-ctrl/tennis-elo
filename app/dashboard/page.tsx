@@ -1837,6 +1837,7 @@ function DashboardContent() {
             >
               <EloChart
                 points={progressionPoints}
+                startingPoints={firstHistory?.old_points}
                 modeLabel={sportLabel}
                 weeklyChange={weeklyPoints}
               />
