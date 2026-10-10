@@ -1473,20 +1473,14 @@ function DashboardContent() {
         >
           <SportModeSwitcher />
 
-          <Link
-            href={actionHref}
-            className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
-          >
-            <PlusIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
-
-            <span>
-              {isDemoMode
-                ? "Créer un compte"
-                : mode === "super_tiebreak"
-                  ? "Nouveau duel"
-                  : "Nouveau match"}
-            </span>
-          </Link>
+{isDemoMode && (
+            <Link
+              href="/signup"
+              className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
+            >
+              <span>Créer un compte</span>
+            </Link>
+          )}
         </motion.div>
 
         {/* CONTENU DYNAMIQUE */}
@@ -2038,41 +2032,14 @@ function DashboardContent() {
                     Ton historique apparaîtra ici après ton premier match.
                   </p>
 
-                  <motion.div
-                    whileHover={{
-                      y: -1,
-                      scale: 1.015,
-                    }}
-                    whileTap={{
-                      scale: 0.96,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 25,
-                    }}
+{isDemoMode && (
+                  <Link
+                    href="/signup"
+                    className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.97]"
                   >
-                    <Link
-                      href={actionHref}
-                      className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:w-auto"
-                    >
-                      <motion.span
-                        whileHover={{
-                          rotate: 45,
-                        }}
-                        transition={{
-                          duration: 0.2,
-                          ease: "easeOut",
-                        }}
-                      >
-                        <PlusIcon />
-                      </motion.span>
-
-                      {isDemoMode
-                        ? "Créer un compte"
-                        : "Nouveau match"}
-                    </Link>
-                  </motion.div>
+                    Créer un compte
+                  </Link>
+                )}
                 </div>
               ) : (
                 <div className="mt-5 space-y-2">
