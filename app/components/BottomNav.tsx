@@ -78,13 +78,18 @@ export default function BottomNav() {
             {items.slice(0, 2).map((item) => {
               const isCreateMatchRoute =
                 pathname === "/matches/new" ||
-                pathname.startsWith("/matches/new/");
+                pathname.startsWith("/matches/new/") ||
+                pathname === "/supertiebreak/new" ||
+                pathname.startsWith("/supertiebreak/new/");
+
+              const isMatchDetailRoute =
+                (pathname.startsWith("/matches/") ||
+                  pathname.startsWith("/supertiebreak/")) &&
+                !isCreateMatchRoute;
 
               const active =
                 pathname === item.href ||
-                (item.href === "/matches" &&
-                  !isCreateMatchRoute &&
-                  pathname.startsWith("/matches/"));
+                (item.href === "/matches" && isMatchDetailRoute);
 
               return (
                 <Link
@@ -151,13 +156,18 @@ export default function BottomNav() {
             {items.slice(2).map((item) => {
               const isCreateMatchRoute =
                 pathname === "/matches/new" ||
-                pathname.startsWith("/matches/new/");
+                pathname.startsWith("/matches/new/") ||
+                pathname === "/supertiebreak/new" ||
+                pathname.startsWith("/supertiebreak/new/");
+
+              const isMatchDetailRoute =
+                (pathname.startsWith("/matches/") ||
+                  pathname.startsWith("/supertiebreak/")) &&
+                !isCreateMatchRoute;
 
               const active =
                 pathname === item.href ||
-                (item.href === "/matches" &&
-                  !isCreateMatchRoute &&
-                  pathname.startsWith("/matches/"));
+                (item.href === "/matches" && isMatchDetailRoute);
 
               return (
                 <Link
