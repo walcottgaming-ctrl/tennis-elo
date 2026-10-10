@@ -4,7 +4,7 @@ import SportIcon from "@/app/components/SportIcon";
 
 type Match = {
   id: string;
-  sport: "tennis" | "padel";
+  sport: "tennis" | "padel" | "super_tiebreak";
   format: "singles" | "doubles";
   created_at: string;
 };
@@ -37,7 +37,7 @@ type MatchResult = {
 
 type RankingHistory = {
   match_id: string;
-  sport: "tennis" | "padel";
+  sport: "tennis" | "padel" | "super_tiebreak";
   old_points: number | null;
   new_points: number | null;
   points_change: number | null;
@@ -550,6 +550,7 @@ export default async function StatsPage() {
 
   let tennisMatches = 0;
   let padelMatches = 0;
+  let superTiebreakMatches = 0;
 
   let singlesMatches = 0;
   let doublesMatches = 0;
@@ -562,6 +563,9 @@ export default async function StatsPage() {
 
   let padelWins = 0;
   let padelLosses = 0;
+
+  let superTiebreakWins = 0;
+  let superTiebreakLosses = 0;
 
   const matchResults: MatchResult[] = [];
 
@@ -613,23 +617,31 @@ export default async function StatsPage() {
 
       if (myScore > opponentScore) {
         mySets++;
-        setsWon++;
+        if (match.sport !== "super_tiebreak") {
+          setsWon++;
+        }
       } else {
         opponentSets++;
-        setsLost++;
+        if (match.sport !== "super_tiebreak") {
+          setsLost++;
+        }
       }
     }
 
     if (match.sport === "tennis") {
       tennisMatches++;
-    } else {
+    } else if (match.sport === "padel") {
       padelMatches++;
+    } else if (match.sport === "super_tiebreak") {
+      superTiebreakMatches++;
     }
 
-    if (match.format === "singles") {
-      singlesMatches++;
-    } else {
-      doublesMatches++;
+    if (match.sport !== "super_tiebreak") {
+      if (match.format === "singles") {
+        singlesMatches++;
+      } else {
+        doublesMatches++;
+      }
     }
 
     let matchWon = false;
@@ -641,8 +653,10 @@ export default async function StatsPage() {
 
       if (match.sport === "tennis") {
         tennisWins++;
-      } else {
+      } else if (match.sport === "padel") {
         padelWins++;
+      } else if (match.sport === "super_tiebreak") {
+        superTiebreakWins++;
       }
 
       matchResults.push({
@@ -655,8 +669,10 @@ export default async function StatsPage() {
 
       if (match.sport === "tennis") {
         tennisLosses++;
-      } else {
+      } else if (match.sport === "padel") {
         padelLosses++;
+      } else if (match.sport === "super_tiebreak") {
+        superTiebreakLosses++;
       }
 
       matchResults.push({
@@ -694,11 +710,13 @@ export default async function StatsPage() {
     }
   }
 
-  const totalMatches = wins + losses;
+  // Tous les matchs joués, y compris ceux dont le résultat n’est pas encore déterminé.
+  const totalMatches = matchesPlayed.length;
+  const decidedMatches = wins + losses;
 
   const winRate =
-    totalMatches > 0
-      ? Math.round((wins / totalMatches) * 100)
+    decidedMatches > 0
+      ? Math.round((wins / decidedMatches) * 100)
       : 0;
 
   const setTotal = setsWon + setsLost;
@@ -708,14 +726,26 @@ export default async function StatsPage() {
       ? Math.round((setsWon / setTotal) * 100)
       : 0;
 
+  const tennisDecidedMatches = tennisWins + tennisLosses;
+  const padelDecidedMatches = padelWins + padelLosses;
+  const superTiebreakDecidedMatches =
+    superTiebreakWins + superTiebreakLosses;
+
   const tennisWinRate =
-    tennisMatches > 0
-      ? Math.round((tennisWins / tennisMatches) * 100)
+    tennisDecidedMatches > 0
+      ? Math.round((tennisWins / tennisDecidedMatches) * 100)
       : 0;
 
   const padelWinRate =
-    padelMatches > 0
-      ? Math.round((padelWins / padelMatches) * 100)
+    padelDecidedMatches > 0
+      ? Math.round((padelWins / padelDecidedMatches) * 100)
+      : 0;
+
+  const superTiebreakWinRate =
+    superTiebreakDecidedMatches > 0
+      ? Math.round(
+          (superTiebreakWins / superTiebreakDecidedMatches) * 100
+        )
       : 0;
 
   let currentStreakType: "win" | "loss" | null = null;
@@ -810,6 +840,10 @@ export default async function StatsPage() {
     (item) => item.sport === "padel"
   );
 
+  const superTiebreakPointsHistory = sortedPointsHistory.filter(
+    (item) => item.sport === "super_tiebreak"
+  );
+
   const latestTennisHistory =
     tennisPointsHistory.length > 0
       ? tennisPointsHistory[
@@ -824,17 +858,30 @@ export default async function StatsPage() {
         ]
       : null;
 
+  const latestSuperTiebreakHistory =
+    superTiebreakPointsHistory.length > 0
+      ? superTiebreakPointsHistory[
+          superTiebreakPointsHistory.length - 1
+        ]
+      : null;
+
   const latestTennisPoints =
     latestTennisHistory?.new_points ?? 1000;
 
   const latestPadelPoints =
     latestPadelHistory?.new_points ?? 1000;
 
+  const latestSuperTiebreakPoints =
+    latestSuperTiebreakHistory?.new_points ?? 1000;
+
   const tennisPointsChange =
     latestTennisPoints - 1000;
 
   const padelPointsChange =
     latestPadelPoints - 1000;
+
+  const superTiebreakPointsChange =
+    latestSuperTiebreakPoints - 1000;
 
   const recentPointsHistory = [
     ...sortedPointsHistory,
@@ -899,7 +946,7 @@ export default async function StatsPage() {
         </header>
 
         {/* BILAN */}
-        <section className="glass-strong relative mt-8 overflow-hidden rounded-[30px]">
+        <section className="glass-strong relative mt-8 overflow-hidden rounded-[30px] border border-white/8 shadow-[0_28px_70px_-42px_rgba(0,0,0,0.95)]">
           <div
             className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full blur-[80px]"
             style={{
@@ -1072,6 +1119,30 @@ export default async function StatsPage() {
                 {padelPointsChange} depuis le début
               </p>
             </div>
+
+            <div className="glass relative col-span-2 overflow-hidden rounded-3xl p-4 sm:p-5">
+              <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/8 blur-2xl" />
+              <div className="relative flex items-center justify-between gap-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
+                  <SportIcon sport="super_tiebreak" className="h-5 w-5" />
+                </div>
+                <span className="eyebrow">Super Tie-Break</span>
+              </div>
+              <p className="relative mt-4 font-display text-3xl font-bold tracking-[-0.04em]">
+                {latestSuperTiebreakPoints}
+              </p>
+              <p className="text-xs text-muted">points</p>
+              <p className={`mt-3 text-xs font-semibold ${
+                superTiebreakPointsChange > 0
+                  ? "text-accent"
+                  : superTiebreakPointsChange < 0
+                    ? "text-danger"
+                    : "text-muted"
+              }`}>
+                {superTiebreakPointsChange > 0 ? "+" : ""}
+                {superTiebreakPointsChange} depuis le début
+              </p>
+            </div>
           </div>
         </section>
 
@@ -1117,7 +1188,9 @@ export default async function StatsPage() {
                         <p className="truncate text-sm font-semibold">
                           {item.sport === "tennis"
                             ? "Tennis"
-                            : "Padel"}
+                            : item.sport === "padel"
+                              ? "Padel"
+                              : "Super Tie-Break"}
                         </p>
 
                         <p className="mt-0.5 text-[11px] text-muted">
@@ -1158,7 +1231,7 @@ export default async function StatsPage() {
             <p className="eyebrow">Répartition</p>
 
             <h2 className="mt-1 font-display text-xl font-semibold tracking-tight">
-              Tennis & Padel
+              Tennis, Padel & Super Tie-Break
             </h2>
           </div>
 
@@ -1238,6 +1311,28 @@ export default async function StatsPage() {
                 {padelWins} victoire
                 {padelWins > 1 ? "s" : ""} · {padelLosses} défaite
                 {padelLosses > 1 ? "s" : ""}
+              </p>
+            </div>
+
+            <div className="glass col-span-2 rounded-3xl p-4 sm:p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-accent/15 bg-accent/10 text-accent">
+                  <SportIcon sport="super_tiebreak" className="h-5 w-5" />
+                </div>
+                <span className="eyebrow">
+                  {superTiebreakMatches} match
+                  {superTiebreakMatches > 1 ? "s" : ""}
+                </span>
+              </div>
+              <p className="mt-5 text-xs font-medium text-muted">Super Tie-Break</p>
+              <p className="mt-1 font-display text-3xl font-bold tracking-[-0.04em]">
+                {superTiebreakWinRate}%
+              </p>
+              <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
+                <div className="h-full rounded-full bg-accent" style={{ width: `${superTiebreakWinRate}%` }} />
+              </div>
+              <p className="mt-3 text-[11px] leading-5 text-muted">
+                {superTiebreakWins} victoire{superTiebreakWins > 1 ? "s" : ""} · {superTiebreakLosses} défaite{superTiebreakLosses > 1 ? "s" : ""}
               </p>
             </div>
           </div>

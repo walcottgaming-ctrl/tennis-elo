@@ -74,6 +74,30 @@ function FriendsIcon({
   );
 }
 
+function PlayersIcon({
+  className = "h-5 w-5",
+}: {
+  className?: string;
+}) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 19c.6-3.1 2.4-4.8 5.5-4.8s4.9 1.7 5.5 4.8" />
+      <circle cx="17" cy="9" r="2.5" />
+      <path d="M16 14.5c2.4.3 3.8 1.8 4.2 4.5" />
+    </svg>
+  );
+}
+
 function StatsIcon({
   className = "h-5 w-5",
 }: {
@@ -1569,6 +1593,31 @@ export default function ProfilePage() {
 
                   <span className="mt-0.5 block truncate text-xs text-muted">
                     Gérer mes amis et mes contacts
+                  </span>
+                </span>
+              </span>
+
+              <span className="shrink-0 text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-foreground">
+                <ChevronIcon />
+              </span>
+            </Link>
+
+            <Link
+              href="/players"
+              className="glass group flex min-h-16 items-center justify-between rounded-[22px] px-4 transition-all duration-200 hover:border-white/12 hover:bg-white/5"
+            >
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/6 bg-white/5 text-muted transition-colors duration-200 group-hover:border-accent/10 group-hover:bg-accent/10 group-hover:text-accent">
+                  <PlayersIcon />
+                </span>
+
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold">
+                    Joueurs
+                  </span>
+
+                  <span className="mt-0.5 block truncate text-xs text-muted">
+                    Explorer les joueurs de Smash Break Point
                   </span>
                 </span>
               </span>

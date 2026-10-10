@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 type EloPoint = {
   label: string;
@@ -11,13 +11,17 @@ type EloChartProps = {
   points: EloPoint[];
   modeLabel?: string;
   weeklyChange?: number;
+  startingPoints?: number;
 };
 
 export default function EloChart({
   points,
   modeLabel = "Performance",
   weeklyChange = 0,
+  startingPoints,
 }: EloChartProps) {
+  const shouldReduceMotion = useReducedMotion();
+
   if (!points || points.length === 0) {
     return (
       <section className="glass relative overflow-hidden rounded-[28px] p-6">
@@ -75,6 +79,12 @@ export default function EloChart({
     );
   }
 
+  // Include the true pre-match rating so the graph shows the full progression.
+  const chartPoints = [
+    { label: "Départ", elo: startingPoints ?? points[0].elo },
+    ...points,
+  ];
+
   const width = 900;
   const height = 300;
 
@@ -86,7 +96,7 @@ export default function EloChart({
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
 
-  const values = points.map((point) => point.elo);
+  const values = chartPoints.map((point) => point.elo);
 
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
@@ -114,12 +124,12 @@ export default function EloChart({
   };
 
   const getX = (index: number) => {
-    if (points.length === 1) {
+    if (chartPoints.length === 1) {
       return paddingLeft + chartWidth / 2;
     }
 
     return (
-      paddingLeft + (index / (points.length - 1)) * chartWidth
+      paddingLeft + (index / (chartPoints.length - 1)) * chartWidth
     );
   };
 
@@ -133,16 +143,16 @@ export default function EloChart({
     );
   };
 
-  const linePoints = points
+  const linePoints = chartPoints
     .map((point, index) => `${getX(index)},${getY(point.elo)}`)
     .join(" ");
 
   const areaPoints = [
     `${getX(0)},${paddingTop + chartHeight}`,
-    ...points.map(
+    ...chartPoints.map(
       (point, index) => `${getX(index)},${getY(point.elo)}`
     ),
-    `${getX(points.length - 1)},${paddingTop + chartHeight}`,
+    `${getX(chartPoints.length - 1)},${paddingTop + chartHeight}`,
   ].join(" ");
 
   const firstPoint = {
@@ -151,7 +161,7 @@ export default function EloChart({
   };
 
   const currentPoint = {
-    x: getX(points.length - 1),
+    x: getX(chartPoints.length - 1),
     y: getY(currentValue),
   };
 
@@ -193,7 +203,7 @@ export default function EloChart({
             key={currentValue}
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.35 }}
             className="text-left sm:text-right"
           >
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted">
@@ -264,7 +274,7 @@ export default function EloChart({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
-            duration: 0.4,
+            duration: shouldReduceMotion ? 0 : 0.4,
             ease: "easeOut",
           }}
         >
@@ -351,8 +361,8 @@ export default function EloChart({
                     opacity: 1,
                   }}
                   transition={{
-                    duration: 0.8,
-                    delay: 0.15,
+                    duration: shouldReduceMotion ? 0 : 0.8,
+                    delay: shouldReduceMotion ? 0 : 0.15,
                   }}
                 />
 
@@ -375,16 +385,16 @@ export default function EloChart({
                     opacity: 1,
                   }}
                   transition={{
-                    duration: 1.2,
+                    duration: shouldReduceMotion ? 0 : 1.2,
                     ease: "easeOut",
                   }}
                 />
 
                 {/* Data points */}
-                {points.map((point, index) => {
+                {chartPoints.map((point, index) => {
                   const x = getX(index);
                   const y = getY(point.elo);
-                  const isCurrent = index === points.length - 1;
+                  const isCurrent = index === chartPoints.length - 1;
 
                   return (
                     <motion.g
@@ -398,8 +408,8 @@ export default function EloChart({
                         scale: 1,
                       }}
                       transition={{
-                        duration: 0.25,
-                        delay: 0.45 + index * 0.04,
+                        duration: shouldReduceMotion ? 0 : 0.25,
+                        delay: shouldReduceMotion ? 0 : 0.45 + index * 0.04,
                       }}
                       style={{
                         transformOrigin: `${x}px ${y}px`,
@@ -426,12 +436,12 @@ export default function EloChart({
                               scale: 0.8,
                             }}
                             animate={{
-                              opacity: [0.05, 0.16, 0.05],
-                              scale: [0.8, 1.15, 0.8],
+                              opacity: shouldReduceMotion ? 0.08 : [0.05, 0.16, 0.05],
+                              scale: shouldReduceMotion ? 1 : [0.8, 1.15, 0.8],
                             }}
                             transition={{
-                              duration: 2,
-                              repeat: Infinity,
+                              duration: shouldReduceMotion ? 0 : 2,
+                              repeat: shouldReduceMotion ? 0 : Infinity,
                               ease: "easeInOut",
                             }}
                           />

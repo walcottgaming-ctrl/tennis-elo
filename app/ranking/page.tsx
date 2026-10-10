@@ -1041,7 +1041,7 @@ export default function RankingPage() {
         )}
 
         {topPlayer ? (
-          <section className="glass-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
+          <section className="glass-strong relative overflow-hidden rounded-[30px] border border-white/8 p-5 shadow-[0_28px_70px_-42px_rgba(0,0,0,0.95)] sm:p-6">
             <div
               className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/10 blur-3xl"
               aria-hidden="true"
@@ -1544,7 +1544,7 @@ export default function RankingPage() {
         </section>
 
         {currentUserDivision && currentUserPlayer && (
-          <section className="glass relative overflow-hidden rounded-[28px] p-5">
+          <section className="glass relative overflow-hidden rounded-[28px] border border-white/7 p-5 shadow-[0_22px_55px_-40px_rgba(0,0,0,0.9)]">
             <div className="flex items-start justify-between gap-5">
               <div className="min-w-0">
                 <p className="eyebrow">

@@ -374,28 +374,6 @@ function getPlayerPoints(
  * ============================================================
  */
 
-function PlusIcon({
-  className = "h-4 w-4",
-}: {
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
-    </svg>
-  );
-}
-
 function UsersIcon({
   className = "h-5 w-5",
 }: {
@@ -526,6 +504,8 @@ function DashboardContent() {
   const [userMatchIds, setUserMatchIds] =
     useState<string[]>([]);
   const [now] = useState(() => Date.now());
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   /*
    * ============================================================
@@ -535,7 +515,8 @@ function DashboardContent() {
 
   useEffect(() => {
     async function loadDashboard() {
-      const supabase = createClient();
+      try {
+        const supabase = createClient();
 
       const {
         data: { user },
@@ -802,6 +783,12 @@ function DashboardContent() {
       setMatches(
         (data ?? []) as Match[]
       );
+      } catch (error) {
+        console.error("Erreur inattendue au chargement du dashboard :", error);
+        setLoadError(true);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     void loadDashboard();
@@ -1122,15 +1109,6 @@ function DashboardContent() {
     pointsByPlayerAndSport,
   ]);
 
-  const newMatchHref =
-    mode === "super_tiebreak"
-      ? "/supertiebreak/new"
-      : "/matches/new";
-
-  const actionHref = isDemoMode
-    ? "/signup"
-    : newMatchHref;
-
   const displayName =
     profile?.first_name ||
     profile?.username ||
@@ -1383,6 +1361,59 @@ function DashboardContent() {
    * ============================================================
    */
 
+  if (isLoading) {
+    return (
+      <main
+        className="min-h-screen px-4 pb-32 pt-5 text-foreground sm:px-5"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <div className="mx-auto max-w-xl">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="h-11 w-11 animate-pulse rounded-[15px] bg-white/8" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-32 animate-pulse rounded bg-white/8" />
+              <div className="h-5 w-44 animate-pulse rounded bg-white/8" />
+            </div>
+          </div>
+          <div className="rounded-[30px] border border-white/8 bg-white/3.5 p-5 sm:p-6">
+            <div className="h-4 w-36 animate-pulse rounded bg-white/8" />
+            <div className="mt-8 h-16 w-28 animate-pulse rounded bg-white/8" />
+            <div className="mt-5 h-3 w-48 animate-pulse rounded bg-white/8" />
+            <div className="mt-8 h-2 w-full animate-pulse rounded-full bg-white/8" />
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              <div className="h-16 animate-pulse rounded-2xl bg-white/5" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/5" />
+              <div className="h-16 animate-pulse rounded-2xl bg-white/5" />
+            </div>
+          </div>
+          <p className="mt-5 text-center text-xs text-muted">Préparation de ton classement…</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4 pb-32 pt-5 text-foreground sm:px-5">
+        <section className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#151820]/90 p-6 text-center shadow-2xl">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-danger/20 bg-danger/10 text-danger" aria-hidden="true">
+            <span className="text-xl font-semibold">!</span>
+          </div>
+          <h1 className="mt-4 font-display text-xl font-semibold">Impossible de charger le dashboard</h1>
+          <p className="mt-2 text-sm leading-6 text-muted">Une erreur inattendue est survenue pendant la récupération de tes données. Réessaie dans un instant.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-5 text-sm font-bold text-[#0b0d13] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-[#151820]"
+          >
+            Réessayer
+          </button>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden px-4 pb-32 pt-5 text-foreground sm:px-5">
       <div
@@ -1473,20 +1504,14 @@ function DashboardContent() {
         >
           <SportModeSwitcher />
 
-          <Link
-            href={actionHref}
-            className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
-          >
-            <PlusIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-90" />
-
-            <span>
-              {isDemoMode
-                ? "Créer un compte"
-                : mode === "super_tiebreak"
-                  ? "Nouveau duel"
-                  : "Nouveau match"}
-            </span>
-          </Link>
+{isDemoMode && (
+            <Link
+              href="/signup"
+              className="group flex min-h-9 items-center gap-2 rounded-full bg-accent px-3.5 text-[11px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:min-h-10 sm:px-4 sm:text-[12px]"
+            >
+              <span>Créer un compte</span>
+            </Link>
+          )}
         </motion.div>
 
         {/* CONTENU DYNAMIQUE */}
@@ -1523,7 +1548,7 @@ function DashboardContent() {
               variants={sectionVariants}
               initial="hidden"
               animate="visible"
-              className="group relative overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/80 p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl sm:p-6"
+              className="group relative overflow-hidden rounded-[30px] border border-white/10 bg-[#151820]/85 p-5 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.95)] backdrop-blur-2xl transition-[border-color,box-shadow,background-color] duration-300 hover:border-white/15 hover:shadow-[0_34px_90px_-40px_rgba(0,0,0,0.98)] sm:p-6"
             >
               <div
                 aria-hidden="true"
@@ -1812,6 +1837,7 @@ function DashboardContent() {
             >
               <EloChart
                 points={progressionPoints}
+                startingPoints={firstHistory?.old_points}
                 modeLabel={sportLabel}
                 weeklyChange={weeklyPoints}
               />
@@ -1829,7 +1855,7 @@ function DashboardContent() {
             >
               {/* FORME RÉCENTE */}
 
-              <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl">
+              <div className="relative overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-5 shadow-[0_18px_45px_-32px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 hover:border-white/12 hover:bg-white/4">
                 <div className="flex items-center justify-between">
                   <p className="eyebrow">
                     Forme récente
@@ -1994,7 +2020,7 @@ function DashboardContent() {
               )}
               initial="hidden"
               animate="visible"
-              className="mt-3 overflow-hidden rounded-[30px] border border-white/8 bg-white/3.5 p-5 backdrop-blur-xl sm:p-6"
+              className="relative mt-3 overflow-hidden rounded-[30px] border border-white/8 bg-white/3.5 p-5 shadow-[0_24px_60px_-42px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-[border-color,background-color,box-shadow] duration-300 hover:border-white/12 hover:bg-white/4 sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -2038,41 +2064,14 @@ function DashboardContent() {
                     Ton historique apparaîtra ici après ton premier match.
                   </p>
 
-                  <motion.div
-                    whileHover={{
-                      y: -1,
-                      scale: 1.015,
-                    }}
-                    whileTap={{
-                      scale: 0.96,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 25,
-                    }}
-                  >
+{isDemoMode && (
                     <Link
-                      href={actionHref}
-                      className="group flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97] sm:w-auto"
+                      href="/signup"
+                      className="mt-5 inline-flex min-h-10 items-center justify-center rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 active:scale-[0.97]"
                     >
-                      <motion.span
-                        whileHover={{
-                          rotate: 45,
-                        }}
-                        transition={{
-                          duration: 0.2,
-                          ease: "easeOut",
-                        }}
-                      >
-                        <PlusIcon />
-                      </motion.span>
-
-                      {isDemoMode
-                        ? "Créer un compte"
-                        : "Nouveau match"}
+                      Créer un compte
                     </Link>
-                  </motion.div>
+                  )}
                 </div>
               ) : (
                 <div className="mt-5 space-y-2">

@@ -1149,7 +1149,7 @@ export default function MatchDetailPage() {
         {/* RESULT */}
 
         <section
-          className={`relative overflow-hidden rounded-[30px] border p-5 sm:p-6 ${resultClasses.border} ${resultClasses.bg} ${resultClasses.glow}`}
+          className={`relative overflow-hidden rounded-[30px] border p-5 shadow-[0_28px_70px_-42px_rgba(0,0,0,0.95)] sm:p-6 ${resultClasses.border} ${resultClasses.bg} ${resultClasses.glow}`}
         >
           <div
             className={`pointer-events-none absolute left-1/2 -top-17.5 h-48 w-48 -translate-x-1/2 rounded-full blur-3xl ${
@@ -1343,7 +1343,7 @@ export default function MatchDetailPage() {
         {/* RANKING IMPACT */}
 
         {currentUserHistory && (
-          <section className="glass-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
+          <section className="glass-strong relative overflow-hidden rounded-[30px] border border-white/8 p-5 shadow-[0_24px_60px_-40px_rgba(0,0,0,0.95)] sm:p-6">
             <div
               className={`pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full blur-3xl ${
                 currentUserHistory.points_change >= 0

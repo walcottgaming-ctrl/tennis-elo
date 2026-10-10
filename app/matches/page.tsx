@@ -516,7 +516,7 @@ function MatchCard({
     >
       <Link
         href={matchHref}
-        className="group relative block overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-4 backdrop-blur-xl transition-all duration-200 hover:border-white/12 hover:bg-white/5 active:scale-[0.995]"
+        className="group relative block overflow-hidden rounded-[25px] border border-white/8 bg-white/3.5 p-4 shadow-[0_16px_42px_-34px_rgba(0,0,0,0.95)] backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform] duration-200 hover:border-white/15 hover:bg-white/5 hover:shadow-[0_20px_48px_-32px_rgba(0,0,0,0.98)] active:scale-[0.995]"
       >
         {/* subtle top line */}
         <div
@@ -1117,23 +1117,15 @@ export default function MatchesPage() {
           </p>
         </motion.div>
 
-        {/* SPORT + NEW MATCH */}
+        {/* SPORT MODE */}
 
         <motion.div
           variants={sectionVariants}
           initial="hidden"
           animate="visible"
-          className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+          className="mb-5"
         >
           <SportModeSwitcher />
-
-          <Link
-            href={newMatchHref}
-            className="group flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-[12px] font-bold text-[#0b0d13] shadow-[0_8px_30px_var(--accent-glow)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_10px_38px_var(--accent-glow)] active:scale-[0.97]"
-          >
-            <PlusIcon className="h-3.5 w-3.5" />
-            Nouveau match
-          </Link>
         </motion.div>
 
         {/* CONTENT */}
